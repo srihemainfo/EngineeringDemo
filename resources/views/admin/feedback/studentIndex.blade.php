@@ -1,65 +1,100 @@
 @extends('layouts.studentHome')
 @section('content')
-    <div class="card">
-        <div class="card-header">
-            <h6>Feed Back Forms</h6>
+    @if ($subject)
+        <div class="card">
+            <div class="card-header">
+                <h6>Course FeedBack Forms</h6>
+            </div>
+            @if (count($training) > 0 || count($subject) > 0)
+                <div class="card-body">
+                    <table class="table table-bordered table-striped text-center" style="text-transform: capitalize;">
+                        <thead>
+                            <tr>
+                                <th>FeedBack Name</th>
+                                <th>Subject</th>
+                                <th>Subject Staff</th>
+                                <th>Due Date</th>
+                                <th>Click To Provide Feedback</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach ($subject as $item)
+                                <tr>
+                                    <td class="text-left">{{ $item['feedback_name'] }}</td>
+                                    <td class="text-left">{{ $item['name'] }}</td>
+                                    <td class="text-left">{{ $item['staff'] }}</td>
+                                    <td>{{ $item['expiry_date'] }}</td>
+                                    <td>
+                                        <form action="{{ route('admin.student-feedback-forms.survey') }}" method="POST">
+                                            @csrf
+                                            <button type="submit" class="newEditBtn" title="Take Feedback"><i
+                                                    class="fas fa-pen-alt"></i></button>
+                                            <input type="hidden" name="feedback_id" id="feedback_id"
+                                                value="{{ $item['feedback_id'] }}">
+                                            <input type="hidden" name="datas" id="datas"
+                                                value="{{ json_encode($item) }}">
+                                        </form>
+                                    </td>
+                                </tr>
+                            @endforeach
+                        </tbody>
+                    </table>
+                </div>
+            @else
+                <div class="card-body">
+                    Feedbacks not Available...
+                </div>
+            @endif
         </div>
-        @if (count($training) > 0 || count($subject) > 0)
-            <div class="card-body">
-
-                <table class="table table-bordered table-striped">
-                    <thead class="text-center">
-                        <tr>
-                            <th>FeedBack</th>
-                            <th>Action</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @foreach ($subject as $item)
-                            <tr>
-                                <td>{{ $item['name'] }} - {{ $item['staff'] }}</td>
-                                <td class="text-center">
-                                    <form action="{{ route('admin.student-feedback-forms.survey') }}" method="POST">
-                                        @csrf
-                                        <button type="submit" class="newEditBtn" title="Take Feedback"><i class="fas fa-pen-alt"></i></button>
-                                        <input type="hidden" name="feedback_id" id="feedback_id"
-                                            value="{{ $item['feedback_id'] }}">
-                                        <input type="hidden" name="datas" id="datas"
-                                            value="{{ json_encode($item) }}">
-                                    </form>
-                                </td>
-                            </tr>
-                        @endforeach
-                        @foreach ($training as $item)
-                            <tr>
-                                <td>{{ $item['feedback_name'] }}</td>
-                                <td class="text-center">
-                                    <form action="{{ route('admin.student-feedback-forms.survey') }}" method="POST">
-                                        @csrf
-                                        <button  class="newEditBtn" title="Take Feedback" data-id="{{ $item['feedback_id'] }}"><i class="fas fa-pen-alt"></i></button>
-                                        <input type="hidden" name="feedback_id" id="feedback_id"
-                                            value="{{ $item['feedback_id'] }}">
-                                        <input type="hidden" name="datas" id="datas"
-                                            value="{{ json_encode($item) }}">
-                                    </form>
-                                </td>
-                            </tr>
-                        @endforeach
-                    </tbody>
-                </table>
+    @endif
+    @if ($training)
+        <div class="card">
+            <div class="card-header">
+                <h6>Training FeedBack Forms</h6>
             </div>
-        @else
-            <div class="card-body">
-                Feedbacks not Available...
-            </div>
-        @endif
-
-    </div>
+            @if (count($training) > 0 || count($subject) > 0)
+                <div class="card-body">
+                    <table class="table table-bordered table-striped text-center">
+                        <thead>
+                            <tr>
+                                <th>FeedBack Name</th>
+                                <th>Due Date</th>
+                                <th>Click to provide feedback</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach ($training as $item)
+                                <tr>
+                                    <td class="text-left">{{ $item['feedback_name'] }}</td>
+                                    <td>{{ $item['expiry_date'] }}</td>
+                                    <td class="text-center">
+                                        <form action="{{ route('admin.student-feedback-forms.survey') }}" method="POST">
+                                            @csrf
+                                            <button class="newEditBtn" title="Take Feedback"
+                                                data-id="{{ $item['feedback_id'] }}"><i
+                                                    class="fas fa-pen-alt"></i></button>
+                                            <input type="hidden" name="feedback_id" id="feedback_id"
+                                                value="{{ $item['feedback_id'] }}">
+                                            <input type="hidden" name="datas" id="datas"
+                                                value="{{ json_encode($item) }}">
+                                        </form>
+                                    </td>
+                                </tr>
+                            @endforeach
+                        </tbody>
+                    </table>
+                </div>
+            @else
+                <div class="card-body">
+                    Feedbacks not Available...
+                </div>
+            @endif
+        </div>
+    @endif
 @endsection
 @section('scripts')
     @parent
     <script>
-
         function callAjax() {
             $.ajax({
                 url: "{{ route('admin.student-feedback-forms.survey') }}",

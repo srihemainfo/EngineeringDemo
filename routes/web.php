@@ -639,15 +639,24 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'namespace' => 'Admin', 'mi
     Route::get('inventory-report/report', 'BookIssueController@inventory')->name('inventory-report.inventory');
     Route::post('reserve-report/search', 'BookIssueController@search')->name('reserve-report.search');
 
-
+    // Feedback type Master
+    Route::get('feedback-type', 'FeedbackTypeController@index')->name('feedback-type.index');
+    Route::post('feedback-type/edit', 'FeedbackTypeController@edit')->name('feedback-type.edit');
+    Route::post('feedback-type/store', 'FeedbackTypeController@store')->name('feedback-type.store');
+    Route::post('feedback-type/view', 'FeedbackTypeController@view')->name('feedback-type.view');
+    Route::post('feedback-type/delete', 'FeedbackTypeController@destroy')->name('feedback-type.delete');
+    Route::delete('feedback-type/massDestroy', 'FeedbackTypeController@massDestroy')->name('feedback-type.massDestroy');
+    
+    
     //FeedBack Configure
     Route::get('configure-feedback', 'FeedbackController@configureIndex')->name('configure-feedback.index');
     Route::post('configure-feedback/edit', 'FeedbackController@configureEdit')->name('configure-feedback.edit');
     Route::post('configure-feedback/store', 'FeedbackController@configureStore')->name('configure-feedback.store');
     Route::post('configure-feedback/view', 'FeedbackController@configureView')->name('configure-feedback.view');
     Route::post('configure-feedback/delete', 'FeedbackController@configureDestroy')->name('configure-feedback.delete');
-
-
+    
+    
+    
     //Feedback Schedule
     Route::get('schedule-feedback', 'FeedbackController@scheduleIndex')->name('schedule-feedback.index');
     Route::post('schedule-feedback/edit', 'FeedbackController@scheduleEdit')->name('schedule-feedback.edit');
@@ -655,7 +664,9 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'namespace' => 'Admin', 'mi
     Route::post('schedule-feedback/view', 'FeedbackController@scheduleView')->name('schedule-feedback.view');
     Route::post('schedule-feedback/delete', 'FeedbackController@scheduleDestroy')->name('schedule-feedback.delete');
     Route::post('schedule-feedback/fetch-course', 'FeedbackController@fetchCourse')->name('schedule-feedback.fetch_course');
-
+    Route::post('schedule-feedback/fetch-section', 'FeedbackController@fetchSection')->name('schedule-feedback.fetch_section');
+    Route::post('schedule-feedback/change-status', 'FeedbackController@change_status')->name('schedule-feedback.change-status');
+    
     //Student Feedback
     Route::get('feedback-forms', 'FeedbackController@studentIndex')->name('feedback-forms.index');
     Route::post('feedback-forms/survey', 'FeedbackController@studentFeedSurvey')->name('student-feedback-forms.survey');

@@ -1,6 +1,91 @@
 @extends('layouts.admin')
 @section('content')
     <style>
+        .toggle {
+            position: relative;
+            width: 60%;
+            margin: auto;
+        }
+
+        .toggle:before {
+            content: '';
+            position: absolute;
+            border-bottom: 3px solid #fff;
+            border-right: 3px solid #fff;
+            width: 6px;
+            height: 14px;
+            z-index: 2;
+            transform: rotate(45deg);
+            top: 8px;
+            left: 15px;
+        }
+
+        .toggle:after {
+            content: '×';
+            position: absolute;
+            top: -6px;
+            left: 35px;
+            z-index: 2;
+            line-height: 42px;
+            font-size: 26px;
+            color: #aaa;
+        }
+
+        .toggle input[type="checkbox"] {
+            position: absolute;
+            left: 0;
+            top: 0;
+            z-index: 10;
+            width: 100%;
+            height: 100%;
+            cursor: pointer;
+            opacity: 0;
+        }
+
+        .toggle label {
+            position: relative;
+            display: flex;
+            align-items: center;
+        }
+
+        .toggle label:before {
+            content: '';
+            width: 70px;
+            height: 30px;
+            box-shadow: 0 0 1px 2px #0001;
+            background: #eee;
+            position: relative;
+            display: inline-block;
+            border-radius: 46px;
+        }
+
+        .toggle label:after {
+            content: '';
+            position: absolute;
+            width: 31px;
+            height: 29px;
+            border-radius: 50%;
+            left: 0;
+            top: 0;
+            z-index: 5;
+            background: #fff;
+            box-shadow: 0 0 5px #0002;
+            transition: 0.2s ease-in;
+        }
+
+        .toggle input[type="checkbox"]:hover+label:after {
+            box-shadow: 0 2px 15px 0 #0002, 0 3px 8px 0 #0001;
+        }
+
+        .toggle input[type="checkbox"]:checked+label:before {
+            transition: 0.1s 0.2s ease-in;
+            background: #4BD865;
+        }
+
+        .toggle input[type="checkbox"]:checked+label:after {
+            left: 30px;
+        }
+
         .select2-container {
             width: 100% !important;
         }
@@ -121,76 +206,82 @@
                                 <span id="feedback_span" class="text-danger text-center"
                                     style="display:none;font-size:0.9rem;"></span>
                             </div>
-                            <div class="col-xl-6 col-lg-6 col-md-12 col-sm-12 col-12 form-group">
+                            <div class="col-xl-4 col-lg-4 col-md-12 col-sm-12 col-12 form-group">
                                 <label for="result" class="required">Feedback Participant</label>
                                 <select name="participant" id="participant" class="form-control select2">
                                     <option value="">Select Type</option>
-                                    <option value="Student">Student</option>
-                                    <option value="Staff">Staff</option>
-                                    <option value="External">External</option>
+                                    <option value="student">Student</option>
+                                    <option value="faculty">Faculty</option>
+                                    <option value="external">External</option>
                                 </select>
                                 <span id="participant_span" class="text-danger text-center"
                                     style="display:none;font-size:0.9rem;"></span>
                             </div>
-                            <div class="col-xl-6 col-lg-6 col-md-12 col-sm-12 col-12 form-group type">
+                            <div class="col-xl-4 col-lg-4 col-md-12 col-sm-12 col-12 form-group type">
                                 <label for="result" class="required">Feedback Type</label>
-                                <select name="type" id="type" class="form-control select2">
+                                <select style="text-transform: capitalize;" name="type" id="type"
+                                    class="form-control select2">
                                     <option value="">Select Type</option>
-                                    <option value="Course">Course Feedback</option>
-                                    <option value="Training">Training Feedback</option>
-                                    <option value="Faculty">Faculty Feedback</option>
+                                    @foreach ($feed_type as $i => $item)
+                                        <option value="{{ $item->feedback_type }}"
+                                            data-type="{{ $item->feedback_participant }}"
+                                            style="text-transform: capitalize;">
+                                            {{ ucwords($item->feedback_type) }}
+                                        </option>
+                                    @endforeach
                                 </select>
+
+
                                 <span id="type_span" class="text-danger text-center"
                                     style="display:none;font-size:0.9rem;"></span>
                             </div>
-                            <div class="col-xl-6 col-lg-6 col-md-12 col-sm-12 col-12 form-group training">
+                            <div class="col-xl-4 col-lg-4 col-md-12 col-sm-12 col-12 form-group training">
                                 <label for="type_training" class="required">Type of Training</label>
-                                <select name="type_training" id="type_training" class="form-control select2">
-                                    <option value="">Select Type</option>
-                                    <option value="Seminar">Seminar</option>
-                                    <option value="Workshop">Workshop</option>
-                                </select>
+                                <input  type="text" style="text-transform: capitalize;" name="type_training" id="type_training" class="form-control">
                                 <span id="type_training_span" class="text-danger text-center"
                                     style="display:none;font-size:0.9rem;"></span>
                             </div>
-                            <div class="col-xl-6 col-lg-6 col-md-12 col-sm-12 col-12 form-group training">
+                            <div class="col-xl-4 col-lg-4 col-md-12 col-sm-12 col-12 form-group training">
                                 <label for="title_training" class="required">Title</label>
                                 <input type="text" name="title_training" id="title_training" class="form-control">
                                 <span id="title_training_span" class="text-danger text-center"
                                     style="display:none;font-size:0.9rem;"></span>
                             </div>
-                            <div class="col-xl-6 col-lg-6 col-md-12 col-sm-12 col-12 form-group training">
-                                <label for="duration_training" class="required">Duration</label>
-                                <input type="text" name="duration_training" id="duration_training" class="form-control"
-                                    placeholder="2 hrs">
-                                <span id="duration_training_span" class="text-danger text-center"
+                            <div class="col-xl-4 col-lg-4 col-md-12 col-sm-12 col-12 form-group training">
+                                <label for="from_time" class="required">From Time</label>
+                                <input type="time" name="from" id="from_time" class="form-control" placeholder="">
+                                <span id="from_time_span" class="text-danger text-center"
                                     style="display:none;font-size:0.9rem;"></span>
                             </div>
-                            <div class="col-xl-6 col-lg-6 col-md-12 col-sm-12 col-12 form-group training">
+                            <div class="col-xl-4 col-lg-4 col-md-12 col-sm-12 col-12 form-group training">
+                                <label for="to_time" class="required">To Time</label>
+                                <input type="time" name="to_time" id="to_time" class="form-control"
+                                    placeholder="">
+                                <span id="to_time_span" class="text-danger text-center"
+                                    style="display:none;font-size:0.9rem;"></span>
+                            </div>
+                            <div class="col-xl-4 col-lg-4 col-md-12 col-sm-12 col-12 form-group training">
                                 <label for="person_training" class="required">Resource Person</label>
                                 <input type="text" name="person_training" id="person_training" class="form-control">
                                 <span id="person_training_span" class="text-danger text-center"
                                     style="display:none;font-size:0.9rem;"></span>
                             </div>
 
-                            <div class="col-xl-6 col-lg-6 col-md-12 col-sm-12 col-12 form-group">
+                            <div class="col-xl-4 col-lg-4 col-md-12 col-sm-12 col-12 form-group">
                                 <label for="start_date" class="required">Start Date</label>
                                 <input type="date" name="start_date" id="start_date" class="form-control">
                                 <span id="start_date_span" class="text-danger text-center"
                                     style="display:none;font-size:0.9rem;"></span>
                             </div>
-                            <div class="col-xl-6 col-lg-6 col-md-12 col-sm-12 col-12 form-group">
+                            <div class="col-xl-4 col-lg-4 col-md-12 col-sm-12 col-12 form-group">
                                 <label for="expiry_date" class="required">Expire Date</label>
                                 <input type="date" name="expiry_date" id="expiry_date" class="form-control"
                                     onblur="getDays(this)">
                                 <span id="expiry_date_span" class="text-danger text-center"
                                     style="display:none;font-size:0.9rem;"></span>
                             </div>
-                            <div class="col-xl-6 col-lg-6 col-md-12 col-sm-12 col-12 form-group">
-                                <label for="result">No. of Days</label>
-                                <input type="text" name="days" id="days" class="form-control" disabled>
-                            </div>
-                            <div class="col-xl-6 col-lg-6 col-md-12 col-sm-12 col-12 form-group">
+
+                            {{-- <div class="col-xl-4 col-lg-4 col-md-12 col-sm-12 col-12 form-group">
                                 <label for="result" class="required">Status</label>
                                 <select name="status" id="status" class="form-control select2">
                                     <option value="">Select Status</option>
@@ -198,8 +289,8 @@
                                     <option value="Inactive">Inactive</option>
                                     <option value="Disabled">Disabled</option>
                                 </select>
-                            </div>
-                            <div class="col-xl-6 col-lg-6 col-md-12 col-sm-12 col-12 form-group filter">
+                            </div> --}}
+                            <div class="col-xl-4 col-lg-4 col-md-12 col-sm-12 col-12 form-group filter">
                                 <label for="result">Degree</label>
                                 <select name="degree" id="degree" class="form-control select2">
                                     <option value="">Select Degree</option>
@@ -209,26 +300,27 @@
                                     @endforeach
                                 </select>
                             </div>
-                            <div class="col-xl-6 col-lg-6 col-md-12 col-sm-12 col-12 form-group filter">
+                            <div class="col-xl-4 col-lg-4 col-md-12 col-sm-12 col-12 form-group filter">
                                 <label for="course">Course</label>
-                                <select name="course[]" id="course" class="form-control select2" multiple>
+                                <select name="course[]" id="course" class="form-control select2" multiple
+                                    onchange="getSection(this)">
                                     <option value="All">All</option>
                                     @foreach ($course as $id => $item)
                                         <option value="{{ $id }}">{{ $item }}</option>
                                     @endforeach
                                 </select>
                             </div>
-                            <div class="col-xl-3 col-lg-3 col-md-12 col-sm-12 col-12 form-group filter">
+                            <div class="col-xl-4 col-lg-4 col-md-12 col-sm-12 col-12 form-group filter">
                                 <label for="batch">Batch</label>
                                 <select name="batch" id="batch" class="form-control select2">
-                                    <option value="">Select Academic Year</option>
+                                    <option value="">Select Batch</option>
                                     @foreach ($batch as $id => $item)
                                         <option value="{{ $id }}">{{ $item }}</option>
                                     @endforeach
                                 </select>
                             </div>
-                            <div class="col-xl-3 col-lg-3 col-md-12 col-sm-12 col-12 form-group filter">
-                                <label for="ay">Ay</label>
+                            <div class="col-xl-4 col-lg-4 col-md-12 col-sm-12 col-12 form-group filter">
+                                <label for="ay">Academic Year</label>
                                 <select name="ay" id="ay" class="form-control select2">
                                     <option value="">Select Academic Year</option>
                                     @foreach ($ay as $id => $item)
@@ -236,7 +328,7 @@
                                     @endforeach
                                 </select>
                             </div>
-                            <div class="col-xl-3 col-lg-3 col-md-12 col-sm-12 col-12 form-group filter">
+                            <div class="col-xl-4 col-lg-4 col-md-12 col-sm-12 col-12 form-group filter">
                                 <label for="sem">Semester</label>
                                 <select name="sem" id="sem" class="form-control select2">
                                     <option value="">Select Semester</option>
@@ -246,7 +338,7 @@
                                     @endforeach
                                 </select>
                             </div>
-                            <div class="col-xl-3 col-lg-3 col-md-12 col-sm-12 col-12 form-group filter">
+                            <div class="col-xl-4 col-lg-4 col-md-12 col-sm-12 col-12 form-group filter">
                                 <label for="sec">Section</label>
                                 <select name="sec" id="sec" class="form-control select2">
                                     <option value="">Select Section</option>
@@ -264,6 +356,10 @@
                                         <option value="{{ $item }}">{{ $item }}</option>
                                     @endforeach
                                 </select>
+                            </div>
+                            <div class="col-xl-4 col-lg-4 col-md-12 col-sm-12 col-12 form-group">
+                                <label for="result">No. of Days</label>
+                                <input type="text" name="days" id="days" class="form-control" disabled>
                             </div>
                         </div>
                     </div>
@@ -300,7 +396,20 @@
 
         const tool_course = `@foreach ($course as $id => $item)
                                         <option value="{{ $id }}">{{ $item }}</option>
-                                    @endforeach`
+                                    @endforeach`;
+
+        const tool_feedType = `@foreach ($feed_type as $i => $item)
+                                <option value="{{ $item->feedback_type }}"
+                                    data-type="{{ $item->feedback_participant }}"
+                                    style="text-transform: capitalize;">
+                                    {{ ucwords($item->feedback_type) }}
+                                </option>
+                            @endforeach`;
+
+        const tool_section = `@foreach ($sec as $id => $item)
+                                        <option value="{{ $item }}">{{ $item }}</option>
+                                    @endforeach`;
+
 
         function callAjax() {
             let dtButtons = $.extend(true, [], $.fn.dataTable.defaults.buttons)
@@ -334,7 +443,17 @@
                     },
                     {
                         data: 'status',
-                        name: 'status'
+                        name: 'status',
+                        render: function(data, type, row) {
+                            // Create the HTML for the toggle switch
+                            return '<div class="toggle text-center">' +
+                                '<input onchange="checkStatus(this)" type="checkbox" data-id="' + row.id +
+                                '" class="toggleData" ' + (row
+                                    .status ==
+                                    "1" ? 'checked' : '') + '/>' +
+                                '<label></label>' +
+                                '</div>';
+                        }
                     },
                     {
                         data: 'createdBy',
@@ -371,9 +490,9 @@
         $('#participant').change(function() {
             let value = $('#participant option:selected').val();
             console.log(value);
-            if (value == 'External') {
-                $('.type').hide();
+            if (value == 'external') {
                 $('.filter').hide();
+                $('.dept').show();
             } else {
                 $('.type').show();
                 $('.filter').show();
@@ -383,14 +502,18 @@
         $('#type').change(function() {
             let value = $('#type option:selected').val();
             console.log(value);
-            if (value == 'Faculty') {
+            if (value == 'faculty feedback') {
                 $('.dept').show();
                 $('.filter').hide();
                 $('.training').hide();
-            } else if (value == 'Training') {
+            } else if (value == 'training feedback') {
                 $('.training').show();
                 $('.filter').show();
                 $('.dept').hide();
+            } else if (value == 'event feedback') {
+                $('.training').hide();
+                $('.filter').hide();
+                $('.dept').show();
             } else {
                 $('.dept').hide();
                 $('.training').hide();
@@ -399,52 +522,33 @@
             }
         })
 
-        function cpyLink(e) {
-            var decode = atob($(e).data('link'));
-            var tempInput = $('<input>').val(decode).appendTo('body').select();
-            document.execCommand('copy');
-            tempInput.remove();
-            Swal.fire('', 'Link Copied...', 'success');
-        }
+        $('#participant').change(function() {
+            let participate = $('#participant').val();
 
-        function openModal() {
-            $("#feedback_id").val('');
-            $("#feedback").val('').select2();
-            $("#participant").val('').select2();
-            $("#participant").prop('disabled', false);
-            $("#start_date").val('');
-            $("#expiry_date").val('');
-            $("#type_training").val('');
-            $("#title_training").val('');
-            $("#duration_training").val('');
-            $("#person_training").val('');
-            $("#dept").val('');
-            $("#status").val('').select2();
-            $("#sem").val('').select2();
-            $("#ay").val('').select2();
-            $("#batch").val('').select2();
-            $("#degree").val('').select2();
-            $("#sec").val('').select2();
-            $("#course").val('').select2();
-            $('#days').val('')
-            $("#loading_div").hide();
-            $(".training").hide();
-            $(".dept").hide();
-            $("#save_btn").html(`Save`);
-            $("#save_div").show();
-            $(".type").show();
-            $("#scheduleFeedbackModel").modal();
-        }
+            $('#type').html(tool_feedType);
 
-
+            $('#type option').each(function() {
+                let optionType = $(this).data('type');
+                console.log(participate, $(this).data('type'), optionType != participate && optionType !=
+                    undefined);
+                if (optionType != participate && optionType != undefined) {
+                    $(this).remove();
+                }
+            });
+            console.log($('#type option'));
+            $('#type').append($('#type option'));
+            $('#type').prepend(`<option value="" selected>Select Type</option>`).select2();
+        })
 
         function getDays(e) {
             let start_date = new Date($('#start_date').val());
             let expiry = new Date($('#expiry_date').val());
             let diffInTime = expiry.getTime() - start_date.getTime();
             let diffInDays = Math.ceil(diffInTime / (1000 * 3600 * 24));
-            if (diffInDays) {
-                $('#days').val(diffInDays + ' Days')
+            if (diffInDays >= 0) {
+                $('#days').val((diffInDays == 0 ? 1 : diffInDays) + ' Days')
+            } else {
+                Swal.fire('', 'Invalid Dates', 'error');
             }
         }
 
@@ -493,6 +597,171 @@
             })
         })
 
+        function cpyLink(e) {
+            var decode = atob($(e).data('link'));
+            var tempInput = $('<input>').val(decode).appendTo('body').select();
+            document.execCommand('copy');
+            tempInput.remove();
+            Swal.fire('', 'Link Copied...', 'success');
+        }
+
+        function checkStatus(e) {
+            let status = 0;
+            $(".secondLoader").show();
+            if ($(e).is(":checked")) {
+                status = 1;
+            } else {
+                status = 0;
+            }
+            let id = $(e).data('id')
+            $.ajax({
+                url: '{{ route('admin.schedule-feedback.change-status') }}',
+                method: "POST",
+                headers: {
+                    'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+                },
+                data: {
+                    'id': id,
+                    'status': status
+                },
+                success: function(response) {
+                    $(".secondLoader").hide();
+                    let status = response.status;
+                    let data = response.data;
+                    if (status == true) {
+                        Swal.fire('', data, 'success');
+                    } else {
+                        Swal.fire('', data, 'error');
+                    }
+                },
+                error: function(jqXHR, textStatus, errorThrown) {
+                    if (jqXHR.status) {
+                        if (jqXHR.status == 500) {
+                            Swal.fire('', 'Request Timeout / Internal Server Error',
+                                'error');
+                        } else {
+                            Swal.fire('', jqXHR.status, 'error');
+                        }
+                    } else if (textStatus) {
+                        Swal.fire('', textStatus, 'error');
+                    } else {
+                        Swal.fire('', 'Request Failed With Status: ' + jqXHR.statusText,
+                            "error");
+                    }
+                }
+            })
+        }
+
+        function openModal() {
+            $("#feedback_id").val('');
+            $("#feedback").val('').select2();
+            $("#participant").val('').select2();
+            $("#participant").prop('disabled', false);
+            $('#course').prop('disabled', false);
+            $("#start_date").val('');
+            $("#expiry_date").val('');
+            $("#type_training").val('');
+            $("#title_training").val('');
+            $("#duration_training").val('');
+            $("#person_training").val('');
+            $("#dept").val('');
+            $("#status").val('').select2();
+            $("#sem").val('').select2();
+            $("#ay").val('').select2();
+            $("#batch").val('').select2();
+            $("#degree").val('').select2();
+            $("#sec").val('').select2();
+            $("#course").val('').select2();
+            $('#days').val('')
+            $("#loading_div").hide();
+            $(".training").hide();
+            $(".dept").hide();
+            $("#save_btn").html(`Save`);
+            $("#save_div").show();
+            $(".type").show();
+            $("#scheduleFeedbackModel").modal();
+        }
+
+
+
+
+
+        function getSection(e) {
+            console.log($('#course').val());
+            console.log($('#course').val().length);
+            $('#course').prop('disabled', false);
+
+            if ($('#course').val().length == 1 && $('#course').val() != 'All' && $('#course').val() != '') {
+                let section = $('#sec').html(`<option value="">Loading...</option>`)
+                $('#course option[value="All"]').prop('selected', false);
+                $('#course').prop('disabled', true);
+                $.ajax({
+                    url: '{{ route('admin.schedule-feedback.fetch_section') }}',
+                    method: 'POST',
+                    headers: {
+                        'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+                    },
+                    data: {
+                        'id': $('#course').val(),
+                    },
+                    success: function(response) {
+                        let status = response.status;
+                        let data = response.data;
+                        if (status == true) {
+                            section = $('#sec').empty()
+                            section.prepend(
+                                `<option value="All">All</option>`)
+                            $.each(data, function(index, value) {
+                                section.append(
+                                    `<option value="${value}">${value}</option>`)
+                            })
+                        } else {
+                            Swal.fire('', response.data, 'error');
+                        }
+                        $('#course').prop('disabled', false);
+
+                    },
+                    error: function(jqXHR, textStatus, errorThrown) {
+                        if (jqXHR.status) {
+                            if (jqXHR.status == 500) {
+                                Swal.fire('', 'Request Timeout / Internal Server Error', 'error');
+                            } else {
+                                Swal.fire('', jqXHR.status, 'error');
+                            }
+                        } else if (textStatus) {
+                            Swal.fire('', textStatus, 'error');
+                        } else {
+                            Swal.fire('', 'Request Failed With Status: ' + jqXHR.statusText,
+                                "error");
+                        }
+                        $('#course').prop('disabled', false);
+
+                        $("#save_div").show();
+                        $("#loading_div").hide();
+                    }
+                })
+
+
+
+            } else if ($('#course').val().length > 1 || $('#course').val() == 'All') {
+                $('#course').prop('disabled', false);
+                let value = $('#course').val();
+                console.log(value[0] == 'All' && $('#course').val().length > 1);
+
+                if (value[0] == 'All' && $('#course').val().length > 1) {
+                    var course = $('#course').val()
+                    let len = $('#course').val().length;
+                    console.log(len);
+                    for (let index = 0; index < len - 1; index++) {
+                        var remove = course.pop();
+                    }
+                    $('#course').val(course).select2()
+                }
+                let section = $('#sec').empty();
+                section.append(`<option value="All">All</option>`)
+            }
+        }
+
 
         function saveFeedback() {
             if ($('#feedback').val() == '') {
@@ -535,7 +804,8 @@
                         'type': $('#type').val(),
                         'type_training': $('#type_training').val(),
                         'title_training': $('#title_training').val(),
-                        'duration_training': $('#duration_training').val(),
+                        'from_time': $('#from_time').val(),
+                        'to_time': $('#to_time').val(),
                         'person_training': $('#person_training').val(),
                         'start': $('#start_date').val(),
                         'expiry': $('#expiry_date').val(),
@@ -610,7 +880,7 @@
                                 $("#duration_training").val(training_details.duration_training);
                                 $("#person_training").val(training_details.person_training);
                                 $("#title_training").val(training_details.title_training);
-                                $("#type_training").val(training_details.type_training).select2();
+                                $("#type_training").val(training_details.type_training);
 
                                 $(".training").show();
                                 $(".type").show();
@@ -724,7 +994,7 @@
                                 $("#duration_training").val(training_details.duration_training);
                                 $("#person_training").val(training_details.person_training);
                                 $("#title_training").val(training_details.title_training);
-                                $("#type_training").val(training_details.type_training).select2();
+                                $("#type_training").val(training_details.type_training);
 
                                 $(".training").show();
                                 $(".type").show();

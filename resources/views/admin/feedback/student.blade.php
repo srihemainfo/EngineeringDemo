@@ -8,7 +8,9 @@
     <title>Feedback Survey</title>
     {{-- EXTERNAL CSS --}}
     <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Varela+Round&amp;display=swap">
-
+    <script defer src="https://use.fontawesome.com/releases/v5.15.4/js/all.js"
+        integrity="sha384-rOA1PnstxnOBLzCLMcre8ybwbTmemjzdNlILg8O7z1lUkLXozs4DHonlDtnE7fpc" crossorigin="anonymous">
+    </script>
     {{-- EXTERNAL JAVASCRIPT --}}
     <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.3.4/gsap.min.js"></script>
     <script src="https://s3-us-west-2.amazonaws.com/s.cdpn.io/16327/MorphSVGPlugin3.min.js"></script>
@@ -24,8 +26,6 @@
 
 
         body {
-            width: 100vw;
-            height: 100vh;
             display: flex;
             align-items: center;
             justify-content: center;
@@ -37,9 +37,7 @@
         .main {
             width: 100%;
             max-width: 600px;
-
-            /* Adjust width as needed */
-            height: 80%;
+            height: 100%;
             display: flex;
             align-items: center;
             justify-content: center;
@@ -101,251 +99,51 @@
             margin-bottom: 20px;
         }
 
+        .rate {
+            display: flex;
+            flex-direction: row-reverse;
+            justify-content: center;
+
+        }
+
         .rating {
             display: flex;
+            flex-direction: column;
+            gap: 20px;
+            padding: 10px;
         }
 
-        .rate {
-            float: left;
-            height: 46px;
-            padding: 0 10px;
-            /* margin-left: 50px; */
-        }
-
-        .rate:not(:checked)>input {
-            position: absolute;
-            top: -9999px;
-        }
-
-        .rate:not(:checked)>label {
-            float: right;
-            width: 1em;
-            overflow: hidden;
-            white-space: nowrap;
+        /* CSS */
+        .button-48 {
+            appearance: none;
+            background-color: #FFFFFF;
+            border-width: 0;
+            box-sizing: border-box;
+            color: #e72d27;
             cursor: pointer;
-            font-size: 20px;
-            color: #ccc;
-        }
-
-        .rate:not(:checked)>label:before {
-            content: '★ ';
-        }
-
-        .rate>input:checked~label {
-            color: #4f29f0;
-        }
-
-        .rate:not(:checked)>label:hover,
-        .rate:not(:checked)>label:hover~label {
-            color: #4f29f0;
-        }
-
-        .rate>input:checked+label:hover,
-        .rate>input:checked+label:hover~label,
-        .rate>input:checked~label:hover,
-        .rate>input:checked~label:hover~label,
-        .rate>label:hover~input:checked~label {
-            color: #4f29f0;
-        }
-
-        .button {
-            --text: #C3C8DE;
-            --plane: #4F29F0;
-            --background: #fff;
-            display: flex;
-            float: right;
-            align-items: center;
-            justify-content: center;
-            position: relative;
-            border: 0;
-            padding: 0;
-            width: 140px;
-            height: 60px;
-            /* line-height: 30px; */
-            background: none;
-            color: var(--text);
-            cursor: pointer;
-            outline: none;
-            border-radius: 10px;
-            box-shadow: rgba(0, 0, 0, 0.2) 0px 10px 20px;
-        }
-
-        .button svg.btn-layer {
-            display: block;
-            position: absolute;
-            top: -20px;
-            left: 0;
-            width: 100%;
-            height: 100px;
-            z-index: 2;
-            pointer-events: none;
-            fill: var(--background);
-        }
-
-        .button svg.plane {
-            z-index: 3;
-            position: absolute;
-            left: 32px;
-            margin-top: 10px;
-            display: block;
-            width: 26px;
-            height: 28px;
-            fill: var(--plane);
-            transform: translate3d(0, 0, 0);
-            perspective: 500px;
-        }
-
-        .button>ul {
-            list-style: none;
-            margin-top: 10px;
-            padding: 0 5px 0 0;
-            position: relative;
-            overflow: hidden;
-        }
-
-        .button>ul>li {
             display: inline-block;
-            position: relative;
-            z-index: 2;
-            padding-left: 40px;
-            font: 400 16px "Varela Round", sans-serif;
-            transition: transform 0.3s ease 0s, opacity 0.3s ease 0s;
+            font-size: 14px;
+            font-weight: 500;
+            letter-spacing: 0;
+            line-height: 1em;
+            margin: 0;
+            outline: 0;
+            padding: 1.5em 2.2em;
+            text-align: right;
+            text-decoration: none;
+            text-transform: uppercase;
+            touch-action: manipulation;
+            vertical-align: baseline;
+            white-space: nowrap;
+            border-radius: 10px;
         }
 
-        .button>ul>li:first-child {
-            opacity: 1;
+        .button-48:hover {
+            color: #d9534f;
         }
 
-        .button>ul>li:last-child {
-            position: absolute;
-            left: 0;
-            top: 100%;
-            opacity: 0;
-        }
-
-        .button.active svg.plane {
-            -webkit-animation: 1.5s orbit alternate linear;
-            animation: 1.5s orbit alternate linear;
-        }
-
-        .button.active>ul>li {
-            transform: translateY(-100%);
-            transition: transform 0.3s ease 1.2s, opacity 0.3s ease 1.2s;
-        }
-
-        .button.active>ul>li:first-child {
-            opacity: 0;
-        }
-
-        .button.active>ul>li:last-child {
-            opacity: 1;
-        }
-
-        @-webkit-keyframes orbit {
-            0% {
-                transform: rotate3d(1, 0, 0, 0deg) translateZ(60px) scale3d(1, 1, 1);
-                -webkit-animation-timing-function: ease-in;
-                animation-timing-function: ease-in;
-            }
-
-            10% {
-                z-index: 3;
-                transform: rotate3d(1, 0.6, 0, -10deg) translateZ(60px) scale3d(1, 1, 1);
-                -webkit-animation-timing-function: ease-out;
-                animation-timing-function: ease-out;
-            }
-
-            20% {
-                z-index: 3;
-                transform: rotate3d(1, 0.6, 0, 30deg) translateZ(60px) scale3d(1, 1, 1);
-                -webkit-animation-timing-function: ease-out;
-                animation-timing-function: ease-out;
-            }
-
-            30% {
-                z-index: 3;
-                transform: rotate3d(1, 0.6, 0, 35deg) translateZ(60px) scale3d(1, 1, 1);
-            }
-
-            40% {
-                z-index: 1;
-                transform: rotate3d(1, 0.6, 0, 120deg) translateZ(60px) scale3d(0.7, 0.7, 1);
-            }
-
-            70% {
-                z-index: 1;
-                transform: rotate3d(1, 0.6, 0, 240deg) translateZ(60px) scale3d(0.7, 0.7, 1);
-                -webkit-animation-timing-function: ease-out;
-                animation-timing-function: ease-out;
-            }
-
-            100% {
-                z-index: 3;
-                transform: rotate3d(1, 0, 0, 360deg) translateZ(60px) scale3d(1, 1, 1);
-            }
-        }
-
-        @keyframes orbit {
-            0% {
-                transform: rotate3d(1, 0, 0, 0deg) translateZ(60px) scale3d(1, 1, 1);
-                -webkit-animation-timing-function: ease-in;
-                animation-timing-function: ease-in;
-            }
-
-            10% {
-                z-index: 3;
-                transform: rotate3d(1, 0.6, 0, -10deg) translateZ(60px) scale3d(1, 1, 1);
-                -webkit-animation-timing-function: ease-out;
-                animation-timing-function: ease-out;
-            }
-
-            20% {
-                z-index: 3;
-                transform: rotate3d(1, 0.6, 0, 30deg) translateZ(60px) scale3d(1, 1, 1);
-                -webkit-animation-timing-function: ease-out;
-                animation-timing-function: ease-out;
-            }
-
-            30% {
-                z-index: 3;
-                transform: rotate3d(1, 0.6, 0, 35deg) translateZ(60px) scale3d(1, 1, 1);
-            }
-
-            40% {
-                z-index: 1;
-                transform: rotate3d(1, 0.6, 0, 120deg) translateZ(60px) scale3d(0.7, 0.7, 1);
-            }
-
-            70% {
-                z-index: 1;
-                transform: rotate3d(1, 0.6, 0, 240deg) translateZ(60px) scale3d(0.7, 0.7, 1);
-                -webkit-animation-timing-function: ease-out;
-                animation-timing-function: ease-out;
-            }
-
-            100% {
-                z-index: 3;
-                transform: rotate3d(1, 0, 0, 360deg) translateZ(60px) scale3d(1, 1, 1);
-            }
-        }
-
-        body .socials {
-            position: fixed;
-            display: block;
-            left: 20px;
-            bottom: 20px;
-        }
-
-        body .socials>a {
-            display: block;
-            width: 30px;
-            opacity: 0.2;
-            transform: scale(var(--scale, 0.8));
-            transition: transform 0.3s cubic-bezier(0.38, -0.12, 0.24, 1.91);
-        }
-
-        body .socials>a:hover {
-            --scale: 1;
+        .button-48:focus {
+            color: #d9534f;
         }
 
         .toast {
@@ -444,13 +242,14 @@
                 </div>
                 <div class="col-xl-6 col-lg-6 col-md-12 col-sm-12 col-12">
                     <label for="name">Name</label>
-                    <input type="text" name="name" id="name">
+                    <input type="text" name="name" id="name" value="{{ auth()->user()->name }}">
                 </div>
                 @php
                     $question = json_decode($question);
+                    $rate = ['Poor', 'Fair', 'Good', 'Best', 'Excelent'];
+
                 @endphp
                 <div class="ques">
-                    <label>Questions</label>
                     <input type="hidden" name="ques_count" id="ques_count" value="{{ count($question) }}">
                     <input type="hidden" name="feedback_id" id="feedback_id" value="{{ $decode->feedback_id }}">
                     <input type="hidden" name="feed_id" id="feed_id" value="{{ $decode->feed_id }}">
@@ -458,70 +257,61 @@
                     <input type="hidden" name="user_id" id="user_id" value="{{ auth()->user()->id }}">
                     <input type="hidden" name="datas" id="datas" value="{{ $datas }}">
                     <input type="hidden" name="question" id="question" value="{{ json_encode($question) }}">
-                    @foreach ($question as $key => $item)
-                        <div class="first">
-                            <label style="text-transform: uppercase;">{{ $item }}</label>
-                        </div>
-                        <div class="col-xl-12 col-lg-12 col-md-12 col-sm-12 col-12 rating">
+                    <table style="text-align: center;">
+                        <thead>
+                            <tr>
+                                <th>Questions</th>
+                                <th>Rating</th>
+                            </tr>
 
-                            <div class="rate">
-                                <input type="radio" id="star{{ $key + 1 }}_5" name="ques{{ $key + 1 }}"
-                                    value="5" />
-                                <label for="star{{ $key + 1 }}_5" title="Excellence/Best/Good/Fair/Poor">5
-                                    stars</label>
-
-                                <input type="radio" id="star{{ $key + 1 }}_4" name="ques{{ $key + 1 }}"
-                                    value="4" />
-                                <label for="star{{ $key + 1 }}_4" title="Best/Good/Fair/Poor">4 stars</label>
-
-                                <input type="radio" id="star{{ $key + 1 }}_3" name="ques{{ $key + 1 }}"
-                                    value="3" />
-                                <label for="star{{ $key + 1 }}_3" title="Good/Fair/Poor">3 stars</label>
-
-                                <input type="radio" id="star{{ $key + 1 }}_2" name="ques{{ $key + 1 }}"
-                                    value="2" />
-                                <label for="star{{ $key + 1 }}_2" title="Fair/Poor">2 stars</label>
-                                <input type="radio" id="star{{ $key + 1 }}_1" name="ques{{ $key + 1 }}"
-                                    value="1" />
-                                <label for="star{{ $key + 1 }}_1" title="Poor">1 star</label>
-                            </div>
-                        </div>
-                    @endforeach
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td></td>
+                                <td>
+                                    <div class="rate">
+                                        @if ($rating)
+                                            @for ($i = 0; $i < $rating; $i++)
+                                                <div class="rating">
+                                                    <label for="name">{{ $rate[$i] }}</label>
+                                                </div>
+                                            @endfor
+                                        @endif
+                                    </div>
+                                </td>
+                            </tr>
+                            @foreach ($question as $key => $item)
+                                <tr>
+                                    <td style="text-transform: capitalize; text-align: left;">{{ $item }}</td>
+                                    <td>
+                                        <div class="rate">
+                                            @if ($rating)
+                                                @for ($i = 0; $i < $rating; $i++)
+                                                    <div class="rating">
+                                                        <input style="margin-left: 17px;" type="radio" name="ques{{ $key + 1 }}"
+                                                            id="ques{{ $key + 1 }}" value="{{ $i + 1 }}"
+                                                            title="{{ $rate[$i] }}">
+                                                    </div>
+                                                @endfor
+                                            @endif
+                                        </div>
+                                    </td>
+                                </tr>
+                            @endforeach
+                        </tbody>
+                    </table>
                 </div>
-                <button type="submit" id="btn-submit" class="button">
-                    <svg class="btn-layer">
-                        <path
-                            d="M136,77.5c0,0-11.7,0-12,0c-90,0-94.2,0-94.2,0s-10.8,0-25.1,0c-0.2,0-0.8,0-0.8,0c-2.2,0-4-1.8-4-4v-47  c0-2.2,1.8-4,4-4c0,0,0.6,0,0.9,0c39.1,0,61.1,0,61.1,0s3,0,69.1,0c0.2,0,0.9,0,0.9,0c2.2,0,4,1.8,4,4v47  C140,75.7,138.2,77.5,136,77.5z" />
-                    </svg>
-                    <svg class="plane">
-                        <use xlink:href="#plane" />
-                    </svg>
-                    <ul>
-                        <li>Send</li>
-                        <li>Done</li>
-                    </ul>
-                </button>
-
-                <!-- SVG -->
-                <svg xmlns="http://www.w3.org/2000/svg" style="display: none;">
-                    <symbol xmlns="http://www.w3.org/2000/svg" viewBox="0 0 140 100" id="btn-layer"
-                        preserveAspectRatio="none">
-                        <path
-                            d="M133,77.5H7c-3.9,0-7-3.1-7-7v-41c0-3.9,3.1-7,7-7h126c3.9,0,7,3.1,7,7v41C140,74.4,136.9,77.5,133,77.5z" />
-                    </symbol>
-                    <symbol xmlns="http://www.w3.org/2000/svg" viewBox="0 0 28 26" id="plane"
-                        preserveAspectRatio="none">
-                        <path
-                            d="M5.25,15.24,18.42,3.88,7.82,17l0,4.28a.77.77,0,0,0,1.36.49l3-3.68,5.65,2.25a.76.76,0,0,0,1-.58L22,.89A.77.77,0,0,0,20.85.1L.38,11.88a.76.76,0,0,0,.09,1.36Z" />
-                    </symbol>
-                </svg>
+                <div class="col-xl-6 col-lg-6 col-md-12 col-sm-12 col-12" style="text-align: right;">
+                    <button class="button-48" type="submit" id="btn-submit" class="button">
+                        <i class="fas fa-paper-plane"></i><span class="text"> Send</span>
+                    </button>
+                </div>
             </form>
         </div>
     </div>
 </body>
+<button></button>
 <script>
-    gsap.registerPlugin(MorphSVGPlugin);
-
     function handleValidate(event) {
         event.preventDefault(); // Prevent default form submission
 
@@ -543,41 +333,17 @@
 
         for (let i = 1; i <= ques_count; i++) {
             let rating = document.querySelector(`input[name="ques${i}"]:checked`);
+            console.log(rating);
             if (!rating) {
                 alert('Please rate all the questions.');
                 return false;
             }
         }
-
-        document.querySelectorAll('.button').forEach(element => {
-            let path = element.querySelector('.btn-layer path'),
-                tl = gsap.timeline();
-
-            if (element.classList.contains('active')) {
-                return;
-            }
-            element.classList.add('active');
-            if (form) {
-                form.submit();
-            } else {
-                console.error('Form is null during submission.');
-            }
-
-            tl.to(path, {
-                morphSVG: 'M136,77.5h-1H4.8H4c-2.2,0-4-1.8-4-4v-47c0-2.2,1.8-4,4-4c0,0,0.6,0,0.9,0C44,22.5,66,10,66,10  s3,12.5,69.1,12.5c0.2,0,0.9,0,0.9,0c2.2,0,4,1.8,4,4v47C140,75.7,138.2,77.5,136,77.5z',
-                duration: .3,
-                delay: .3
-            }).to(path, {
-                morphSVG: 'M136,77.5c0,0-11.7,0-12,0c-90,0-94.2,0-94.2,0s-10.8,0-25.1,0c-0.2,0-0.8,0-0.8,0c-2.2,0-4-1.8-4-4v-47  c0-2.2,1.8-4,4-4c0,0,0.6,0,0.9,0c39.1,0,61.1,0,61.1,0s3,0,69.1,0c0.2,0,0.9,0,0.9,0c2.2,0,4,1.8,4,4v47  C140,75.7,138.2,77.5,136,77.5z',
-                duration: 10.7,
-                ease: 'elastic.out(5, 5.15)',
-                onComplete() {
-                    element.classList.remove('active');
-                }
-            });
-        });
-
-        return false;
+        if (form) {
+            form.submit();
+        } else {
+            console.error('Form is null during submission.');
+        }
     }
 
     function closeToast(element) {

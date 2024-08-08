@@ -1717,6 +1717,7 @@
                             request()->is('admin/leave-types*') ||
                             request()->is('admin/leave-types/*') ||
                             request()->is('admin/admission-mode*') ||
+                            request()->is('admin/feedback-type*') ||
                             request()->is('admin/result-master*')
                                 ? 'active'
                                 : '' }}">

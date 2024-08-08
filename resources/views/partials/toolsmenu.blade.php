@@ -62,15 +62,15 @@
     @endcan
 
     @can('year_access')
-    <li class="nav-item">
-        <a href="{{ route('admin.fee-cycle.index') }}"
-            class="nav-link {{ request()->is('admin/fee-cycle') || request()->is('admin/fee-cycle/*') ? 'active' : '' }}">
-            <i class="fa-fw nav-icon fas fa-calendar-alt"></i>
-            <p>
-                {{ trans('Fee Cycle') }}
-            </p>
-        </a>
-    </li>
+        <li class="nav-item">
+            <a href="{{ route('admin.fee-cycle.index') }}"
+                class="nav-link {{ request()->is('admin/fee-cycle') || request()->is('admin/fee-cycle/*') ? 'active' : '' }}">
+                <i class="fa-fw nav-icon fas fa-calendar-alt"></i>
+                <p>
+                    {{ trans('Fee Cycle') }}
+                </p>
+            </a>
+        </li>
     @endcan
 
     @can('year_access')
@@ -327,6 +327,18 @@
                 </i>
                 <p>
                     Result Master
+                </p>
+            </a>
+        </li>
+    @endcan
+    @can('result_master_access')
+        <li class="nav-item">
+            <a href="{{ route('admin.feedback-type.index') }}"
+                class="nav-link {{ request()->is('admin/feedback-type') || request()->is('admin/feedback-type/*') ? 'active' : '' }}">
+                <i class="fa-fw nav-icon fas fa-book">
+                </i>
+                <p>
+                    Feedback Type
                 </p>
             </a>
         </li>

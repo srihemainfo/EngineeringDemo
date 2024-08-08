@@ -4,53 +4,6 @@
         .select2-container {
             width: 100% !important;
         }
-
-        .rating {
-            display: flex;
-        }
-
-        .rate {
-            float: left;
-            height: 46px;
-            padding: 0 10px;
-            margin-left: 50px;
-        }
-
-        .rate:not(:checked)>input {
-            position: absolute;
-            top: -9999px;
-        }
-
-        .rate:not(:checked)>label {
-            float: right;
-            width: 1em;
-            overflow: hidden;
-            white-space: nowrap;
-            cursor: pointer;
-            font-size: 30px;
-            color: #ccc;
-        }
-
-        .rate:not(:checked)>label:before {
-            content: '★ ';
-        }
-
-        .rate>input:checked~label {
-            color: #ffc700;
-        }
-
-        .rate:not(:checked)>label:hover,
-        .rate:not(:checked)>label:hover~label {
-            color: #deb217;
-        }
-
-        .rate>input:checked+label:hover,
-        .rate>input:checked+label:hover~label,
-        .rate>input:checked~label:hover,
-        .rate>input:checked~label:hover~label,
-        .rate>label:hover~input:checked~label {
-            color: #c59b08;
-        }
     </style>
     @can('nationality_create')
         <div style="margin-bottom: 10px;" class="row">
@@ -81,11 +34,11 @@
                         <th>
                             FeedBack Name
                         </th>
-                        {{-- <th>
-                            FeedBack Type
-                        </th> --}}
                         <th>
                             Created By
+                        </th>
+                        <th>
+                            Created At
                         </th>
                         <th>
                             Action
@@ -96,7 +49,7 @@
         </div>
 
         <div class="modal fade" id="configureFeedbackModel" role="dialog">
-            <div class="modal-dialog modal-lg">
+            <div class="modal-dialog">
                 <div class="modal-content">
                     <div class="modal-header">
                         <button type="button" style="outline: none;" class="close" data-dismiss="modal">&times;</button>
@@ -122,20 +75,18 @@
                                 <span id="feedback_type_span" class="text-danger text-center"
                                     style="display:none;font-size:0.9rem;"></span>
                             </div> --}}
-                            <div class="col-xl-12 col-lg-12 col-md-12 col-sm-12 col-12 rating">
-                                <label for="result" class="required">Rating</label>
-                                <div class="rate">
-                                    <input type="radio" id="star5" name="rate" value="5" />
-                                    <label for="star5" title="Excellence/Best/Good/Fair/Poor">5 stars</label>
-                                    <input type="radio" id="star4" name="rate" value="4" />
-                                    <label for="star4" title="Best/Good/Fair/Poor">4 stars</label>
-                                    <input type="radio" id="star3" name="rate" value="3" />
-                                    <label for="star3" title="Good/Fair/Poor">3 stars</label>
-                                    <input type="radio" id="star2" name="rate" value="2" />
-                                    <label for="star2" title="Fair/Poor">2 stars</label>
-                                    <input type="radio" id="star1" name="rate" value="1" />
-                                    <label for="star1" title="Poor">1 star</label>
-                                </div>
+                            <div class="col-xl-12 col-lg-12 col-md-12 col-sm-12 col-12 form-group">
+                                <label for="result" class="required">Rating Scale</label>
+                                <select class="form-control select2" name="rate" id="rate">
+                                    <option value="">Select Scale</option>
+                                    <option value="3">3 Scale
+                                        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(Good/Fair/Poor)</option>
+                                    <option value="4">4 Scale
+                                        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(Best/Good/Fair/Poor)</option>
+                                    <option value="5">5 Scale
+                                        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(Excellent/Best/Good/Fair/Poor)
+                                    </option>
+                                </select>
                                 <span id="rating_span" class="text-danger text-center"
                                     style="display:none;font-size:0.9rem;"></span>
                             </div>
@@ -144,14 +95,14 @@
                                 <label for="Questions">Questions</label>
                                 <div class="form-group" style="margin-bottom: 1rem;">
                                     <label for="Questions" class="control-label">1.</label>
-                                    <input type="text" class="form-control ques_inp" style="text-transform:uppercase"
+                                    <input type="text" class="form-control ques_inp" style="text-transform:capitalize"
                                         id="ques_inp_1" name="ques_inp[]" value="">
                                     <span id="ques_inp_1_span" class="text-danger text-center"
                                         style="display:none;font-size:0.9rem;"></span>
                                 </div>
                             </div>
                             <div class="col-xl-12 col-lg-12 col-md-12 col-sm-12 col-12 form-group tbl">
-                                <table class="table table-bordered table-striped">
+                                <table class="table table-bordered table-striped" style="text-transform: capitalize">
                                     <thead>
                                         <tr>
                                             <th>S.No</th>
@@ -181,7 +132,6 @@
                 </div>
             </div>
         </div>
-
         <div class="secondLoader"></div>
     </div>
 @endsection
@@ -214,13 +164,13 @@
                         data: 'name',
                         name: 'name'
                     },
-                    // {
-                    //     data: 'feedback_type',
-                    //     name: 'feedback_type'
-                    // },
                     {
                         data: 'createdBy',
                         name: 'createdBy'
+                    },
+                    {
+                        data: 'updated_at',
+                        name: 'updated_at'
                     },
                     {
                         data: 'actions',
@@ -247,45 +197,45 @@
             $('.tbl').hide()
             $('.questions').show()
             $('.buttons').show()
-            $('input[name="rate"]').prop('disabled', false);
+            $('#rate').val('').select2().prop('disabled', false);
             $("#fee_components_span").hide();
             $("#loading_div").hide();
             $("#save_btn").html(`Save`);
             $("#save_div").show();
-            $("#configureFeedbackModel").modal();
+            $("#configureFeedbackModel").modal()
+            $('.questions').empty()
+            let add = `<label for="Questions">Questions</label><div class="form-group" style="margin-bottom: 1rem;"><label for="result" class="control-label">1.</label>
+                            <input type="text" class="form-control ques_inp" style="text-transform:capitalize;" id="ques_inp_1" name="ques_inp" value="">
+                                <span id="ques_inp_1_span" class="text-danger text-center" style="display:none;font-size:0.9rem;"></span>
+                       </div>`;
+
+            $('.questions').append(add);
         }
 
         function addQuestion(e) {
             let inp = $('.ques_inp').length;
-            let rate = $('input[name="rate"]:checked').val();
             if (inp) {
                 let add = `<div class="form-group" style="margin-bottom: 1rem;"><label for="result" class="control-label">${inp+1}.</label>
-                    <input type="text" class="form-control ques_inp" style="text-transform:uppercase" id="ques_inp_${inp+1}"
+                                <input type="text" class="form-control ques_inp" style="text-transform:capitalize" id="ques_inp_${inp+1}"
                                     name="ques_inp" value="">
                                 <span id="ques_inp_${inp+1}_span" class="text-danger text-center"
-                                    style="display:none;font-size:0.9rem;"></span></div>`;
+                                    style="display:none;font-size:0.9rem;"></span>
+                           </div>`;
 
                 $('.questions').append(add)
             }
         }
 
-        $('input[name="rate"]').change(function() {
-            if ($('input[name="rate"]:checked').val() <= 2) {
-                Swal.fire('', 'Only 3 star to 5 star Rating is Applicable.', 'warning');
-            }
-
-            console.log($('input[name="ques_inp"]').val());
-
-
-        })
 
         function saveFeedback() {
             if ($('#feedback').val() == '') {
                 $("#feedback_span").html(`Feedback Name Is Required.`);
                 $("#feedback_span").show();
-                // $("#feedback_type_span").hide();
-            } else if ($('input[name="rate"]:checked').val() <= 2 || $('input[name="rate"]:checked').val() == undefined) {
-                Swal.fire('', 'Only 3 star to 5 star Rating is Applicable.', 'warning');
+                $("#rating_span").hide();
+            } else if ($('#rate').val() == '') {
+                $("#rating_span").html(`Rating Scale Is Required.`);
+                $("#rating_span").show();
+                $("#feedback_span").hide();
             } else {
                 let ques_inp = $('.ques_inp').length
                 let question = [];
@@ -297,6 +247,8 @@
                 }
                 $("#save_div").hide();
                 $("#loading_div").show();
+                $("#rating_span").hide();
+                $("#feedback_span").hide();
                 $.ajax({
                     url: '{{ route('admin.configure-feedback.store') }}',
                     method: 'POST',
@@ -306,8 +258,7 @@
                     data: {
                         'id': $('#feedback_id').val(),
                         'name': $('#feedback').val(),
-                        // 'type': $('#feedback_type').val(),
-                        'rating': $('input[name="rate"]:checked').val(),
+                        'rate': $('#rate').val(),
                         'question': question
                     },
                     success: function(response) {
@@ -364,9 +315,7 @@
                             console.log(data)
                             $("#feedback_id").val(data.id);
                             $("#feedback").val(data.name);
-                            // $("#feedback_type").val(data.feedback_type).select2();
-                            $('input[name="rate"][value="' + data.rating + '"]').prop('checked', true);
-                            $('input[name="rate"]').prop('disabled', true);
+                            $("#rate").val(data.rating).select2().prop('disabled', true);
                             let question = JSON.parse(data.question)
                             let body = $('#tbody').empty()
                             $.each(question, function(index, value) {
@@ -424,15 +373,13 @@
                             var data = response.data;
                             $("#feedback_id").val(data.id);
                             $("#feedback").val(data.name);
-                            // $("#feedback_type").val(data.feedback_type).select2();
-                            $('input[name="rate"][value="' + data.rating + '"]').prop('checked', true);
-                            $('input[name="rate"]').prop('disabled', false);
+                            $("#rate").val(data.rating).select2().prop('disabled', false);
                             let question = JSON.parse(data.question)
                             let body = $('#tbody').empty()
                             let inp = $('.questions').empty();
                             $.each(question, function(index, value) {
                                 let add = `<div class="form-group" style="margin-bottom: 1rem;"><label for="result" class="control-label">${index+1}.</label>
-                                <input type="text" class="form-control ques_inp" style="text-transform:uppercase" id="ques_inp_${index+1}"
+                                <input type="text" class="form-control ques_inp" style="text-transform:capitalize" id="ques_inp_${index+1}"
                                     name="ques_inp" value="${value}">
                                 <span id="ques_inp_${index+1}_span" class="text-danger text-center"
                                     style="display:none;font-size:0.9rem;"></span></div>`;

@@ -137,7 +137,7 @@ class HostelBlockController extends Controller
 
         if (isset($request->id)) {
             $delete = HostelBlock::where(['id' => $request->id])->update([
-                'deleted_at' => Carbon::now(),
+                'deleted_at' => Carbon::now()
             ]);
             return response()->json(['status' => 'success', 'data' => 'Hostel Deleted Successfully']);
         } else {

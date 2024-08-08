@@ -494,6 +494,7 @@
                         request()->is('admin/leave-types*') ||
                         request()->is('admin/leave-types/*') ||
                         request()->is('admin/admission-mode*') ||
+                        request()->is('admin/feedback-type*') ||
                         request()->is('admin/result-master*'))
                     <!-- //  General Tools menu will match URL /tools/999 or /tools/create -->
 
