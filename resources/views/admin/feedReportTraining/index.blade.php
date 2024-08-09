@@ -201,7 +201,7 @@
                         } else {
                             Swal.fire('', data, 'error');
                         }
-
+                        $('.secondLoader').hide()
                         $('#save_div').show()
                         $('#loading_div').hide()
                     }

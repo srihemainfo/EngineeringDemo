@@ -8,7 +8,7 @@
                     <thead class="text-center">
                         <tr>
                             <th>FeedBack</th>
-                            <th>Action</th>
+                            <th>Click to Provide Feedback</th>
                         </tr>
                     </thead>
                     <tbody>

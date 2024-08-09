@@ -72,8 +72,8 @@
                     <tr>
                         <th>S.No</th>
                         <th>Question</th>
-                        @for ($i = 0; $i < $get_feed[0]->; $i++)
-                            <th>{{ $rate }}</th>
+                        @for ($i = 0; $i < $get_feed[0]->rating_scale; $i++)
+                            <th>{{ $rate[$i] }}</th>
                         @endfor
                         <th>Percentage (%)</th>
                         <th>5 Scale</th>
@@ -84,11 +84,11 @@
                         <tr>
                             <td>{{ $id + 1 }}</td>
                             <td style="text-transform: uppercase;">{{ $item->question_name }}</td>
-                            <td>{{ $item->five_star }}</td>
-                            <td>{{ $item->four_star }}</td>
-                            <td>{{ $item->three_star }}</td>
-                            <td>{{ $item->two_star }}</td>
                             <td>{{ $item->one_star }}</td>
+                            <td>{{ $item->two_star }}</td>
+                            <td>{{ $item->three_star }}</td>
+                            <td>{{ $item->four_star }}</td>
+                            <td>{{ $item->five_star }}</td>
                             <td>{{ $item->star_percent }} %</td>
                             <td>{{ $item->five_scale }}</td>
                         </tr>

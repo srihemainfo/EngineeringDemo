@@ -235,7 +235,6 @@ class FeedbackController extends Controller
             if ($request->participant != '') {
                 $course_encode = null;
                 $dept_encode = null;
-                // dd($request->course);
                 if (!empty($request->course) && $request->course[0] != null) {
                     foreach ($request->course as $id => $value) {
 
@@ -251,7 +250,7 @@ class FeedbackController extends Controller
                 if (!empty($request->dept && $request->dept[0] != null)) {
                     foreach ($request->dept as $id => $value) {
                         if ($value != 'All') {
-                            $check_dept = ToolsDepartment::where('id', $value)->exists();
+                            $check_dept = ToolsDepartment::where('name', $value)->exists();
                             if (!$check_dept) {
                                 return response()->json(['status' => false, 'data' => 'Department not found.']);
                             }
@@ -265,19 +264,21 @@ class FeedbackController extends Controller
                     $training = [
                         'type_training' => $request->type_training,
                         'title_training' => $request->title_training,
-                        'duration_training' => $request->duration_training,
+                        'from_time' => $request->from_time,
+                        'to_time' => $request->to_time,
                         'person_training' => $request->person_training
                     ];
                     $training = json_encode($training);
                 }
 
-                if ($request->participant == 'external feedback') {
+                if ($request->participant == 'external') {
                     $domain = url('/');
                     $token = Str::random(32);
                     $encode_token = base64_encode($domain . '/feedback/' . $token);
                     $create = FeedbackSchedule::create([
                         'feedback_id' => $request->name,
                         'feedback_participant' => $request->participant,
+                        'feedback_type' => $request->type,
                         'expiry_date' => $request->expiry,
                         'start_date' => $request->start,
                         'status' => '0',
@@ -377,7 +378,6 @@ class FeedbackController extends Controller
 
     public function scheduleView(Request $request)
     {
-
         if (isset($request->id)) {
             $data = FeedbackSchedule::where(['id' => $request->id])->first();
             return response()->json(['status' => true, 'data' => $data]);
@@ -457,11 +457,14 @@ class FeedbackController extends Controller
         $data = FeedbackSchedule::with('feedback')
             ->where('token_link', $encode_token)
             ->where('expiry_date', '>=', date('Y-m-d'))
+            ->where('status', 1)
             ->first();
         if ($data) {
             if ($data->token_link) {
-                $dept = ToolsDepartment::pluck('name', 'id');
-                return view('admin.feedback.external', compact('data', 'dept'));
+                // $dept = ToolsDepartment::pluck('name', 'id');
+                $rating = $data->feedback->rating;
+
+                return view('admin.feedback.external', compact('data', 'rating'));
             }
         } else {
             $data = 'The link has expired or is Invalid.';
@@ -472,10 +475,9 @@ class FeedbackController extends Controller
     public function feedbackStore(Request $request)
     {
         // dd($request);
-        if (!empty($request->feed_id) && !empty($request->feedback_id) && !empty($request->name) && !empty($request->dept)) {
+        if (!empty($request->feed_id) && !empty($request->feedback_id) && !empty($request->name)) {
             $rules = [
                 'email' => 'required|email',
-                'dept' => 'required',
             ];
 
             $validator = Validator::make($request->all(), $rules);
@@ -500,14 +502,14 @@ class FeedbackController extends Controller
                     'feedback_id' => $check->feedback->id,
                     'feed_schedule_id' => $check->id,
                     'feedback_participant' => $feedback_participant,
-                    'department_id' => $request->dept
+                    // 'department_id' => $request->dept
                 ])->exists();
                 if ($verify) {
                     $email_exists = OverAllFeedbacksModel::where([
                         'feedback_id' => $check->feedback->id,
                         'feed_schedule_id' => $check->id,
                         'feedback_participant' => $feedback_participant,
-                        'department_id' => $request->dept
+                        // 'department_id' => $request->dept
                     ])->whereJsonContains('emails', $request->email)->exists();
                     if ($email_exists) {
                         $data = 'You have Already Submitted the Form.';
@@ -517,7 +519,7 @@ class FeedbackController extends Controller
                             'feedback_id' => $check->feedback->id,
                             'feed_schedule_id' => $check->id,
                             'feedback_participant' => $feedback_participant,
-                            'department_id' => $request->dept
+                            // 'department_id' => $request->dept
                         ])->get();
 
                         foreach ($update as $key => $value) {
@@ -552,7 +554,7 @@ class FeedbackController extends Controller
                             'feed_schedule_id' => $check->id,
                             'feedback_participant' => $feedback_participant,
                             'question_name' => $value,
-                            'department_id' => $request->dept,
+                            // 'department_id' => $request->dept,
                             'overall_rating' => $check->feedback->rating,
                             'ratings' => $decode_rate,
                             'users' => $decode_name,
@@ -564,6 +566,8 @@ class FeedbackController extends Controller
                 }
                 // dd($create);
             }
+        } else {
+            return back()->with(['errors' => 'Enter All Fields.'], 422);
         }
     }
 
@@ -805,8 +809,8 @@ class FeedbackController extends Controller
         $data = FeedbackSchedule::with('feedback', 'overall_feedbacks')
             ->whereDate('start_date', '<=', $today)
             ->whereDate('expiry_date', '>=', $today)
-            ->where('feedback_participant', 'Staff')
-            ->where('feedback_type', 'Faculty')
+            ->where('feedback_participant', 'faculty')
+            ->where('feedback_type', 'faculty feedback')
             ->where('status', '1')
             ->where(function ($query) use ($user_id) {
                 $query->where(function ($q) use ($user_id) {
@@ -816,7 +820,6 @@ class FeedbackController extends Controller
                 })->orWhereDoesntHave('overall_feedbacks');
             })
             ->get();
-
         return view('admin.feedback.staffIndex', compact('data'));
     }
 
@@ -831,7 +834,9 @@ class FeedbackController extends Controller
                     $question[] = $value;
                 }
                 $datas = $request->datas;
-                return view('admin.feedback.staff', compact('datas', 'question'));
+                $rating = $schedule->feedback->rating;
+
+                return view('admin.feedback.staff', compact('datas', 'question', 'rating'));
             } else {
                 $data = 'The link has expired or is Invalid.';
                 return view('admin.feedback.expiry', compact('data'));
@@ -857,8 +862,9 @@ class FeedbackController extends Controller
             // dd($request, $dept);
 
             $check = FeedbackSchedule::with('feedback')
-                ->where('id', $request->feedback_id)
+                ->where('id', $request->feed_id)
                 ->where('expiry_date', '>=', date('Y-m-d'))
+                ->where('status', 1)
                 ->first();
             // dd($check, $request);
             if (!$check) {
@@ -876,6 +882,7 @@ class FeedbackController extends Controller
                     'feedback_type' => $feedback_type,
                     'department_id' => $dept->id,
                 ])->exists();
+                // dd($feedback_type, $feedback_participant);
                 if ($verify) {
                     $email_exists = OverAllFeedbacksModel::where([
                         'feedback_id' => $check->feedback->id,

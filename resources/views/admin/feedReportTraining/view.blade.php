@@ -12,7 +12,7 @@
         .details span {
             padding: 10px;
             /* background-color: #007bff;
-                                            color: white; */
+                                                color: white; */
             border-radius: 3px;
         }
 
@@ -22,7 +22,7 @@
     </style>
     <div class="card">
         <div class="card-header">
-            Bra Chart Report
+            Bar Chart Report
         </div>
         <div class="card-body">
             <div style="width: 80%;">
@@ -58,14 +58,15 @@
             <table
                 class=" table table-bordered table-striped table-hover ajaxTable datatable datatable-feedbackReport text-center">
                 <thead>
+                    @php
+                        $rate = ['Poor', 'Fair', 'Good', 'Best', 'Excelent'];
+                    @endphp
                     <tr>
                         <th>S.No</th>
                         <th>Question</th>
-                        <th>Excellence</th>
-                        <th>Best</th>
-                        <th>Good</th>
-                        <th>Fair</th>
-                        <th>Poor</th>
+                        @for ($i = 0; $i < $get_feed[0]->rating_scale; $i++)
+                            <th>{{ $rate[$i] }}</th>
+                        @endfor
                         <th>Percentage (%)</th>
                         <th>5 Scale</th>
                     </tr>
@@ -75,11 +76,11 @@
                         <tr>
                             <td>{{ $id + 1 }}</td>
                             <td style="text-transform: uppercase;">{{ $item->question_name }}</td>
-                            <td>{{ $item->five_star }}</td>
-                            <td>{{ $item->four_star }}</td>
-                            <td>{{ $item->three_star }}</td>
-                            <td>{{ $item->two_star }}</td>
                             <td>{{ $item->one_star }}</td>
+                            <td>{{ $item->two_star }}</td>
+                            <td>{{ $item->three_star }}</td>
+                            <td>{{ $item->four_star }}</td>
+                            <td>{{ $item->five_star }}</td>
                             <td>{{ $item->star_percent }}%</td>
                             <td>{{ $item->five_scale }}</td>
                         </tr>

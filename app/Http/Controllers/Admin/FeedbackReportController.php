@@ -120,6 +120,7 @@ class FeedbackReportController extends Controller
     {
         if ($request->feedback_id != '') {
             $get_feed = OverAllFeedbacksModel::with('feedback', 'feedback_schedule')->where('feed_schedule_id', $request->feedback_id)->get();
+            // dd($get_feed);
             $rates = [];
             $label = [];
             $datas = [];
@@ -129,10 +130,14 @@ class FeedbackReportController extends Controller
                     $rates = [];
                     $rating = json_decode($value->ratings);
                     $label[] = 'Q' . ($key + 1);
+                    $sum_rate = 0;
+                    $rating_scale = $get_feed[0]->overall_rating;
                     foreach ($rating as $id => $item) {
                         $check = Student::where(['user_name_id' => $id, 'enroll_master_id' => $request->enroll_id])->first();
                         if ($check) {
                             $rates[] = $item;
+                            $sum_rate += (int) $item;
+
                             $value->enroll = $check->enroll_master->enroll_master_number;
                         } else {
                             $value->enroll = '';
@@ -144,14 +149,15 @@ class FeedbackReportController extends Controller
                     $threeStarCount = array_count_values($rates)[3] ?? 0;
                     $twoStarCount = array_count_values($rates)[2] ?? 0;
                     $oneStarCount = array_count_values($rates)[1] ?? 0;
-                    $five_scale = ($fiveStarCount * 5 + $fourStarCount * 4 + $threeStarCount * 3 + $twoStarCount * 2 + $oneStarCount * 1) /
-                        ($fiveStarCount + $fourStarCount + $threeStarCount + $twoStarCount + $oneStarCount);
+                    $five_scale = $sum_rate / $count;
                     $value->submitted = $request->submitted;
                     $value->five_star = $fiveStarCount;
                     $value->four_star = $fourStarCount;
                     $value->three_star = $threeStarCount;
                     $value->two_star = $twoStarCount;
                     $value->one_star = $oneStarCount;
+                    $value->rating_scale = $rating_scale;
+
                     $value->star_percent = (int) $request->total_student / $count;
                     $value->five_scale = $five_scale;
                     $datas[] = $value->five_scale;
@@ -177,15 +183,16 @@ class FeedbackReportController extends Controller
             $datas = [];
             $question = [];
             if (count($get_feed) > 0) {
-
                 foreach ($get_feed as $key => $value) {
                     $rates = [];
                     $rating = json_decode($value->ratings);
                     $label[] = 'Q' . ($key + 1);
+                    $sum_rate = 0;
                     foreach ($rating as $id => $item) {
                         $check = Student::where(['user_name_id' => $id, 'enroll_master_id' => $request->enroll_id])->first();
                         if ($check) {
                             $rates[] = $item;
+                            $sum_rate += (int) $item;
                             $value->enroll = $check->enroll_master->enroll_master_number;
                         } else {
                             $value->enroll = '';
@@ -197,8 +204,7 @@ class FeedbackReportController extends Controller
                     $threeStarCount = array_count_values($rates)[3] ?? 0;
                     $twoStarCount = array_count_values($rates)[2] ?? 0;
                     $oneStarCount = array_count_values($rates)[1] ?? 0;
-                    $five_scale = ($fiveStarCount * 5 + $fourStarCount * 4 + $threeStarCount * 3 + $twoStarCount * 2 + $oneStarCount * 1) /
-                        ($fiveStarCount + $fourStarCount + $threeStarCount + $twoStarCount + $oneStarCount);
+                    $five_scale = $sum_rate / $count;
                     $value->submitted = $request->submitted;
                     $value->five_star = $fiveStarCount;
                     $value->four_star = $fourStarCount;
@@ -391,7 +397,7 @@ class FeedbackReportController extends Controller
             $rates = [];
             $label = [];
             $datas = [];
-            $rating_scale =  $get_feed[0]->overall_rating;
+            $rating_scale = $get_feed[0]->overall_rating;
             if (count($get_feed) > 0) {
                 foreach ($get_feed as $key => $value) {
                     $rates = [];
@@ -402,7 +408,7 @@ class FeedbackReportController extends Controller
                         $check = Student::where(['user_name_id' => $id, 'enroll_master_id' => $request->enroll_id])->first();
                         if ($check) {
                             $rates[] = $item;
-                            $sum_rate += $item;
+                            $sum_rate += (int) $item;
                             $value->enroll = $check->enroll_master->enroll_master_number;
                             $value->subject_code = $explode[1];
                             $value->subject_name = $explode[2];
@@ -417,7 +423,6 @@ class FeedbackReportController extends Controller
                     $twoStarCount = array_count_values($rates)[2] ?? 0;
                     $oneStarCount = array_count_values($rates)[1] ?? 0;
                     $five_scale = $sum_rate / $count;
-                    // dd($rates, $sum_rate, $five_scale);
                     $value->submitted = $request->submitted;
                     $value->five_star = $fiveStarCount;
                     $value->four_star = $fourStarCount;
@@ -425,7 +430,7 @@ class FeedbackReportController extends Controller
                     $value->two_star = $twoStarCount;
                     $value->one_star = $oneStarCount;
                     $value->rating_scale = $rating_scale;
-                    $value->star_percent = (int) $request->total_students / $count;
+                    $value->star_percent = ((int) $request->total_students / $count) * 100;
                     $value->five_scale = $five_scale;
                     $datas[] = $value->five_scale;
                 }
@@ -511,7 +516,7 @@ class FeedbackReportController extends Controller
     {
         $ay = AcademicYear::pluck('name', 'id');
         $dept = ToolsDepartment::pluck('name', 'id');
-        $feedback = FeedbackSchedule::with('feedback')->where('feedback_type', 'Faculty')->get();
+        $feedback = FeedbackSchedule::with('feedback')->where('feedback_type', 'faculty feedback')->get();
         return view('admin.feedReportFaculty.index', compact('ay', 'dept', 'feedback'));
     }
 
@@ -527,13 +532,15 @@ class FeedbackReportController extends Controller
             return response()->json(['status' => false, 'data' => $validator->errors()]);
         }
 
+        $dept = ToolsDepartment::find($request->dept);
+
         $schedule = FeedbackSchedule::with('feedback', 'overall_feedbacks')->where([
-            'feedback_type' => 'Faculty',
+            'feedback_type' => 'faculty feedback',
             'academic_id' => $request->ay,
         ])
-            ->whereJsonContains('department_id', $request->dept)
+            ->whereJsonContains('department_id', $dept->name)
             ->orWhereJsonContains('department_id', 'All')->get();
-        // dd($schedule);
+        dd( $dept->name);
 
         if (!empty($schedule)) {
             $data = [];

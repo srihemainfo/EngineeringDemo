@@ -154,11 +154,11 @@
 
         <div class="card-body">
             <table
-                class=" table table-bordered table-striped table-hover ajaxTable datatable datatable-FeedBack text-center">
+                class=" table table-bordered table-striped table-hover ajaxTable datatable datatable-FeedBack text-center"
+                style="text-transform: capitalize;">
                 <thead>
                     <tr>
                         <th width="10">
-
                         </th>
                         <th>
                             S.No
@@ -208,7 +208,8 @@
                             </div>
                             <div class="col-xl-4 col-lg-4 col-md-12 col-sm-12 col-12 form-group">
                                 <label for="result" class="required">Feedback Participant</label>
-                                <select name="participant" id="participant" class="form-control select2">
+                                <select name="participant" id="participant" class="form-control select2"
+                                    onchange="participant(this)">
                                     <option value="">Select Type</option>
                                     <option value="student">Student</option>
                                     <option value="faculty">Faculty</option>
@@ -237,7 +238,8 @@
                             </div>
                             <div class="col-xl-4 col-lg-4 col-md-12 col-sm-12 col-12 form-group training">
                                 <label for="type_training" class="required">Type of Training</label>
-                                <input  type="text" style="text-transform: capitalize;" name="type_training" id="type_training" class="form-control">
+                                <input type="text" style="text-transform: capitalize;" name="type_training"
+                                    id="type_training" class="form-control">
                                 <span id="type_training_span" class="text-danger text-center"
                                     style="display:none;font-size:0.9rem;"></span>
                             </div>
@@ -348,7 +350,7 @@
                                     @endforeach
                                 </select>
                             </div>
-                            <div class="col-xl-12 col-lg-12 col-md-12 col-sm-12 col-12 form-group dept">
+                            <div class="col-xl-4 col-lg-4 col-md-12 col-sm-12 col-12 form-group dept">
                                 <label for="dept">Department</label>
                                 <select name="dept[]" id="dept" class="form-control select2" multiple>
                                     <option value="All">All</option>
@@ -375,7 +377,6 @@
                 </div>
             </div>
         </div>
-
         <div class="secondLoader"></div>
     </div>
 @endsection
@@ -407,8 +408,8 @@
                             @endforeach`;
 
         const tool_section = `@foreach ($sec as $id => $item)
-                                        <option value="{{ $item }}">{{ $item }}</option>
-                                    @endforeach`;
+                                <option value="{{ $item }}">{{ $item }}</option>
+                            @endforeach`;
 
 
         function callAjax() {
@@ -487,18 +488,6 @@
 
         };
 
-        $('#participant').change(function() {
-            let value = $('#participant option:selected').val();
-            console.log(value);
-            if (value == 'external') {
-                $('.filter').hide();
-                $('.dept').show();
-            } else {
-                $('.type').show();
-                $('.filter').show();
-            }
-        })
-
         $('#type').change(function() {
             let value = $('#type option:selected').val();
             console.log(value);
@@ -510,11 +499,7 @@
                 $('.training').show();
                 $('.filter').show();
                 $('.dept').hide();
-            } else if (value == 'event feedback') {
-                $('.training').hide();
-                $('.filter').hide();
-                $('.dept').show();
-            } else {
+            } else if (value == 'course feedback') {
                 $('.dept').hide();
                 $('.training').hide();
                 $('.type').show();
@@ -522,8 +507,9 @@
             }
         })
 
-        $('#participant').change(function() {
+        function participant(e) {
             let participate = $('#participant').val();
+            console.log('HII');
 
             $('#type').html(tool_feedType);
 
@@ -535,9 +521,21 @@
                     $(this).remove();
                 }
             });
+
+            if (participate == 'external') {
+                $('.filter').hide();
+                $('.dept').hide();
+            } else {
+                $('.type').show();
+                $('.filter').show();
+            }
+
             console.log($('#type option'));
             $('#type').append($('#type option'));
             $('#type').prepend(`<option value="" selected>Select Type</option>`).select2();
+        }
+        $('#participant').change(function() {
+
         })
 
         function getDays(e) {
@@ -662,10 +660,15 @@
             $("#expiry_date").val('');
             $("#type_training").val('');
             $("#title_training").val('');
-            $("#duration_training").val('');
+            $("#from_time").val('');
+            $("#to_time").val('');
             $("#person_training").val('');
-            $("#dept").val('');
-            $("#status").val('').select2();
+            $("#dept").val('').select2();
+            $("#type").empty();
+            $("#type").html(tool_feedType);
+            $("#type").prepend(`<option value="">Select Type</option>`);
+            $("#type").val('').select2();
+            $("#type").select2();
             $("#sem").val('').select2();
             $("#ay").val('').select2();
             $("#batch").val('').select2();
@@ -674,11 +677,13 @@
             $("#course").val('').select2();
             $('#days').val('')
             $("#loading_div").hide();
+            $(".training").show();
+            $(".dept").show();
+            $(".type").show();
             $(".training").hide();
-            $(".dept").hide();
+            $(".filter").show();
             $("#save_btn").html(`Save`);
             $("#save_div").show();
-            $(".type").show();
             $("#scheduleFeedbackModel").modal();
         }
 
@@ -873,11 +878,13 @@
                             $("#feedback").val(data.feedback_id).select2();
                             $("#participant").val(data.feedback_participant).select2();
                             $("#participant").prop('disabled', true);
-                            // console.log(data.feedback_type);
-                            if (data.feedback_type == 'Training' && data.feedback_type != null) {
+                            participant(data.feedback_participant)
+                            if (data.feedback_type == 'training feedback' && data.feedback_type != null) {
                                 let training_details = JSON.parse(data.training);
+                                console.log(training_details);
                                 $("#type").val(data.feedback_type).select2();
-                                $("#duration_training").val(training_details.duration_training);
+                                $("#from_time").val(training_details.from_time);
+                                $("#to_time").val(training_details.to_time);
                                 $("#person_training").val(training_details.person_training);
                                 $("#title_training").val(training_details.title_training);
                                 $("#type_training").val(training_details.type_training);
@@ -887,7 +894,7 @@
                                 $(".dept").hide();
                                 $(".filter").show();
 
-                            } else if (data.feedback_type == 'Course' && data.feedback_type != null) {
+                            } else if (data.feedback_type == 'course feedback' && data.feedback_type != null) {
 
                                 $("#type").val(data.feedback_type).select2();
                                 $(".type").show();
@@ -895,7 +902,7 @@
                                 $(".dept").hide();
                                 $(".filter").show();
 
-                            } else if (data.feedback_type == 'Faculty' && data.feedback_type != null) {
+                            } else if (data.feedback_type == 'faculty feedback' && data.feedback_type != null) {
                                 $("#type").val(data.feedback_type).select2();
                                 $(".dept").show();
                                 $(".type").show();
@@ -903,14 +910,15 @@
                                 $(".filter").hide();
 
                             } else {
-                                $(".type").hide();
+                                $("#type").val(data.feedback_type).select2();
+                                $(".type").show();
                                 $(".dept").hide();
                                 $(".training").hide();
                                 $(".filter").hide();
 
                             }
 
-                            if (data.feedback_participant != 'External') {
+                            if (data.feedback_participant != 'external') {
                                 $("#degree").val(data.degree_id).select2();
                                 $("#batch").val(data.batch_id).select2();
                                 $("#sem").val(data.semester).select2();
@@ -987,8 +995,8 @@
                             $("#feedback").val(data.feedback_id).select2();
                             $("#participant").val(data.feedback_participant).select2();
                             $("#participant").prop('disabled', true);
-                            // console.log(data.feedback_type);
-                            if (data.feedback_type == 'Training' && data.feedback_type != null) {
+                            participant(data.feedback_participant)
+                            if (data.feedback_type == 'training feedback' && data.feedback_type != null) {
                                 let training_details = JSON.parse(data.training);
                                 $("#type").val(data.feedback_type).select2();
                                 $("#duration_training").val(training_details.duration_training);
@@ -1001,7 +1009,7 @@
                                 $(".dept").hide();
                                 $(".filter").show();
 
-                            } else if (data.feedback_type == 'Course' && data.feedback_type != null) {
+                            } else if (data.feedback_type == 'course feedback' && data.feedback_type != null) {
 
                                 $("#type").val(data.feedback_type).select2();
                                 $(".type").show();
@@ -1009,7 +1017,7 @@
                                 $(".dept").hide();
                                 $(".filter").show();
 
-                            } else if (data.feedback_type == 'Faculty' && data.feedback_type != null) {
+                            } else if (data.feedback_type == 'faculty feedback' && data.feedback_type != null) {
                                 $("#type").val(data.feedback_type).select2();
                                 $(".dept").show();
                                 $(".type").show();
@@ -1017,14 +1025,15 @@
                                 $(".filter").hide();
 
                             } else {
-                                $(".type").hide();
+                                $("#type").val(data.feedback_type).select2();
+                                $(".type").show();
                                 $(".dept").hide();
                                 $(".training").hide();
                                 $(".filter").hide();
 
                             }
 
-                            if (data.feedback_participant != 'External') {
+                            if (data.feedback_participant != 'external') {
                                 $("#degree").val(data.degree_id).select2();
                                 $("#batch").val(data.batch_id).select2();
                                 $("#sem").val(data.semester).select2();
