@@ -333,7 +333,8 @@
                                     <div class="form-group">
                                         <label for="shift">Shift</label>
                                         <input type="text" class="form-control" name="shift"
-                                            value="{{ old('shift', $academic_list->shift->Name) }}" readonly>
+                                            value="{{ old('shift', $academic_list->shift ? $academic_list->shift->Name : '') }}"
+                                            readonly>
                                     </div>
                                 </div>
                                 <div class="col-xl-6 col-lg-6 col-md-6 col-sm-6 col-12">
@@ -376,7 +377,8 @@
                                     <div class="form-group">
                                         <label for="scholarship_name">Scholarship Name</label>
                                         <input type="text" class="form-control" name="scholarship_name"
-                                            value="{{ $academic_list->scholarDetail != null ? $academic_list->scholarDetail->name : '' }}" readonly>
+                                            value="{{ $academic_list->scholarDetail != null ? $academic_list->scholarDetail->name : '' }}"
+                                            readonly>
                                     </div>
                                 </div>
                                 <div class="col-xl-6 col-lg-6 col-md-6 col-sm-6 col-12">

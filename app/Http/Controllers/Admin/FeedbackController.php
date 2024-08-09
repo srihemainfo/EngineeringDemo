@@ -649,6 +649,7 @@ class FeedbackController extends Controller
 
                     } elseif ($is_valid == true && $item->feedback_type == 'training feedback') {
                         $overall_feed = OverAllFeedbacksModel::where(['feedback_type' => 'training feedback', 'feed_schedule_id' => $item->id])->whereJsonContains('users', (string) $user_id)->exists();
+                        // dd($overall_feed, $user_id);
                         if (!$overall_feed) {
                             $decode = json_decode($item->training);
                             $training[] = [

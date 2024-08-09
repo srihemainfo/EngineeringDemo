@@ -12,7 +12,7 @@
         .details span {
             padding: 10px;
             /* background-color: #007bff;
-                                                color: white; */
+                                                                color: white; */
             border-radius: 3px;
         }
 
@@ -66,14 +66,15 @@
             <table
                 class=" table table-bordered table-striped table-hover ajaxTable datatable datatable-feedbackReport text-center">
                 <thead>
+                    @php
+                        $rate = ['Poor', 'Fair', 'Good', 'Best', 'Excelent'];
+                    @endphp
                     <tr>
                         <th>S.No</th>
                         <th>Question</th>
-                        <th>Excellence</th>
-                        <th>Best</th>
-                        <th>Good</th>
-                        <th>Fair</th>
-                        <th>Poor</th>
+                        @for ($i = 0; $i < $get_feed[0]->; $i++)
+                            <th>{{ $rate }}</th>
+                        @endfor
                         <th>Percentage (%)</th>
                         <th>5 Scale</th>
                     </tr>
@@ -92,7 +93,7 @@
                             <td>{{ $item->five_scale }}</td>
                         </tr>
                     @endforeach
-                    
+
                 </tbody>
             </table>
         </div>

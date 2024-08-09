@@ -48,7 +48,7 @@ class FeedbackReportController extends Controller
         }
 
         $schedule = FeedbackSchedule::with('feedback', 'overall_feedbacks')->where([
-            'feedback_type' => 'Training',
+            'feedback_type' => 'training feedback',
             'batch_id' => $request->batch,
             'academic_id' => $request->ay
         ])
@@ -240,7 +240,7 @@ class FeedbackReportController extends Controller
         $course = ToolsCourse::pluck('short_form', 'id');
         $section = Section::pluck('section', 'id')->unique();
         $sem = Semester::pluck('semester', 'id');
-        $feedback = FeedbackSchedule::with('feedback')->where('feedback_type', 'Course')->get();
+        $feedback = FeedbackSchedule::with('feedback')->where('feedback_type', 'course feedback')->get();
 
         return view('admin.feedReportCourse.index', compact('batch', 'ay', 'course', 'section', 'sem', 'feedback'));
     }
@@ -262,7 +262,7 @@ class FeedbackReportController extends Controller
 
         $schedule = FeedbackSchedule::with('feedback', 'overall_feedbacks')
             ->where([
-                'feedback_type' => 'Course',
+                'feedback_type' => 'course feedback',
                 'batch_id' => $request->batch,
                 'academic_id' => $request->ay
             ])
@@ -327,8 +327,8 @@ class FeedbackReportController extends Controller
                         ->leftJoin('feedback_schedule', 'feedback_schedule.academic_id', '=', 'course_enroll_masters.academic_id')
                         ->leftJoin('overall_feedbacks', function ($join) use ($value) {
                             $join->on('overall_feedbacks.feed_schedule_id', '=', 'feedback_schedule.id')
-                                ->where('overall_feedbacks.feedback_participant', 'Student')
-                                ->where('overall_feedbacks.feedback_type', 'Course')
+                                ->where('overall_feedbacks.feedback_participant', 'student')
+                                ->where('overall_feedbacks.feedback_type', 'course feedback')
                                 ->whereColumn('overall_feedbacks.staff_id', 'class_time_table_two.staff');
                         })
                         ->where('feedback_schedule.id', $value->id)
@@ -361,7 +361,7 @@ class FeedbackReportController extends Controller
                         $submitted_student = 0;
                         foreach ($get_student as $i => $stu) {
                             // dd($stu);
-                            $get_feed = OverAllFeedbacksModel::where(['feed_schedule_id' => $val->feed_schedule_id, 'feedback_participant' => 'Student', 'feedback_type' => 'Course', 'staff_id' => $val->staff_id])->whereJsonContains('users', (string) $stu->user_name_id)->get();
+                            $get_feed = OverAllFeedbacksModel::where(['feed_schedule_id' => $val->feed_schedule_id, 'feedback_participant' => 'student', 'feedback_type' => 'course feedback', 'staff_id' => $val->staff_id])->whereJsonContains('users', (string) $stu->user_name_id)->get();
                             // dd($get_feed);
                             if (count($get_feed) > 0) {
                                 $submitted_student += 1;
@@ -391,15 +391,18 @@ class FeedbackReportController extends Controller
             $rates = [];
             $label = [];
             $datas = [];
+            $rating_scale =  $get_feed[0]->overall_rating;
             if (count($get_feed) > 0) {
                 foreach ($get_feed as $key => $value) {
                     $rates = [];
                     $rating = json_decode($value->ratings);
                     $label[] = 'Q' . ($key + 1);
+                    $sum_rate = 0;
                     foreach ($rating as $id => $item) {
                         $check = Student::where(['user_name_id' => $id, 'enroll_master_id' => $request->enroll_id])->first();
                         if ($check) {
                             $rates[] = $item;
+                            $sum_rate += $item;
                             $value->enroll = $check->enroll_master->enroll_master_number;
                             $value->subject_code = $explode[1];
                             $value->subject_name = $explode[2];
@@ -413,14 +416,15 @@ class FeedbackReportController extends Controller
                     $threeStarCount = array_count_values($rates)[3] ?? 0;
                     $twoStarCount = array_count_values($rates)[2] ?? 0;
                     $oneStarCount = array_count_values($rates)[1] ?? 0;
-                    $five_scale = ($fiveStarCount * 5 + $fourStarCount * 4 + $threeStarCount * 3 + $twoStarCount * 2 + $oneStarCount * 1) /
-                        ($fiveStarCount + $fourStarCount + $threeStarCount + $twoStarCount + $oneStarCount);
+                    $five_scale = $sum_rate / $count;
+                    // dd($rates, $sum_rate, $five_scale);
                     $value->submitted = $request->submitted;
                     $value->five_star = $fiveStarCount;
                     $value->four_star = $fourStarCount;
                     $value->three_star = $threeStarCount;
                     $value->two_star = $twoStarCount;
                     $value->one_star = $oneStarCount;
+                    $value->rating_scale = $rating_scale;
                     $value->star_percent = (int) $request->total_students / $count;
                     $value->five_scale = $five_scale;
                     $datas[] = $value->five_scale;
@@ -709,10 +713,11 @@ class FeedbackReportController extends Controller
         $validator = Validator::make($request->all(), $rules);
         if ($validator->fails()) {
             return response()->json(['status' => false, 'data' => $validator->errors()]);
-        } 
+        }
 
         $schedule = FeedbackSchedule::with('feedback', 'overall_feedbacks')->where([
-            'feedback_participant', 'External',
+            'feedback_participant',
+            'External',
             'academic_id' => $request->ay,
         ])
             ->whereJsonContains('department_id', $request->dept)

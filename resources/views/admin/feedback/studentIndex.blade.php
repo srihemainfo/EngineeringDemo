@@ -3,7 +3,7 @@
     @if ($subject)
         <div class="card">
             <div class="card-header">
-                <h6>Course FeedBack Forms</h6>
+                <h6><strong>Course FeedBack Forms</strong></h6>
             </div>
             @if (count($training) > 0 || count($subject) > 0)
                 <div class="card-body">
@@ -40,17 +40,23 @@
                         </tbody>
                     </table>
                 </div>
-            @else
-                <div class="card-body">
-                    Feedbacks not Available...
-                </div>
             @endif
         </div>
+    @else
+        <div class="card">
+            <div class="card-header">
+                <h6><strong>Course FeedBack Forms</strong></h6>
+            </div>
+            <div class="card-body text-center">
+                Feedbacks not Available...
+            </div>
+        </div>
     @endif
+
     @if ($training)
         <div class="card">
             <div class="card-header">
-                <h6>Training FeedBack Forms</h6>
+                <h6><strong>Training FeedBack Forms</strong></h6>
             </div>
             @if (count($training) > 0 || count($subject) > 0)
                 <div class="card-body">
@@ -84,11 +90,16 @@
                         </tbody>
                     </table>
                 </div>
-            @else
-                <div class="card-body">
-                    Feedbacks not Available...
-                </div>
             @endif
+        </div>
+    @else
+        <div class="card">
+            <div class="card-header">
+                <h6><strong>Training FeedBack Forms</strong></h6>
+            </div>
+            <div class="card-body text-center">
+                Feedbacks not Available...
+            </div>
         </div>
     @endif
 @endsection
