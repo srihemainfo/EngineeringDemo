@@ -442,9 +442,7 @@
 
                     let class_name = $("#class_name").val()
                     let subject = $("#subject").val()
-
                     let form_data = [];
-
                     let data = {
                         'class': class_name,
                         'subject': subject,
@@ -454,8 +452,6 @@
                     for (let i = 0; i < len; i++) {
                         form_data.push($($("form")[i]).serializeArray());
                     }
-                    // console.log(data)
-
                     $.ajax({
                         url: '{{ route('admin.staff-subjects.lesson-plan.save') }}',
                         type: 'POST',

@@ -82,9 +82,9 @@
                                     <option value="3">3 Scale
                                         &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(Good/Fair/Poor)</option>
                                     <option value="4">4 Scale
-                                        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(Best/Good/Fair/Poor)</option>
+                                        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(Very Good/Good/Fair/Poor)</option>
                                     <option value="5">5 Scale
-                                        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(Excellent/Best/Good/Fair/Poor)
+                                        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(Excellent/Very Good/Good/Fair/Poor)
                                     </option>
                                 </select>
                                 <span id="rating_span" class="text-danger text-center"

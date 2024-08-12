@@ -22,6 +22,7 @@ use App\Models\ToolsCourse;
 use App\Models\ToolsDegreeType;
 use App\Models\ToolsDepartment;
 use Carbon\Carbon;
+use DateTime;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Request as Requests;
 use Validator;
@@ -223,9 +224,7 @@ class FeedbackController extends Controller
         $course = ToolsCourse::pluck('short_form', 'id');
         $ay = AcademicYear::pluck('name', 'id');
         $sec = Section::pluck('section', 'id')->unique();
-
         $feed_type = FeedbackTypeModel::select('feedback_type', 'feedback_participant')->get();
-
         return view('admin.feedbackSchedule.index', compact('feed_type', 'dept', 'batch', 'ay', 'sem', 'course', 'feedback', 'degree', 'sec'));
     }
     public function scheduleStore(Request $request)
@@ -235,28 +234,12 @@ class FeedbackController extends Controller
             if ($request->participant != '') {
                 $course_encode = null;
                 $dept_encode = null;
-                if (!empty($request->course) && $request->course[0] != null) {
-                    foreach ($request->course as $id => $value) {
-
-                        if ($value != 'All') {
-                            $check_course = ToolsCourse::where('id', $value)->exists();
-                            if (!$check_course) {
-                                return response()->json(['status' => false, 'data' => 'Course not found.']);
-                            }
-                        }
+                if (!empty($request->course)) {
+                    $check_course = ToolsCourse::where('id', $request->course)->exists();
+                    if (!$check_course) {
+                        return response()->json(['status' => false, 'data' => 'Course not found.']);
                     }
                     $course_encode = json_encode($request->course, true);
-                }
-                if (!empty($request->dept && $request->dept[0] != null)) {
-                    foreach ($request->dept as $id => $value) {
-                        if ($value != 'All') {
-                            $check_dept = ToolsDepartment::where('name', $value)->exists();
-                            if (!$check_dept) {
-                                return response()->json(['status' => false, 'data' => 'Department not found.']);
-                            }
-                        }
-                    }
-                    $dept_encode = json_encode($request->dept, true);
                 }
 
                 $training = null;
@@ -294,7 +277,7 @@ class FeedbackController extends Controller
                         'expiry_date' => $request->expiry,
                         'start_date' => $request->start,
                         'degree_id' => $request->degree,
-                        'department_id' => $dept_encode,
+                        //'department_id' => $dept_encode,
                         'academic_id' => $request->ay,
                         'batch_id' => $request->batch,
                         'course_id' => $course_encode,
@@ -316,27 +299,11 @@ class FeedbackController extends Controller
                 $dept_encode = null;
 
                 if (!empty($request->course)) {
-                    foreach ($request->course as $id => $value) {
-                        if ($value != 'All') {
-                            $check_course = ToolsCourse::where('id', $value)->exists();
-                            if (!$check_course) {
-                                return response()->json(['status' => false, 'data' => 'Course not found.']);
-                            }
-                        }
+                    $check_course = ToolsCourse::where('id', $request->course)->exists();
+                    if (!$check_course) {
+                        return response()->json(['status' => false, 'data' => 'Course not found.']);
                     }
                     $course_encode = json_encode($request->course, true);
-                }
-
-                if (!empty($request->dept && $request->dept[0] != null)) {
-                    foreach ($request->dept as $id => $value) {
-                        if ($value != 'All') {
-                            $check_dept = ToolsDepartment::where('id', $value)->exists();
-                            if (!$check_dept) {
-                                return response()->json(['status' => false, 'data' => 'Department not found.']);
-                            }
-                        }
-                    }
-                    $dept_encode = json_encode($request->dept, true);
                 }
 
                 $training = null;
@@ -344,7 +311,8 @@ class FeedbackController extends Controller
                     $training = [
                         'type_training' => $request->type_training,
                         'title_training' => $request->title_training,
-                        'duration_training' => $request->duration_training,
+                        'from_time' => $request->from_time,
+                        'to_time' => $request->to_time,
                         'person_training' => $request->person_training
                     ];
                     $training = json_encode($training);
@@ -358,7 +326,7 @@ class FeedbackController extends Controller
                     'expiry_date' => $request->expiry,
                     'start_date' => $request->start,
                     'degree_id' => $request->degree,
-                    'department_id' => $dept_encode,
+                    //'department_id' => $dept_encode,
                     'academic_id' => $request->ay,
                     'batch_id' => $request->batch,
                     'course_id' => $course_encode,
@@ -502,14 +470,14 @@ class FeedbackController extends Controller
                     'feedback_id' => $check->feedback->id,
                     'feed_schedule_id' => $check->id,
                     'feedback_participant' => $feedback_participant,
-                    // 'department_id' => $request->dept
+                    // //'department_id' => $request->dept
                 ])->exists();
                 if ($verify) {
                     $email_exists = OverAllFeedbacksModel::where([
                         'feedback_id' => $check->feedback->id,
                         'feed_schedule_id' => $check->id,
                         'feedback_participant' => $feedback_participant,
-                        // 'department_id' => $request->dept
+                        // //'department_id' => $request->dept
                     ])->whereJsonContains('emails', $request->email)->exists();
                     if ($email_exists) {
                         $data = 'You have Already Submitted the Form.';
@@ -519,7 +487,7 @@ class FeedbackController extends Controller
                             'feedback_id' => $check->feedback->id,
                             'feed_schedule_id' => $check->id,
                             'feedback_participant' => $feedback_participant,
-                            // 'department_id' => $request->dept
+                            // //'department_id' => $request->dept
                         ])->get();
 
                         foreach ($update as $key => $value) {
@@ -554,7 +522,7 @@ class FeedbackController extends Controller
                             'feed_schedule_id' => $check->id,
                             'feedback_participant' => $feedback_participant,
                             'question_name' => $value,
-                            // 'department_id' => $request->dept,
+                            // //'department_id' => $request->dept,
                             'overall_rating' => $check->feedback->rating,
                             'ratings' => $decode_rate,
                             'users' => $decode_name,
@@ -656,9 +624,17 @@ class FeedbackController extends Controller
                         // dd($overall_feed, $user_id);
                         if (!$overall_feed) {
                             $decode = json_decode($item->training);
+                            // dd($decode);
+                            $from_time = $decode->from_time;
+                            $to_time = $decode->to_time;
+
+                            $dateTime1 = new DateTime($from_time);
+                            $dateTime2 = new DateTime($to_time);
+
+                            $interval = $dateTime1->diff($dateTime2);
                             $training[] = [
                                 'title' => $decode->title_training,
-                                'duration' => $decode->duration_training,
+                                'duration' => $interval->format('%h hours %i minutes'),
                                 'person' => $decode->person_training,
                                 'staff_id' => null,
                                 'feedback_name' => $item->feedback->name,
@@ -880,7 +856,7 @@ class FeedbackController extends Controller
                     'feed_schedule_id' => $check->id,
                     'feedback_participant' => $feedback_participant,
                     'feedback_type' => $feedback_type,
-                    'department_id' => $dept->id,
+                    //'department_id' => $dept->id,
                 ])->exists();
                 // dd($feedback_type, $feedback_participant);
                 if ($verify) {
@@ -889,7 +865,7 @@ class FeedbackController extends Controller
                         'feed_schedule_id' => $check->id,
                         'feedback_participant' => $feedback_participant,
                         'feedback_type' => $feedback_type,
-                        'department_id' => $dept->id,
+                        //'department_id' => $dept->id,
                     ])->whereJsonContains('users', auth()->user()->id)->exists();
                     if ($email_exists) {
                         $data = 'You have Already Submitted the Form.';
@@ -900,7 +876,7 @@ class FeedbackController extends Controller
                             'feed_schedule_id' => $check->id,
                             'feedback_participant' => $feedback_participant,
                             'feedback_type' => $feedback_type,
-                            'department_id' => $dept->id,
+                            //'department_id' => $dept->id,
                         ])->get();
                         // dd($update);
                         foreach ($update as $key => $value) {
@@ -933,7 +909,7 @@ class FeedbackController extends Controller
                             'feedback_type' => $feedback_type,
                             'question_name' => $value,
                             'overall_rating' => $check->feedback->rating,
-                            'department_id' => $dept->id,
+                            //'department_id' => $dept->id,
                             'ratings' => $decode_rate,
                             'users' => $decode_id,
                             // 'emails' => $decode_email,

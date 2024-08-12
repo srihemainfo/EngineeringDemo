@@ -225,7 +225,7 @@
                 <div class="ques">
                     @php
                         $question = json_decode($decode->feedback->question);
-                        $rate = ['Poor', 'Fair', 'Good', 'Best', 'Excelent'];
+                        $rate = ['Poor', 'Fair', 'Good', 'Very Good', 'Excelent'];
                     @endphp
                     <input type="hidden" name="ques_count" id="ques_count" value="{{ count($question) }}">
                     <input type="hidden" name="feedback_id" id="feedback_id" value="{{ $decode->feedback_id }}">

@@ -29,10 +29,10 @@
                             S.No
                         </th>
                         <th>
-                            Participant
+                            Feedback Type
                         </th>
                         <th>
-                            Feedback Type
+                            Participant
                         </th>
                         <th>
                             Action
@@ -54,22 +54,25 @@
                 <div class="modal-body">
                     <div class="row gutters">
                         <div class="col-xl-12 col-lg-12 col-md-12 col-sm-12 col-12 form-group">
+                            <label for="feedType" class="required">Feedback Type</label>
+                            <select class="form-control select2" name="feedType" id="feedType">
+                                <option value="">Select FeedType</option>
+                                <option value="course feedback">Course Feedback</option>
+                                <option value="training feedback">Training Feedback</option>
+                                <option value="faculty feedback">Faculty Feedback</option>
+                            </select>
+                            <span id="feedType_span" class="text-danger text-center"
+                                style="display:none;font-size:0.9rem;"></span>
+                        </div>
+                        <div class="col-xl-12 col-lg-12 col-md-12 col-sm-12 col-12 form-group">
                             <label for="result" class="required">Feedback Participant</label>
                             <input type="hidden" name="feedType_id" id="feedType_id" value="">
                             <select class="form-control select2" name="participant" id="participant">
                                 <option value="">Select Participant</option>
                                 <option value="faculty">Faculty</option>
                                 <option value="student">Student</option>
-                                <option value="external">External</option>
                             </select>
                             <span id="participant_span" class="text-danger text-center"
-                                style="display:none;font-size:0.9rem;"></span>
-                        </div>
-                        <div class="col-xl-12 col-lg-12 col-md-12 col-sm-12 col-12 form-group">
-                            <label for="result" class="required">Feedback Type</label>
-                            <input type="text" class="form-control" id="feedType" style="text-transform: capitalize;"
-                                name="feedType" value="">
-                            <span id="feedType_span" class="text-danger text-center"
                                 style="display:none;font-size:0.9rem;"></span>
                         </div>
                     </div>
@@ -162,12 +165,12 @@
                         name: 'id'
                     },
                     {
-                        data: 'participant',
-                        name: 'participant'
-                    },
-                    {
                         data: 'feedback_type',
                         name: 'feedback_type'
+                    },
+                    {
+                        data: 'participant',
+                        name: 'participant'
                     },
                     {
                         data: 'actions',

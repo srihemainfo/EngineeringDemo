@@ -238,9 +238,20 @@
                             </div>
                             <div class="col-xl-4 col-lg-4 col-md-12 col-sm-12 col-12 form-group training">
                                 <label for="type_training" class="required">Type of Training</label>
-                                <input type="text" style="text-transform: capitalize;" name="type_training"
-                                    id="type_training" class="form-control">
+                                <select style="text-transform: capitalize;" name="type_training" id="type_training"
+                                    class="form-control select2">
+                                    <option value="">Select Training</option>
+                                    <option value="Seminar">Seminar</option>
+                                    <option value="Workshop">Workshop</option>
+                                    <option value="Others">Others</option>
+                                </select>
                                 <span id="type_training_span" class="text-danger text-center"
+                                    style="display:none;font-size:0.9rem;"></span>
+                            </div>
+                            <div class="col-xl-4 col-lg-4 col-md-12 col-sm-12 col-12 form-group others_training">
+                                <label for="others_training" class="required">Others</label>
+                                <input type="text" name="others_training" id="others_training" class="form-control">
+                                <span id="others_training_span" class="text-danger text-center"
                                     style="display:none;font-size:0.9rem;"></span>
                             </div>
                             <div class="col-xl-4 col-lg-4 col-md-12 col-sm-12 col-12 form-group training">
@@ -251,7 +262,8 @@
                             </div>
                             <div class="col-xl-4 col-lg-4 col-md-12 col-sm-12 col-12 form-group training">
                                 <label for="from_time" class="required">From Time</label>
-                                <input type="time" name="from" id="from_time" class="form-control" placeholder="">
+                                <input type="time" name="from" id="from_time" class="form-control"
+                                    placeholder="">
                                 <span id="from_time_span" class="text-danger text-center"
                                     style="display:none;font-size:0.9rem;"></span>
                             </div>
@@ -302,11 +314,10 @@
                                     @endforeach
                                 </select>
                             </div>
-                            <div class="col-xl-4 col-lg-4 col-md-12 col-sm-12 col-12 form-group filter">
+                            <div class="col-xl-4 col-lg-4 col-md-12 col-sm-12 col-12 form-group filter course">
                                 <label for="course">Course</label>
-                                <select name="course[]" id="course" class="form-control select2" multiple
-                                    onchange="getSection(this)">
-                                    <option value="All">All</option>
+                                <select name="course[]" id="course" class="form-control select2">
+                                    <option value="">Select Course</option>
                                     @foreach ($course as $id => $item)
                                         <option value="{{ $id }}">{{ $item }}</option>
                                     @endforeach
@@ -350,7 +361,7 @@
                                     @endforeach
                                 </select>
                             </div>
-                            <div class="col-xl-4 col-lg-4 col-md-12 col-sm-12 col-12 form-group dept">
+                            {{-- <div class="col-xl-4 col-lg-4 col-md-12 col-sm-12 col-12 form-group course">
                                 <label for="dept">Department</label>
                                 <select name="dept[]" id="dept" class="form-control select2" multiple>
                                     <option value="All">All</option>
@@ -358,7 +369,7 @@
                                         <option value="{{ $item }}">{{ $item }}</option>
                                     @endforeach
                                 </select>
-                            </div>
+                            </div> --}}
                             <div class="col-xl-4 col-lg-4 col-md-12 col-sm-12 col-12 form-group">
                                 <label for="result">No. of Days</label>
                                 <input type="text" name="days" id="days" class="form-control" disabled>
@@ -491,32 +502,30 @@
         $('#type').change(function() {
             let value = $('#type option:selected').val();
             console.log(value);
+            $('#others_training').val('')
+            $('.others_training').hide()
             if (value == 'faculty feedback') {
-                $('.dept').show();
                 $('.filter').hide();
+                $('.course').show();
                 $('.training').hide();
             } else if (value == 'training feedback') {
                 $('.training').show();
                 $('.filter').show();
-                $('.dept').hide();
+                $('.course').hide();
             } else if (value == 'course feedback') {
-                $('.dept').hide();
                 $('.training').hide();
                 $('.type').show();
+                $('.course').hide();
                 $('.filter').show();
             }
         })
 
         function participant(e) {
             let participate = $('#participant').val();
-            console.log('HII');
-
+            $('#others_training').val('')
             $('#type').html(tool_feedType);
-
             $('#type option').each(function() {
                 let optionType = $(this).data('type');
-                console.log(participate, $(this).data('type'), optionType != participate && optionType !=
-                    undefined);
                 if (optionType != participate && optionType != undefined) {
                     $(this).remove();
                 }
@@ -524,13 +533,11 @@
 
             if (participate == 'external') {
                 $('.filter').hide();
-                $('.dept').hide();
+                $('.course').hide();
             } else {
                 $('.type').show();
                 $('.filter').show();
             }
-
-            console.log($('#type option'));
             $('#type').append($('#type option'));
             $('#type').prepend(`<option value="" selected>Select Type</option>`).select2();
         }
@@ -566,8 +573,6 @@
                     let data = response.data;
                     if (status == true) {
                         course = $('#course').empty()
-                        course.prepend(
-                            `<option value="All">All</option>`)
                         $.each(data, function(index, value) {
                             course.append(
                                 `<option value="${index}">${value}</option>`)
@@ -654,14 +659,16 @@
             $("#feedback_id").val('');
             $("#feedback").val('').select2();
             $("#participant").val('').select2();
+            $('#others_training').val('')
             $("#participant").prop('disabled', false);
             $('#course').prop('disabled', false);
             $("#start_date").val('');
             $("#expiry_date").val('');
-            $("#type_training").val('');
+            $("#type_training").val('').select2();
             $("#title_training").val('');
             $("#from_time").val('');
             $("#to_time").val('');
+            $('.others_training').hide()
             $("#person_training").val('');
             $("#dept").val('').select2();
             $("#type").empty();
@@ -678,7 +685,7 @@
             $('#days').val('')
             $("#loading_div").hide();
             $(".training").show();
-            $(".dept").show();
+            $(".course").show();
             $(".type").show();
             $(".training").hide();
             $(".filter").show();
@@ -687,85 +694,91 @@
             $("#scheduleFeedbackModel").modal();
         }
 
+        // function getSection(e) {
+        //     console.log($('#course').val());
+        //     console.log($('#course').val().length);
+        //     $('#course').prop('disabled', false);
+
+        //     if ($('#course').val().length == 1 && $('#course').val() != 'All' && $('#course').val() != '') {
+        //         let section = $('#sec').html(`<option value="">Loading...</option>`)
+        //         $('#course option[value="All"]').prop('selected', false);
+        //         $('#course').prop('disabled', true);
+        //         $.ajax({
+        //             url: '{{ route('admin.schedule-feedback.fetch_section') }}',
+        //             method: 'POST',
+        //             headers: {
+        //                 'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+        //             },
+        //             data: {
+        //                 'id': $('#course').val(),
+        //             },
+        //             success: function(response) {
+        //                 let status = response.status;
+        //                 let data = response.data;
+        //                 if (status == true) {
+        //                     section = $('#sec').empty()
+        //                     section.prepend(
+        //                         `<option value="All">All</option>`)
+        //                     $.each(data, function(index, value) {
+        //                         section.append(
+        //                             `<option value="${value}">${value}</option>`)
+        //                     })
+        //                 } else {
+        //                     Swal.fire('', response.data, 'error');
+        //                 }
+        //                 $('#course').prop('disabled', false);
+
+        //             },
+        //             error: function(jqXHR, textStatus, errorThrown) {
+        //                 if (jqXHR.status) {
+        //                     if (jqXHR.status == 500) {
+        //                         Swal.fire('', 'Request Timeout / Internal Server Error', 'error');
+        //                     } else {
+        //                         Swal.fire('', jqXHR.status, 'error');
+        //                     }
+        //                 } else if (textStatus) {
+        //                     Swal.fire('', textStatus, 'error');
+        //                 } else {
+        //                     Swal.fire('', 'Request Failed With Status: ' + jqXHR.statusText,
+        //                         "error");
+        //                 }
+        //                 $('#course').prop('disabled', false);
+
+        //                 $("#save_div").show();
+        //                 $("#loading_div").hide();
+        //             }
+        //         })
 
 
 
+        //     } else if ($('#course').val().length > 1 || $('#course').val() == 'All') {
+        //         $('#course').prop('disabled', false);
+        //         let value = $('#course').val();
+        //         console.log(value[0] == 'All' && $('#course').val().length > 1);
 
-        function getSection(e) {
-            console.log($('#course').val());
-            console.log($('#course').val().length);
-            $('#course').prop('disabled', false);
-
-            if ($('#course').val().length == 1 && $('#course').val() != 'All' && $('#course').val() != '') {
-                let section = $('#sec').html(`<option value="">Loading...</option>`)
-                $('#course option[value="All"]').prop('selected', false);
-                $('#course').prop('disabled', true);
-                $.ajax({
-                    url: '{{ route('admin.schedule-feedback.fetch_section') }}',
-                    method: 'POST',
-                    headers: {
-                        'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
-                    },
-                    data: {
-                        'id': $('#course').val(),
-                    },
-                    success: function(response) {
-                        let status = response.status;
-                        let data = response.data;
-                        if (status == true) {
-                            section = $('#sec').empty()
-                            section.prepend(
-                                `<option value="All">All</option>`)
-                            $.each(data, function(index, value) {
-                                section.append(
-                                    `<option value="${value}">${value}</option>`)
-                            })
-                        } else {
-                            Swal.fire('', response.data, 'error');
-                        }
-                        $('#course').prop('disabled', false);
-
-                    },
-                    error: function(jqXHR, textStatus, errorThrown) {
-                        if (jqXHR.status) {
-                            if (jqXHR.status == 500) {
-                                Swal.fire('', 'Request Timeout / Internal Server Error', 'error');
-                            } else {
-                                Swal.fire('', jqXHR.status, 'error');
-                            }
-                        } else if (textStatus) {
-                            Swal.fire('', textStatus, 'error');
-                        } else {
-                            Swal.fire('', 'Request Failed With Status: ' + jqXHR.statusText,
-                                "error");
-                        }
-                        $('#course').prop('disabled', false);
-
-                        $("#save_div").show();
-                        $("#loading_div").hide();
-                    }
-                })
+        //         if (value[0] == 'All' && $('#course').val().length > 1) {
+        //             var course = $('#course').val()
+        //             let len = $('#course').val().length;
+        //             console.log(len);
+        //             for (let index = 0; index < len - 1; index++) {
+        //                 var remove = course.pop();
+        //             }
+        //             $('#course').val(course).select2()
+        //         }
+        //         let section = $('#sec').empty();
+        //         section.append(`<option value="All">All</option>`)
+        //     }
+        // }
 
 
-
-            } else if ($('#course').val().length > 1 || $('#course').val() == 'All') {
-                $('#course').prop('disabled', false);
-                let value = $('#course').val();
-                console.log(value[0] == 'All' && $('#course').val().length > 1);
-
-                if (value[0] == 'All' && $('#course').val().length > 1) {
-                    var course = $('#course').val()
-                    let len = $('#course').val().length;
-                    console.log(len);
-                    for (let index = 0; index < len - 1; index++) {
-                        var remove = course.pop();
-                    }
-                    $('#course').val(course).select2()
-                }
-                let section = $('#sec').empty();
-                section.append(`<option value="All">All</option>`)
+        $('#type_training').change(function() {
+            if ($('#type_training').val() == 'Others') {
+                $('.others_training').show();
+            } else {
+                $('.others_training').hide();
+                $('#others_training').val('');
             }
-        }
+        })
 
 
         function saveFeedback() {
@@ -796,6 +809,11 @@
             } else {
                 $("#save_div").hide();
                 $("#loading_div").show();
+                if ($('#type_training').val() == 'Others') {
+                    type_training = $('#others_training').val()
+                } else {
+                    type_training = $('#type_training').val()
+                }
                 $.ajax({
                     url: '{{ route('admin.schedule-feedback.store') }}',
                     method: 'POST',
@@ -807,7 +825,7 @@
                         'name': $('#feedback').val(),
                         'participant': $('#participant').val(),
                         'type': $('#type').val(),
-                        'type_training': $('#type_training').val(),
+                        'type_training': type_training,
                         'title_training': $('#title_training').val(),
                         'from_time': $('#from_time').val(),
                         'to_time': $('#to_time').val(),
@@ -874,6 +892,7 @@
                         let status = response.status;
                         if (status == true) {
                             var data = response.data;
+                            $('.others_training').hide()
                             $("#feedback_id").val(data.id);
                             $("#feedback").val(data.feedback_id).select2();
                             $("#participant").val(data.feedback_participant).select2();
@@ -887,35 +906,31 @@
                                 $("#to_time").val(training_details.to_time);
                                 $("#person_training").val(training_details.person_training);
                                 $("#title_training").val(training_details.title_training);
-                                $("#type_training").val(training_details.type_training);
+                                $("#type_training").val(training_details.type_training).select2();
 
                                 $(".training").show();
                                 $(".type").show();
-                                $(".dept").hide();
+                                $(".course").hide();
                                 $(".filter").show();
 
                             } else if (data.feedback_type == 'course feedback' && data.feedback_type != null) {
-
                                 $("#type").val(data.feedback_type).select2();
                                 $(".type").show();
                                 $(".training").hide();
-                                $(".dept").hide();
+                                $(".course").hide();
                                 $(".filter").show();
-
                             } else if (data.feedback_type == 'faculty feedback' && data.feedback_type != null) {
                                 $("#type").val(data.feedback_type).select2();
-                                $(".dept").show();
+                                $(".filter").hide();
+                                $(".course").show();
                                 $(".type").show();
                                 $(".training").hide();
-                                $(".filter").hide();
-
                             } else {
                                 $("#type").val(data.feedback_type).select2();
                                 $(".type").show();
-                                $(".dept").hide();
-                                $(".training").hide();
                                 $(".filter").hide();
-
+                                $(".course").hide();
+                                $(".training").hide();
                             }
 
                             if (data.feedback_participant != 'external') {
@@ -926,17 +941,8 @@
                                 $("#sec").val(data.section).select2();
                                 $("#course").val('');
                                 let decode = JSON.parse(data.course_id)
-                                console.log(decode);
-                                $.each(decode, function(index, value) {
-                                    $("#course option[value='" + value + "']").prop("selected", true);
-                                })
-
-                                let dept = JSON.parse(data.department_id)
-                                $.each(dept, function(id, val) {
-                                    $("#dept option[value='" + val + "']").prop("selected", true);
-                                })
+                                $("#course").val(decode).prop("selected", true);
                                 $("#course").select2();
-                                $("#dept").select2();
                             }
 
                             $("#expiry_date").val(data.expiry_date);
@@ -995,18 +1001,19 @@
                             $("#feedback").val(data.feedback_id).select2();
                             $("#participant").val(data.feedback_participant).select2();
                             $("#participant").prop('disabled', true);
+                            $('.others_training').hide()
                             participant(data.feedback_participant)
                             if (data.feedback_type == 'training feedback' && data.feedback_type != null) {
                                 let training_details = JSON.parse(data.training);
                                 $("#type").val(data.feedback_type).select2();
-                                $("#duration_training").val(training_details.duration_training);
+                                $("#from_time").val(training_details.from_time);
+                                $("#to_time").val(training_details.to_time);
                                 $("#person_training").val(training_details.person_training);
                                 $("#title_training").val(training_details.title_training);
-                                $("#type_training").val(training_details.type_training);
-
+                                $("#type_training").val(training_details.type_training).select2();
                                 $(".training").show();
                                 $(".type").show();
-                                $(".dept").hide();
+                                $(".course").hide();
                                 $(".filter").show();
 
                             } else if (data.feedback_type == 'course feedback' && data.feedback_type != null) {
@@ -1014,22 +1021,22 @@
                                 $("#type").val(data.feedback_type).select2();
                                 $(".type").show();
                                 $(".training").hide();
-                                $(".dept").hide();
+                                $(".course").hide();
                                 $(".filter").show();
 
                             } else if (data.feedback_type == 'faculty feedback' && data.feedback_type != null) {
                                 $("#type").val(data.feedback_type).select2();
-                                $(".dept").show();
+                                $(".filter").hide();
+                                $(".course").show();
                                 $(".type").show();
                                 $(".training").hide();
-                                $(".filter").hide();
 
                             } else {
                                 $("#type").val(data.feedback_type).select2();
                                 $(".type").show();
-                                $(".dept").hide();
-                                $(".training").hide();
                                 $(".filter").hide();
+                                $(".course").hide();
+                                $(".training").hide();
 
                             }
 
@@ -1041,17 +1048,8 @@
                                 $("#sec").val(data.section).select2();
                                 $("#course").val('');
                                 let decode = JSON.parse(data.course_id)
-                                console.log(decode);
-                                $.each(decode, function(index, value) {
-                                    $("#course option[value='" + value + "']").prop("selected", true);
-                                })
-
-                                let dept = JSON.parse(data.department_id)
-                                $.each(dept, function(id, val) {
-                                    $("#dept option[value='" + val + "']").prop("selected", true);
-                                })
+                                $("#course").val(decode).prop("selected", true);
                                 $("#course").select2();
-                                $("#dept").select2();
                             }
 
                             $("#expiry_date").val(data.expiry_date);

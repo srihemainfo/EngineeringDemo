@@ -245,7 +245,7 @@
                 </div>
                 @php
                     $question = json_decode($question);
-                    $rate = ['Poor', 'Fair', 'Good', 'Best', 'Excelent'];
+                    $rate = ['Poor', 'Fair', 'Good', 'Very Good', 'Excelent'];
 
                 @endphp
                 <div class="ques">

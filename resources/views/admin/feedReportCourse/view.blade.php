@@ -67,7 +67,11 @@
                 class=" table table-bordered table-striped table-hover ajaxTable datatable datatable-feedbackReport text-center">
                 <thead>
                     @php
-                        $rate = ['Poor', 'Fair', 'Good', 'Best', 'Excelent'];
+                        $rate = ['Excelent', 'Very good', 'Good', 'Fair', 'Poor'];
+                        if ($get_feed[0]->rating_scale != 5) {
+                            $slice_count = count($rate) - $get_feed[0]->rating_scale;
+                            $rate = array_slice($rate, $slice_count);
+                        }
                     @endphp
                     <tr>
                         <th>S.No</th>
@@ -75,8 +79,9 @@
                         @for ($i = 0; $i < $get_feed[0]->rating_scale; $i++)
                             <th>{{ $rate[$i] }}</th>
                         @endfor
+                        <th>Total Weightage</th>
                         <th>Percentage (%)</th>
-                        <th>5 Scale</th>
+                        <th>{{ $get_feed[0]->rating_scale }} Scale</th>
                     </tr>
                 </thead>
                 <tbody id="tbody">
@@ -84,16 +89,27 @@
                         <tr>
                             <td>{{ $id + 1 }}</td>
                             <td style="text-transform: uppercase;">{{ $item->question_name }}</td>
-                            <td>{{ $item->one_star }}</td>
-                            <td>{{ $item->two_star }}</td>
-                            <td>{{ $item->three_star }}</td>
-                            <td>{{ $item->four_star }}</td>
-                            <td>{{ $item->five_star }}</td>
-                            <td>{{ $item->star_percent }} %</td>
-                            <td>{{ $item->five_scale }}</td>
+                            @if ($get_feed[0]->rating_scale == 5)
+                                <td>{{ $item->five_star }}</td>
+                                <td>{{ $item->four_star }}</td>
+                                <td>{{ $item->three_star }}</td>
+                                <td>{{ $item->two_star }}</td>
+                                <td>{{ $item->one_star }}</td>
+                            @elseif($get_feed[0]->rating_scale == 4)
+                                <td>{{ $item->four_star }}</td>
+                                <td>{{ $item->three_star }}</td>
+                                <td>{{ $item->two_star }}</td>
+                                <td>{{ $item->one_star }}</td>
+                            @elseif($get_feed[0]->rating_scale == 3)
+                                <td>{{ $item->three_star }}</td>
+                                <td>{{ $item->two_star }}</td>
+                                <td>{{ $item->one_star }}</td>
+                            @endif
+                            <td>{{ $item->weightage }}</td>
+                            <td>{{ $item->star_percent }}%</td>
+                            <td>{{ $item->scale }}</td>
                         </tr>
                     @endforeach
-
                 </tbody>
             </table>
         </div>
