@@ -2118,8 +2118,8 @@
                                 </li>
                             @endcan
                             <li
-                                class="nav-item has-treeview {{ request()->is('admin/feedReport-training*') || request()->is('admin/feedReport-faculty*') || request()->is('admin/feedReport-external*') || request()->is('admin/fee-category-report*') ? 'menu-open' : '' }}">
-                                <a class="nav-link nav-dropdown-toggle {{ request()->is('admin/feedReport-training*') || request()->is('admin/feedReport-faculty*') || request()->is('admin/feedReport-external*') || request()->is('admin/fee-category-report*') ? 'active' : '' }}"
+                                class="nav-item has-treeview {{ request()->is('admin/feedReport-training*') || request()->is('admin/feedReport-faculty*') || request()->is('admin/feedReport-external*') || request()->is('admin/fee-category-report*') || request()->is('admin/feedReport-course*') ? 'menu-open' : '' }}">
+                                <a class="nav-link nav-dropdown-toggle {{ request()->is('admin/feedReport-training*') || request()->is('admin/feedReport-faculty*') || request()->is('admin/feedReport-external*') || request()->is('admin/fee-category-report*') || request()->is('admin/feedReport-course*') ? 'active' : '' }}"
                                     href="#">
 
                                     <i class="fa nav-icon fas fa-newspaper"></i>

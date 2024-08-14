@@ -15,8 +15,9 @@
                     <label for="feedback_type" class="required">Feedback Type</label>
                     <select class="form-control select2" name="feedback_type" id="feedback_type">
                         <option value="">Select Type</option>
-                        <option value="Workshop">Workshop</option>
-                        <option value="Seminar">Seminar</option>
+                        @foreach ($type as $key => $item)
+                            <option value="{{ $item }}">{{ $item }}</option>
+                        @endforeach
                     </select>
                     <span id="feedback_type_span" class="text-danger text-center"
                         style="display:none;font-size:0.9rem;"></span>
@@ -110,7 +111,6 @@
         </div>
         {{-- <div class="secondLoader"></div> --}}
     </div>
-    
 @endsection
 @section('scripts')
     <script>
@@ -137,7 +137,7 @@
         function fetchReport() {
             if ($('#feedback_type').val() != '' && $('#batch').val() != '' && $('#ay').val() != '' && $('#course')
                 .val() != '') {
-                    $('.secondLoader').show()
+                $('.secondLoader').show()
                 $.ajax({
                     url: "{{ route('admin.feedback-training.report') }}",
                     method: 'POST',
@@ -204,6 +204,22 @@
                         $('.secondLoader').hide()
                         $('#save_div').show()
                         $('#loading_div').hide()
+                    },
+                    error: function(jqXHR, textStatus, errorThrown) {
+                        $('.secondLoader').hide()
+                        $('#save_div').show()
+                        $('#loading_div').hide()
+                        if (jqXHR.status) {
+                            if (jqXHR.status == 500) {
+                                Swal.fire('', 'Request Timeout / Internal Server Error', 'error');
+                            } else {
+                                Swal.fire('', jqXHR.status, 'error');
+                            }
+                        } else if (textStatus) {
+                            Swal.fire('', textStatus, 'error');
+                        } else {
+                            Swal.fire('', 'Request Failed With Status: ' + jqXHR.statusText, "error");
+                        }
                     }
                 })
             } else {

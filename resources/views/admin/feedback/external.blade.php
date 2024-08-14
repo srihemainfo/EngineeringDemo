@@ -215,6 +215,10 @@
                 <h2>Feedback Survey</h2>
                 <hr>
                 <h3>{{ $data->feedback->name }}</h3>
+                <h3><strong>{{ $course->short_form }}</strong></h3>
+                <div class="col-xl-6 col-lg-6 col-md-12 col-sm-12 col-12">
+                    <input type="hidden" name="course" id="course" value="{{ $course->id }}">
+                </div>
                 <div class="col-xl-6 col-lg-6 col-md-12 col-sm-12 col-12">
                     <label for="name">Name</label>
                     <input type="text" name="name" id="name">
@@ -228,7 +232,6 @@
                     @php
                         $question = json_decode($data->feedback->question);
                         $rate = ['Poor', 'Fair', 'Good', 'VeryGood', 'Excelent'];
-
                     @endphp
                     <input type="hidden" name="ques_count" id="ques_count" value="{{ count($question) }}">
                     <input type="hidden" name="feedback_id" id="feedback_id" value="{{ $data->feedback_id }}">
@@ -265,8 +268,9 @@
                                                 @for ($i = 0; $i < $rating; $i++)
                                                     <div class="rating">
                                                         <input style="margin-left: 17px;" type="radio"
-                                                            name="ques{{ $key + 1 }}" id="ques{{ $key + 1 }}"
-                                                            value="{{ $i + 1 }}" title="{{ $rate[$i] }}">
+                                                            name="ques{{ $key + 1 }}"
+                                                            id="ques{{ $key + 1 }}" value="{{ $i + 1 }}"
+                                                            title="{{ $rate[$i] }}">
                                                     </div>
                                                 @endfor
                                             @endif

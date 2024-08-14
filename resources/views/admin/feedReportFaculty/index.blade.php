@@ -32,10 +32,10 @@
                     <span id="ay_span" class="text-danger text-center" style="display:none;font-size:0.9rem;"></span>
                 </div>
                 <div class="col-xl-3 col-lg-3 col-md-12 col-sm-12 col-12 form-group">
-                    <label for="dept" class="required">Department</label>
-                    <select class="form-control select2" name="dept" id="dept">
+                    <label for="course" class="required">Course</label>
+                    <select class="form-control select2" name="course" id="course">
                         <option value="">Select Course</option>
-                        @foreach ($dept as $id => $item)
+                        @foreach ($course as $id => $item)
                             <option value="{{ $id }}">{{ $item }}</option>
                         @endforeach
                     </select>
@@ -120,7 +120,7 @@
         };
 
         function fetchReport() {
-            if ($('#feedback').val() != '' && $('#ay').val() != '' && $('#dept').val() != '') {
+            if ($('#feedback').val() != '' && $('#ay').val() != '' && $('#course').val() != '') {
                 $('.secondLoader').show();
                 $.ajax({
                     url: "{{ route('admin.feedback-faculty.report') }}",
@@ -131,7 +131,7 @@
                     data: {
                         'feedback': $('#feedback').val(),
                         'ay': $('#ay').val(),
-                        'dept': $('#dept').val()
+                        'dept': $('#course').val()
                     },
                     success: function(response) {
                         let data = response.data

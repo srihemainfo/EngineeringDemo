@@ -31,7 +31,15 @@ class FeedbackReportController extends Controller
         $ay = AcademicYear::pluck('name', 'id');
         $course = ToolsCourse::pluck('short_form', 'id');
 
-        return view('admin.feedReportTraining.index', compact('batch', 'ay', 'course'));
+        $training_type = FeedbackSchedule::where('feedback_type', 'training feedback')->pluck('training');
+        $type = [];
+        foreach ($training_type as $key => $value) {
+            $decode = json_decode($value);
+            if (!in_array(ucwords($decode->type_training), $type)) {
+                $type[] = ucwords($decode->type_training);
+            }
+        }
+        return view('admin.feedReportTraining.index', compact('batch', 'ay', 'course', 'type'));
     }
     public function trainingReport(Request $request)
     {
@@ -50,21 +58,21 @@ class FeedbackReportController extends Controller
         $schedule = FeedbackSchedule::with('feedback', 'overall_feedbacks')->where([
             'feedback_type' => 'training feedback',
             'batch_id' => $request->batch,
+            'course_id' => $request->course,
             'academic_id' => $request->ay
         ])
             ->where('training->type_training', $request->feedback_type)->get();
-
-        if (!empty($schedule)) {
+        if (count($schedule) > 0) {
             $data = [];
             $feed_ids = [];
             foreach ($schedule as $key => $value) {
-                $decode_course = json_decode($value->course_id);
+                $decode_course = $value->course_id;
                 $get_sem = $value->semester;
                 $get_sec = $value->section;
                 $course = null;
                 $sem = Semester::pluck('semester', 'id')->toArray();
                 $sec = Section::where('course_id', $request->course)->pluck('section', 'id')->toArray();
-                if (in_array('All', $decode_course) || in_array($request->course, $decode_course)) {
+                if (('All' == $decode_course) || ($request->course == $decode_course)) {
                     $course = $request->course;
                 }
                 if ($course) {
@@ -77,8 +85,8 @@ class FeedbackReportController extends Controller
                             $sec = [$get_sec];
                         }
                         $get_enroll = CourseEnrollMaster::where(['batch_id' => $request->batch, 'academic_id' => $request->ay, 'course_id' => $course])
-                            // ->whereIn('semester_id', $sem)
-                            // ->whereIn('section', $sec)
+                            ->whereIn('semester_id', $sem)
+                            ->whereIn('section', $sec)
                             ->get();
                         // dd($get_enroll);
                         foreach ($get_enroll as $id => $val) {
@@ -111,7 +119,7 @@ class FeedbackReportController extends Controller
             // dd($data);
             return response()->json(['status' => true, 'data' => $data]);
         } else {
-            return response()->json(['status' => false, 'data' => 'Feedback Not Yes Created']);
+            return response()->json(['status' => false, 'data' => 'Feedback Not Yet Created']);
         }
 
     }
@@ -281,17 +289,14 @@ class FeedbackReportController extends Controller
             ->where([
                 'feedback_type' => 'course feedback',
                 'batch_id' => $request->batch,
+                'course_id' => $request->course,
                 'academic_id' => $request->ay
             ])
             ->where(function ($query) use ($request) {
                 $query->where(function ($subQuery) use ($request) {
-                    $subQuery->whereJsonContains('course_id', $request->course)
-                        ->orWhereJsonContains('course_id', 'All');
+                    $subQuery->where('semester', $request->sem)
+                        ->orWhere('semester', 'All');
                 })
-                    ->where(function ($subQuery) use ($request) {
-                        $subQuery->where('semester', $request->sem)
-                            ->orWhere('semester', 'All');
-                    })
                     ->where(function ($subQuery) use ($request) {
                         $subQuery->where('section', $request->section)
                             ->orWhere('section', 'All');
@@ -306,13 +311,13 @@ class FeedbackReportController extends Controller
             $data = [];
             $feed_ids = [];
             foreach ($schedule as $key => $value) {
-                $decode_course = json_decode($value->course_id);
+                $decode_course = $value->course_id;
                 $get_sem = $value->semester;
                 $get_sec = $value->section;
                 $course = null;
                 $sem = Semester::where('semester', $request->sem)->pluck('semester', 'id')->toArray();
                 $sec = Section::where(['course_id' => $request->course, 'section' => $request->section])->pluck('section', 'id')->toArray();
-                if (in_array('All', $decode_course) || in_array($request->course, $decode_course)) {
+                if ($request->course == $decode_course) {
                     $course = $request->course;
                 }
 
@@ -538,9 +543,9 @@ class FeedbackReportController extends Controller
     public function facultyIndex(Request $request)
     {
         $ay = AcademicYear::pluck('name', 'id');
-        $dept = ToolsDepartment::pluck('name', 'id');
+        $course = ToolsCourse::pluck('short_form', 'id');
         $feedback = FeedbackSchedule::with('feedback')->where('feedback_type', 'faculty feedback')->get();
-        return view('admin.feedReportFaculty.index', compact('ay', 'dept', 'feedback'));
+        return view('admin.feedReportFaculty.index', compact('ay', 'course', 'feedback'));
     }
 
     public function facultyReport(Request $request)

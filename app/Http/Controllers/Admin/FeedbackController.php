@@ -232,14 +232,11 @@ class FeedbackController extends Controller
         // dd($request);
         if ($request->id == '') {
             if ($request->participant != '') {
-                $course_encode = null;
-                $dept_encode = null;
                 if (!empty($request->course)) {
                     $check_course = ToolsCourse::where('id', $request->course)->exists();
                     if (!$check_course) {
                         return response()->json(['status' => false, 'data' => 'Course not found.']);
                     }
-                    $course_encode = json_encode($request->course, true);
                 }
 
                 $training = null;
@@ -280,7 +277,7 @@ class FeedbackController extends Controller
                         //'department_id' => $dept_encode,
                         'academic_id' => $request->ay,
                         'batch_id' => $request->batch,
-                        'course_id' => $course_encode,
+                        'course_id' => $request->course,
                         'semester' => $request->sem,
                         'section' => $request->sec,
                         'status' => '0',
@@ -295,15 +292,11 @@ class FeedbackController extends Controller
             }
         } else {
             if ($request->participant != '') {
-                $course_encode = null;
-                $dept_encode = null;
-
                 if (!empty($request->course)) {
                     $check_course = ToolsCourse::where('id', $request->course)->exists();
                     if (!$check_course) {
                         return response()->json(['status' => false, 'data' => 'Course not found.']);
                     }
-                    $course_encode = json_encode($request->course, true);
                 }
 
                 $training = null;
@@ -326,10 +319,9 @@ class FeedbackController extends Controller
                     'expiry_date' => $request->expiry,
                     'start_date' => $request->start,
                     'degree_id' => $request->degree,
-                    //'department_id' => $dept_encode,
                     'academic_id' => $request->ay,
                     'batch_id' => $request->batch,
-                    'course_id' => $course_encode,
+                    'course_id' => $request->course,
                     'semester' => $request->sem,
                     'section' => $request->sec,
                     'status' => '0',
@@ -427,12 +419,15 @@ class FeedbackController extends Controller
             ->where('expiry_date', '>=', date('Y-m-d'))
             ->where('status', 1)
             ->first();
+
+        $course = ToolsCourse::where('id', json_decode($data->course_id))->select('short_form', 'id')->first();
+        // dd($course);
         if ($data) {
             if ($data->token_link) {
                 // $dept = ToolsDepartment::pluck('name', 'id');
                 $rating = $data->feedback->rating;
 
-                return view('admin.feedback.external', compact('data', 'rating'));
+                return view('admin.feedback.external', compact('data', 'rating', 'course'));
             }
         } else {
             $data = 'The link has expired or is Invalid.';
@@ -442,7 +437,6 @@ class FeedbackController extends Controller
 
     public function feedbackStore(Request $request)
     {
-        // dd($request);
         if (!empty($request->feed_id) && !empty($request->feedback_id) && !empty($request->name)) {
             $rules = [
                 'email' => 'required|email',
@@ -456,8 +450,10 @@ class FeedbackController extends Controller
 
             $check = FeedbackSchedule::with('feedback')
                 ->where('id', $request->feed_id)
+                ->where('course_id', $request->course)
                 ->where('expiry_date', '>=', date('Y-m-d'))
                 ->first();
+            // dd($check);
             if (!$check) {
                 $data = 'You Submited Feedback form has expired or is Invalid.';
                 return view('admin.feedback.expiry', compact('data'));
@@ -504,6 +500,7 @@ class FeedbackController extends Controller
                             $value->emails = json_encode($decode_email);
                             $value->users = json_encode($decode_name);
                             $value->ratings = json_encode($decode_rate);
+                            $value->course_id = $check->course_id;
 
                             $value->save();
                         }
@@ -527,6 +524,7 @@ class FeedbackController extends Controller
                             'ratings' => $decode_rate,
                             'users' => $decode_name,
                             'emails' => $decode_email,
+                            'course_id' => $check->course_id,
                         ]);
                     }
                     $data = 'Feedback Submitted Successfully.';
@@ -779,7 +777,8 @@ class FeedbackController extends Controller
     {
         $user_id = auth()->user()->id;
         $dept = auth()->user()->dept;
-        $dept = ToolsDepartment::where('name', $dept)->value('id');
+        $dept = ToolsDepartment::where('name', $dept)->first();
+        $course = ToolsCourse::where('department_id', $dept->id)->value('id');
         $today = Carbon::today()->toDateString();
 
         $data = FeedbackSchedule::with('feedback', 'overall_feedbacks')
@@ -787,6 +786,7 @@ class FeedbackController extends Controller
             ->whereDate('expiry_date', '>=', $today)
             ->where('feedback_participant', 'faculty')
             ->where('feedback_type', 'faculty feedback')
+            ->where('course_id', $course)
             ->where('status', '1')
             ->where(function ($query) use ($user_id) {
                 $query->where(function ($q) use ($user_id) {
@@ -835,11 +835,13 @@ class FeedbackController extends Controller
                 return view('admin.feedback.staff')->with(['errors' => $validator->errors(), 'datas' => $request->datas], 422);
             }
             $dept = ToolsDepartment::where('name', auth()->user()->dept)->first();
+            $course = ToolsDepartment::where('department_id', $dept->id)->value('id');
             // dd($request, $dept);
 
             $check = FeedbackSchedule::with('feedback')
                 ->where('id', $request->feed_id)
                 ->where('expiry_date', '>=', date('Y-m-d'))
+                ->where('course_id', $course)
                 ->where('status', 1)
                 ->first();
             // dd($check, $request);
@@ -856,7 +858,7 @@ class FeedbackController extends Controller
                     'feed_schedule_id' => $check->id,
                     'feedback_participant' => $feedback_participant,
                     'feedback_type' => $feedback_type,
-                    //'department_id' => $dept->id,
+                    'course_id' => $course,
                 ])->exists();
                 // dd($feedback_type, $feedback_participant);
                 if ($verify) {
@@ -865,7 +867,7 @@ class FeedbackController extends Controller
                         'feed_schedule_id' => $check->id,
                         'feedback_participant' => $feedback_participant,
                         'feedback_type' => $feedback_type,
-                        //'department_id' => $dept->id,
+                        'course_id' => $course,
                     ])->whereJsonContains('users', auth()->user()->id)->exists();
                     if ($email_exists) {
                         $data = 'You have Already Submitted the Form.';
@@ -876,7 +878,7 @@ class FeedbackController extends Controller
                             'feed_schedule_id' => $check->id,
                             'feedback_participant' => $feedback_participant,
                             'feedback_type' => $feedback_type,
-                            //'department_id' => $dept->id,
+                            'course_id' => $dept->id,
                         ])->get();
                         // dd($update);
                         foreach ($update as $key => $value) {
@@ -909,7 +911,7 @@ class FeedbackController extends Controller
                             'feedback_type' => $feedback_type,
                             'question_name' => $value,
                             'overall_rating' => $check->feedback->rating,
-                            //'department_id' => $dept->id,
+                            'course_id' => $course,
                             'ratings' => $decode_rate,
                             'users' => $decode_id,
                             // 'emails' => $decode_email,

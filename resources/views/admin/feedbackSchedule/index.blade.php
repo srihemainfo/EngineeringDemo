@@ -511,7 +511,7 @@
             } else if (value == 'training feedback') {
                 $('.training').show();
                 $('.filter').show();
-                $('.course').hide();
+                $('.course').show();
             } else if (value == 'course feedback') {
                 $('.training').hide();
                 $('.type').show();
@@ -532,8 +532,9 @@
             });
 
             if (participate == 'external') {
-                $('.filter').hide();
-                $('.course').hide();
+                $(".filter").hide();
+                $(".course").show();
+                $('.type').hide();
             } else {
                 $('.type').show();
                 $('.filter').show();
@@ -662,6 +663,7 @@
             $('#others_training').val('')
             $("#participant").prop('disabled', false);
             $('#course').prop('disabled', false);
+            $("#type").val('').prop("disabled", false).select2();
             $("#start_date").val('');
             $("#expiry_date").val('');
             $("#type_training").val('').select2();
@@ -897,16 +899,25 @@
                             $("#feedback").val(data.feedback_id).select2();
                             $("#participant").val(data.feedback_participant).select2();
                             $("#participant").prop('disabled', true);
+
                             participant(data.feedback_participant)
                             if (data.feedback_type == 'training feedback' && data.feedback_type != null) {
                                 let training_details = JSON.parse(data.training);
                                 console.log(training_details);
-                                $("#type").val(data.feedback_type).select2();
+                                $("#type").val(data.feedback_type).prop("disabled", true).select2();
                                 $("#from_time").val(training_details.from_time);
                                 $("#to_time").val(training_details.to_time);
                                 $("#person_training").val(training_details.person_training);
                                 $("#title_training").val(training_details.title_training);
-                                $("#type_training").val(training_details.type_training).select2();
+                                if (training_details.type_training != 'Seminar' && training_details
+                                    .type_training != 'Workshop') {
+                                    $("#type_training").val('Others').select2();
+                                    $(".others_training").show();
+                                    $("#others_training").val(training_details.type_training);
+
+                                } else {
+                                    $("#type_training").val(training_details.type_training).select2();
+                                }
 
                                 $(".training").show();
                                 $(".type").show();
@@ -914,23 +925,24 @@
                                 $(".filter").show();
 
                             } else if (data.feedback_type == 'course feedback' && data.feedback_type != null) {
-                                $("#type").val(data.feedback_type).select2();
+                                $("#type").val(data.feedback_type).prop("disabled", true).select2();
                                 $(".type").show();
                                 $(".training").hide();
                                 $(".course").hide();
                                 $(".filter").show();
                             } else if (data.feedback_type == 'faculty feedback' && data.feedback_type != null) {
-                                $("#type").val(data.feedback_type).select2();
+                                $("#type").val(data.feedback_type).prop("disabled", true).select2();
+                                $("#course").val(data.course_id).prop("selected", true);
                                 $(".filter").hide();
                                 $(".course").show();
                                 $(".type").show();
                                 $(".training").hide();
                             } else {
-                                $("#type").val(data.feedback_type).select2();
-                                $(".type").show();
-                                $(".filter").hide();
-                                $(".course").hide();
                                 $(".training").hide();
+                                $(".type").hide();
+                                $(".others_training").hide();
+                                $(".course").show();
+                                $(".filter").hide();
                             }
 
                             if (data.feedback_participant != 'external') {
@@ -940,9 +952,16 @@
                                 $("#ay").val(data.academic_id).select2();
                                 $("#sec").val(data.section).select2();
                                 $("#course").val('');
-                                let decode = JSON.parse(data.course_id)
-                                $("#course").val(decode).prop("selected", true);
+                                $("#course").val(data.course_id).prop("selected", true);
                                 $("#course").select2();
+                            } else {
+                                $("#type").val(data.feedback_type).prop("disabled", true).select2();
+                                $("#course").val(data.course_id).prop("selected", true);
+                                $("#course").select2();
+                                $(".type").hide();
+                                $(".filter").hide();
+                                $(".course").show();
+                                $(".training").hide();
                             }
 
                             $("#expiry_date").val(data.expiry_date);
@@ -1005,12 +1024,20 @@
                             participant(data.feedback_participant)
                             if (data.feedback_type == 'training feedback' && data.feedback_type != null) {
                                 let training_details = JSON.parse(data.training);
-                                $("#type").val(data.feedback_type).select2();
+                                $("#type").val(data.feedback_type).prop("disabled", true).select2();
                                 $("#from_time").val(training_details.from_time);
                                 $("#to_time").val(training_details.to_time);
                                 $("#person_training").val(training_details.person_training);
                                 $("#title_training").val(training_details.title_training);
-                                $("#type_training").val(training_details.type_training).select2();
+                                if (training_details.type_training != 'Seminar' && training_details
+                                    .type_training != 'Workshop') {
+                                    $("#type_training").val('Others').select2();
+                                    $(".others_training").show();
+                                    $("#others_training").val(training_details.type_training);
+
+                                } else {
+                                    $("#type_training").val(training_details.type_training).select2();
+                                }
                                 $(".training").show();
                                 $(".type").show();
                                 $(".course").hide();
@@ -1018,26 +1045,27 @@
 
                             } else if (data.feedback_type == 'course feedback' && data.feedback_type != null) {
 
-                                $("#type").val(data.feedback_type).select2();
+                                $("#type").val(data.feedback_type).prop("disabled", true).select2();
                                 $(".type").show();
                                 $(".training").hide();
                                 $(".course").hide();
                                 $(".filter").show();
 
                             } else if (data.feedback_type == 'faculty feedback' && data.feedback_type != null) {
-                                $("#type").val(data.feedback_type).select2();
+                                $("#type").val(data.feedback_type).prop("disabled", true).select2();
+                                $("#course").val(data.course_id).prop("selected", true);
+                                $("#course").select2();
                                 $(".filter").hide();
                                 $(".course").show();
                                 $(".type").show();
                                 $(".training").hide();
 
                             } else {
-                                $("#type").val(data.feedback_type).select2();
-                                $(".type").show();
-                                $(".filter").hide();
-                                $(".course").hide();
                                 $(".training").hide();
-
+                                $(".type").hide();
+                                $(".others_training").hide();
+                                $(".course").show();
+                                $(".filter").hide();
                             }
 
                             if (data.feedback_participant != 'external') {
@@ -1046,10 +1074,17 @@
                                 $("#sem").val(data.semester).select2();
                                 $("#ay").val(data.academic_id).select2();
                                 $("#sec").val(data.section).select2();
-                                $("#course").val('');
-                                let decode = JSON.parse(data.course_id)
-                                $("#course").val(decode).prop("selected", true);
+                                console.log(data.course_id);
+                                $("#course").val(data.course_id).prop("selected", true);
                                 $("#course").select2();
+                            } else {
+                                $("#type").val(data.feedback_type).prop("disabled", true).select2();
+                                $("#course").val(data.course_id).prop("selected", true);
+                                $("#course").select2();
+                                $(".type").hide();
+                                $(".filter").hide();
+                                $(".course").show();
+                                $(".training").hide();
                             }
 
                             $("#expiry_date").val(data.expiry_date);
