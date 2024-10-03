@@ -1,15 +1,11 @@
 @extends('layouts.admin')
 @section('content')
-    @can('college_calender_create')
+    @can('office_calender_create')
         <div style="margin-bottom: 10px;" class="row">
             <div class="col-lg-12">
                 <a class="btn btn-success" href="{{ route('admin.college-calenders.create') }}">
-                    Add Academic Calendar
+                    Add Calendar
                 </a>
-                {{-- <button class="btn btn-warning" data-toggle="modal" data-target="#csvImportModal">
-                {{ trans('global.app_csvImport') }}
-            </button> --}}
-                {{-- @include('csvImport.modal', ['model' => 'CollegeCalender', 'route' => 'admin.college-calenders.parseCsvImport']) --}}
             </div>
         </div>
     @endcan
@@ -101,7 +97,7 @@
     </style>
     <div class="card">
         <div class="card-header">
-            Academic Calendar List
+            Office Calendar List
         </div>
         <div class="card-body">
             <table class=" table table-bordered table-striped table-hover ajaxTable datatable datatable-CollegeCalender">
@@ -111,28 +107,16 @@
 
                         </th>
                         <th>
-                            {{ trans('cruds.collegeCalender.fields.id') }}
-                        </th>
-                        {{-- <th>
-                        {{ trans('cruds.collegeCalender.fields.type') }}
-                    </th> --}}
-                        <th>
-                            {{ trans('cruds.collegeCalender.fields.academic_year') }}
+                            S.No
                         </th>
                         <th>
-                            Batch
-                        </th>
-                        <th>
-                            {{ trans('cruds.collegeCalender.fields.semester_type') }}
+                            Office Year
                         </th>
                         <th>
                             {{ trans('cruds.collegeCalender.fields.from_date') }}
                         </th>
                         <th>
                             {{ trans('cruds.collegeCalender.fields.to_date') }}
-                        </th>
-                        <th>
-                            Past Attendance Control
                         </th>
                         <th>
                             Action
@@ -148,7 +132,7 @@
     <script>
         $(function() {
             let dtButtons = $.extend(true, [], $.fn.dataTable.defaults.buttons)
-            @can('college_calender_delete')
+            @can('office_calender_delete')
                 let deleteButtonTrans = '{{ trans('global.datatables.delete') }}';
                 let deleteButton = {
                     text: deleteButtonTrans,
@@ -207,24 +191,12 @@
                         name: 'academic_year'
                     },
                     {
-                        data: 'batch',
-                        name: 'batch'
-                    },
-                    {
-                        data: 'semester_type',
-                        name: 'semester_type'
-                    },
-                    {
                         data: 'from_date',
                         name: 'from_date'
                     },
                     {
                         data: 'to_date',
                         name: 'to_date'
-                    },
-                    {
-                        data: 'past_attendance_control',
-                        name: 'past_attendance_control'
                     },
                     {
                         data: 'actions',

@@ -1,13 +1,10 @@
-@extends('layouts.teachingStaffHome')
+@extends('layouts.staffs')
 @section('content')
     <style>
         input[type="file"] {
-            /* background-color: #f2f2f2; */
             border: none;
-            /* color: #555; */
             cursor: pointer;
             font-size: 16px;
-            /* padding: 10px; */
         }
 
 
@@ -18,7 +15,8 @@
         .select2-container {
             width: 100% !important;
         }
-        .table.dataTable tbody td.select-checkbox:before{
+
+        .table.dataTable tbody td.select-checkbox:before {
             content: none !important;
         }
     </style>
@@ -39,8 +37,7 @@
                         <h5 class="mb-2 text-primary">Leave Form</h5>
                     </div>
                     <div class="card-body">
-                        <form method="POST" onsubmit="return AssignStaff(this)"
-                            action="{{ route('admin.staff-request-leaves.staff_update', ['user_name_id' => $staff->user_name_id, 'name' => $staff->name, 'id' => $staff_edit->id]) }}"
+                        <form method="POST" action="{{ route('admin.staff-request-leaves.staff_update', ['user_name_id' => $staff->user_name_id, 'name' => $staff->name, 'id' => $staff_edit->id]) }}"
                             enctype="multipart/form-data" id="leave_form">
                             @csrf
                             <div class="row gutters">
@@ -116,8 +113,7 @@
                                     style={{ $staff_edit->half_day_leave == null ? 'display:none;' : '' }}>
                                     <div class="form-group">
                                         <label for="noon" class="required"> FN / AN</label>
-                                        <select class="form-control select2" name="noon" id="noon"
-                                            onchange="get_periods(this)">
+                                        <select class="form-control select2" name="noon" id="noon">
                                             <option value="" {{ $staff_edit->noon == '' ? 'selected' : '' }}> Select
                                                 FN / AN</option>
                                             <option value="Fore Noon"
@@ -169,85 +165,32 @@
                                             Only</span>
                                     </div>
                                 </div>
-
-                            </div>
-                            <div class="row gutters">
-                                <div class="col-xl-6 col-lg-6 col-md-6 col-sm-6 col-12" id="view_staff"
-                                    style="padding-left:1rem;">
-                                    @if (count($get_AssignedStaff) > 0)
-                                        <span class="text-left text-primary">
-                                            Alternative Staffs Assigned
-                                        </span>
-                                        <span class="text-right" style="padding-left:1.5rem;">
-                                            <button type="button" class="btn btn-xs btn-success" data-toggle="modal"
-                                                data-target="#myModal">View</button>
-                                        </span>
-                                    @endif
-                                </div>
-                                <div class="col-1" id="adder_div"></div>
-                                <div class="col-xl-5 col-lg-5 col-md-5 col-sm-5 col-11">
-                                    <div class="text-right" id="submit_div">
-                                        <button type="submit" id="submit" name="submit" style="display:none;"
-                                            class="btn btn-primary Edit">{{ $staff_edit->add }}</button>
-                                    </div>
-                                    <div class="text-right text-primary" id="loading_div" style="display:none;">
-                                        <b>Processing...</b>
+                                <div class="row gutters">
+                                    {{-- <div class="col-xl-6 col-lg-6 col-md-6 col-sm-6 col-12" id="view_staff"
+                                        style="padding-left:1rem;">
+                                        @if (count($get_AssignedStaff) > 0)
+                                            <span class="text-left text-primary">
+                                                Alternative Staffs Assigned
+                                            </span>
+                                            <span class="text-right" style="padding-left:1.5rem;">
+                                                <button type="button" class="btn btn-xs btn-success" data-toggle="modal"
+                                                    data-target="#myModal">View</button>
+                                            </span>
+                                        @endif
+                                    </div> --}}
+                                    <div class="col-1" id="adder_div"></div>
+                                    <div class="col-xl-5 col-lg-5 col-md-5 col-sm-5 col-11">
+                                        <div class="text-right" id="submit_div" style="display:none;">
+                                            <button type="submit" id="submit" name="submit" 
+                                                class="btn btn-primary Edit">{{ $staff_edit->add }}</button>
+                                        </div>
+                                        <div class="text-right text-primary" id="loading_div" style="display:none;">
+                                            <b>Processing...</b>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
                         </form>
-                    </div>
-                </div>
-            </div>
-        </div>
-        <div class="modal fade" id="myModal" style="margin:auto;width:100%;" role="dialog" data-backdrop='static'>
-            <div class="modal-dialog" role="document">
-                <div class="modal-content">
-                    <div class="modal-header">
-                        <h5 class="modal-title" id="myModalLabel">Alternative Staff</h5>
-                        {{-- <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                            <span aria-hidden="true">&times;</span>
-                        </button> --}}
-                    </div>
-                    <div class="modal-body" id="modal_body">
-                        @if (count($get_AssignedStaff) > 0)
-                            @foreach ($get_AssignedStaff as $AssignedStaff)
-                                <form class="alter_forms">
-                                    <div class="form-group">
-                                        <input type="hidden" name="class" value="{{ $AssignedStaff->classname }}">
-                                        <input type="hidden" name="day" value="{{ $AssignedStaff->day }}">
-                                        <input type="hidden" name="period" value="{{ $AssignedStaff->period }}">
-                                        <div
-                                            style="width:80%;display:flex;justify-content:space-around;font-weight:bold;margin-bottom:5px;">
-                                            <div>{{ $AssignedStaff->class }}</div>
-                                            <div>|</div>
-                                            <div>{{ $AssignedStaff->day }} </div>
-                                            <div>|</div>
-                                            <div>{{ $AssignedStaff->period }}</div>
-                                        </div>
-
-                                        <select class="form-control select2 alteration_selecter" name="selected_staff"
-                                            id="selected_staff" style="width:100%;" onchange="check_availability(this)">
-                                            <option value="">Select Staff For Alteration</option>
-                                            @foreach ($users as $user)
-                                                <option value="{{ $user->user_name_id }}"
-                                                    {{ $AssignedStaff->to_id == $user->user_name_id ? 'selected' : '' }}>
-                                                    {{ $user->name }}
-                                                    ({{ $user->StaffCode }})
-                                                </option>
-                                            @endforeach
-                                        </select>
-                                        <p id="p" style="color:red;font-weight:bold;font-size:0.80rem;"></p>
-                                    </div>
-                                </form>
-                            @endforeach
-                        @endif
-                    </div>
-                    <div class="modal-footer">
-                        <button type="button" class="btn btn-primary Edit" id="save" data-dismiss="modal"
-                            aria-label="Close">
-                            <span aria-hidden="true" onclick="saveClick(this)">Save</span>
-                        </button>
                     </div>
                 </div>
             </div>
@@ -258,9 +201,11 @@
                 <div class="col" style="padding:0;">
                     <div class="card h-100">
 
-                            <div class="card-body" style="max-width:100%;overflow-x:auto;">
-                                <h5 class="mb-3 text-primary">Requested Leave Detail</h5>
-                                <table class="table table-bordered table-striped table-hover datatable datatable-leaveList text-center" style="min-width:700px;">
+                        <div class="card-body" style="max-width:100%;overflow-x:auto;">
+                            <h5 class="mb-3 text-primary">Requested Leave Detail</h5>
+                            <table
+                                class="table table-bordered table-striped table-hover datatable datatable-leaveList text-center"
+                                style="min-width:700px;">
                                 <thead>
                                     <tr>
                                         <th>
@@ -289,9 +234,6 @@
                                         </th>
                                         <th>
                                             Reason
-                                        </th>
-                                        <th>
-                                            Alternative Staff
                                         </th>
                                         <th>
                                             Document
@@ -325,23 +267,15 @@
                                                 <td>{{ $list[$i]->alter_date }}</td>
                                                 <td>{{ $list[$i]->half_day_leave }}</td>
                                                 <td>{{ $list[$i]->noon }}</td>
-                                                <td>{{ $list[$i]->total_days + ($list[$i]->total_days_nxt_mn != null ? $list[$i]->total_days_nxt_mn : 0) }}</td>
-                                                <td>{{ $list[$i]->subject }}</td>
-                                                <td>
-                                                    @php
-                                                        $staffs = $list[$i]->assigning_staff;
-                                                        $data = json_decode($staffs, true);
-                                                    @endphp
-                                                    @foreach ($data as $data)
-                                                        {{ $data }}<br>
-                                                    @endforeach
+                                                <td>{{ $list[$i]->total_days + ($list[$i]->total_days_nxt_mn != null ? $list[$i]->total_days_nxt_mn : 0) }}
                                                 </td>
+                                                <td>{{ $list[$i]->subject }}</td>
+                                                
                                                 <td>
                                                     @if ($list[$i]->certificate)
                                                         <img class="uploaded_img"
                                                             src="{{ asset($list[$i]->certificate) }}" alt="image">
                                                     @endif
-
                                                 </td>
                                                 <td>
                                                     @if ($list[$i]->status == 'Rejected')
@@ -355,29 +289,7 @@
                                                     @switch($list[$i]->status)
                                                         @case('Pending')
                                                             @if ($list[$i]->level == 0)
-                                                                {{-- @if ($list[$i]->leave_type == 2 || $list[$i]->leave_type == 3 || $list[$i]->leave_type == 4 || $list[$i]->leave_type == 6 || $list[$i]->leave_type == 7)
-                                                                    <div class="p-2 Pending">Waiting For Principal Approval
-                                                                    </div>
-                                                                @else --}}
-                                                                <div class="p-2 Pending">Waiting For HOD Approval</div>
-                                                                {{-- @endif --}}
-                                                            @elseif ($list[$i]->level == 1)
-                                                                @if (
-                                                                    $list[$i]->leave_type == 2 ||
-                                                                        $list[$i]->leave_type == 3 ||
-                                                                        $list[$i]->leave_type == 4 ||
-                                                                        $list[$i]->leave_type == 6 ||
-                                                                        $list[$i]->leave_type == 7 ||
-                                                                        $list[$i]->leave_type == 8)
-                                                                    <div class="p-2 Pending">Waiting For Principal Approval
-                                                                    </div>
-                                                                @else
-                                                                    <div class="p-2 Pending">Waiting For HR Approval</div>
-                                                                @endif
-                                                            @elseif ($list[$i]->level == 95)
-                                                                <div class="p-2 Pending">Waiting For HR
-                                                                    Approval
-                                                                </div>
+                                                                <div class="p-2 Pending">Waiting For Approval</div>
                                                             @endif
                                                         @break
 
@@ -390,7 +302,8 @@
                                                         @break
 
                                                         @case('NeedClarification')
-                                                            <div class=" mt-2 btn-info" style="border-radius:3px;">Need Clarification</div>
+                                                            <div class=" mt-2 btn-info" style="border-radius:3px;">Need
+                                                                Clarification</div>
                                                         @break
 
                                                         @default
@@ -400,7 +313,13 @@
                                                 </td>
                                                 <td>
 
-                                                    @if (($list[$i]->status == 'Pending' && $list[$i]->level == 0) || ($list[$i]->status == 'Pending' && $list[$i]->level == 1 && (auth()->user()->roles[0]->id == 50 || auth()->user()->roles[0]->id == 51 || auth()->user()->roles[0]->id == 52)))
+                                                    @if (
+                                                        ($list[$i]->status == 'Pending' && $list[$i]->level == 0) ||
+                                                            ($list[$i]->status == 'Pending' &&
+                                                                $list[$i]->level == 1 &&
+                                                                (auth()->user()->roles[0]->id == 50 ||
+                                                                    auth()->user()->roles[0]->id == 51 ||
+                                                                    auth()->user()->roles[0]->id == 52)))
                                                         <form method="POST"
                                                             action="{{ route('admin.staff-request-leaves.staff_updater', ['user_name_id' => $staff->user_name_id, 'name' => $staff->name, 'id' => $list[$i]->id]) }}"
                                                             enctype="multipart/form-data">
@@ -442,6 +361,7 @@
             $("#submit").show();
             callAjax();
         }
+
         function callAjax() {
             let dtButtons = $.extend(true, [], $.fn.dataTable.defaults.buttons)
             dtButtons.splice(0, 4);
@@ -493,6 +413,7 @@
                     $("button, input,select").prop("disabled", true);
                     $("#loader").show();
                     $("#save").hide();
+                    $("#submit_div").hide();
                     $.ajax({
                         url: "{{ route('admin.staff-request-leaves.check') }}",
                         method: 'POST',
@@ -505,53 +426,13 @@
                             to_date: toDate,
                         },
                         success: function(response) {
-                            if (response.data != '') {
-                                if (response.data != 'Error') {
-                                    let data = response.data;
-                                    let len = data.length;
-
-                                    let labels = '';
-
-
-                                    for (let a = 0; a < len; a++) {
-
-                                        labels += `<form class="alter_forms"><div class="form-group">
-                                    <input type="hidden" name="class" value="${data[a]['class_name']}">
-                                    <input type="hidden" name="day" value="${data[a]['day']}">
-                                    <input type="hidden" name="period" value="${data[a]['period']}">
-                                    <div style="width:95%;display:flex;justify-content:space-around;font-weight:bold;margin-bottom:5px;">
-                                        <div>${data[a]['shortform']}</div>
-                                        <div>|</div>
-                                        <div>${data[a]['day']} </div>
-                                        <div>|</div>
-                                        <div>PERIOD  ${data[a]['period_name']}</div>
-                                    </div>
-
-                                       <select class="form-control select2 alteration_selecter" name="selected_staff" id="selected_staff" style="width:100%;" onchange="check_availability(this)">
-                                           <option value="">Select Staff For Alteration</option>
-                                           @foreach ($users as $user)
-                                                    <option value="{{ $user->user_name_id }}">{{ $user->name }}   ({{ $user->StaffCode }})</option>
-                                           @endforeach
-                                       </select>
-                                    </div></form>`;
-                                    }
-                                    labels += `<p id="p" style="font-size:0.90rem;" class="text-primary"></p>`;
-
-                                    $("#modal_body").html(labels);
-                                    $("select").select2();
-                                    $("#leave_type").select2();
-                                    $("#myModal").modal();
-
-                                } else {
-
-                                    Swal.fire('', 'You Have Applied a Leave/OD for the Selected Date',
-                                        "warning");
-                                    $('#from_date').val('');
-                                    $('#to_date').val('');
-                                }
+                            let status = response.status;
+                            let data = response.data;
+                            if (status) {
+                                $("#submit_div").show();
                             } else {
-                                Swal.fire('', 'There Is No Class Hours For These Dates', 'info');
-                                $("#view_staff").html('');
+                                $("#submit_div").hide();
+                                Swal.fire('', data, 'error');
                             }
                             $("#loader").hide();
                             $("button, input,select").removeAttr("disabled");
@@ -625,7 +506,7 @@
             Date_get.setHours(0, 0, 0, 0)
             const today = new Date();
             today.setHours(0, 0, 0, 0);
-
+            $("#submit_div").hide();
             if (today > Date_get) {
                 $("#loader").show();
                 $.ajax({
@@ -654,7 +535,7 @@
 
                         } else {
                             $("#loader").hide();
-
+                            $("#submit_div").show();
                         }
 
                     },
@@ -886,8 +767,9 @@
                     $("#to_date").val('')
                     $("#off_date").val('')
                     $("#alter_date").val('')
-
+                    $("#submit_div").show();
                 } else {
+                    $("#submit_div").hide();
                     check_leave();
                 }
             } else {
@@ -1025,211 +907,213 @@
                         Swal.fire('', 'Request Failed With Status: ' + jqXHR.statusText, "error");
                     }
                 }
+
             })
 
         }
 
-        function get_periods(element) {
-            let timing = element.value;
+        // function get_periods(element) {
+        //     let timing = element.value;
 
-            let leave_date = $("#half_day_leave").val();
-            $("#view_staff").html('');
-            if (timing == '') {
-                Swal.fire('', 'Please Choose the FN OR AN', 'warning');
-            } else {
-                if (leave_date == '') {
-                    Swal.fire('', 'Please Choose the Date', 'warning');
-                    $(element).val('')
-                    $(element).select2()
-                } else {
+        //     let leave_date = $("#half_day_leave").val();
+        //     $("#view_staff").html('');
+        //     if (timing == '') {
+        //         Swal.fire('', 'Please Choose the FN OR AN', 'warning');
+        //     } else {
+        //         if (leave_date == '') {
+        //             Swal.fire('', 'Please Choose the Date', 'warning');
+        //             $(element).val('')
+        //             $(element).select2()
+        //         } else {
 
-                    $("input, select").prop("disabled", true);
-                    $("#loader").show();
-                    $("#save").hide();
-                    $.ajax({
-                        url: '{{ route('admin.staff-request-leaves.check_for_half') }}',
-                        method: 'POST',
-                        headers: {
-                            'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
-                        },
-                        data: {
-                            'leave_date': leave_date,
-                            'timing': timing
-                        },
-                        success: function(response) {
-                            if (response.data != '') {
-                                if (response.data != 'Error') {
-                                    let data = response.data;
-                                    let len = data.length;
+        //             $("input, select").prop("disabled", true);
+        //             $("#loader").show();
+        //             $("#save").hide();
+        //             $.ajax({
+        //                 url: '{{ route('admin.staff-request-leaves.check_for_half') }}',
+        //                 method: 'POST',
+        //                 headers: {
+        //                     'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+        //                 },
+        //                 data: {
+        //                     'leave_date': leave_date,
+        //                     'timing': timing
+        //                 },
+        //                 success: function(response) {
+        //                     if (response.data != '') {
+        //                         if (response.data != 'Error') {
+        //                             let data = response.data;
+        //                             let len = data.length;
 
-                                    let labels = '';
-                                    if (len > 0) {
-                                        for (let a = 0; a < len; a++) {
+        //                             let labels = '';
+        //                             if (len > 0) {
+        //                                 for (let a = 0; a < len; a++) {
 
-                                            labels += `<form class="alter_forms"><div class="form-group">
-                                <input type="hidden" name="class" value="${data[a]['class_name']}">
-                                <input type="hidden" name="day" value="${data[a]['day']}">
-                                <input type="hidden" name="period" value="${data[a]['period']}">
-                                <div style="width:80%;display:flex;justify-content:space-around;font-weight:bold;margin-bottom:5px;">
-                                    <div>${data[a]['shortform']}</div>
-                                    <div>|</div>
-                                    <div>${data[a]['day']} </div>
-                                    <div>|</div>
-                                    <div>PERIOD  ${data[a]['period_name']}</div>
-                                </div>
-                                   <select class="form-control select2 alteration_selecter" name="selected_staff" id="selected_staff" style="width:100%;" onchange="check_availability(this)">
-                                       <option value="">Select Staff For Alteration</option>
-                                       @foreach ($users as $user)
-                                                <option value="{{ $user->user_name_id }}">{{ $user->name }}   ({{ $user->StaffCode }})</option>
-                                       @endforeach
-                                   </select>
-                                </div>
-                                </form>`;
-                                        }
-                                        labels +=
-                                            `<p id="p" class="text-primary" style="font-size:0.90rem;"></p>`;
+        //                                     labels += `<form class="alter_forms"><div class="form-group">
+        //                         <input type="hidden" name="class" value="${data[a]['class_name']}">
+        //                         <input type="hidden" name="day" value="${data[a]['day']}">
+        //                         <input type="hidden" name="period" value="${data[a]['period']}">
+        //                         <div style="width:80%;display:flex;justify-content:space-around;font-weight:bold;margin-bottom:5px;">
+        //                             <div>${data[a]['shortform']}</div>
+        //                             <div>|</div>
+        //                             <div>${data[a]['day']} </div>
+        //                             <div>|</div>
+        //                             <div>PERIOD  ${data[a]['period_name']}</div>
+        //                         </div>
+        //                            <select class="form-control select2 alteration_selecter" name="selected_staff" id="selected_staff" style="width:100%;" onchange="check_availability(this)">
+        //                                <option value="">Select Staff For Alteration</option>
+        //                                @foreach ($users as $user)
+        //                                         <option value="{{ $user->user_name_id }}">{{ $user->name }}   ({{ $user->StaffCode }})</option>
+        //                                @endforeach
+        //                            </select>
+        //                         </div>
+        //                         </form>`;
+        //                                 }
+        //                                 labels +=
+        //                                     `<p id="p" class="text-primary" style="font-size:0.90rem;"></p>`;
 
-                                        $("#modal_body").html(labels);
-                                        $("select").select2();
-                                        $("#noon").select2();
-                                        $("#myModal").modal();
-                                    } else {
+        //                                 $("#modal_body").html(labels);
+        //                                 $("select").select2();
+        //                                 $("#noon").select2();
+        //                                 $("#myModal").modal();
+        //                             } else {
 
-                                        Swal.fire("No Class Hours For This Date!", "info");
+        //                                 Swal.fire("No Class Hours For This Date!", "info");
 
-                                    }
+        //                             }
 
-                                } else {
-                                    Swal.fire('', "You Have Applied a Half Day Leave for the Selected Date!",
-                                        "warning");
+        //                         } else {
+        //                             Swal.fire('', "You Have Applied a Half Day Leave for the Selected Date!",
+        //                                 "warning");
 
-                                    $('#half_day_leave').val('');
-                                    $('#noon').val('');
-                                }
-                            } else {
-                                Swal.fire('', "No Class Hours For This Particular Time!", "info");
+        //                             $('#half_day_leave').val('');
+        //                             $('#noon').val('');
+        //                         }
+        //                     } else {
+        //                         Swal.fire('', "No Class Hours For This Particular Time!", "info");
 
-                            }
-                            $("#loader").hide();
-                            $("input, select").prop("disabled", false);
-                        },
-                        error: function(jqXHR, textStatus, errorThrown) {
-                            if (jqXHR.status) {
-                                if (jqXHR.status == 500) {
-                                    Swal.fire('', 'Request Timeout / Internal Server Error', 'error');
-                                } else {
-                                    Swal.fire('', jqXHR.status, 'error');
-                                }
-                            } else if (textStatus) {
-                                Swal.fire('', textStatus, 'error');
-                            } else {
-                                Swal.fire('', 'Request Failed With Status: ' + jqXHR.statusText, "error");
-                            }
-                        }
-                    })
-                }
-            }
-        }
+        //                     }
+        //                     $("#loader").hide();
+        //                     $("input, select").prop("disabled", false);
+        //                 },
+        //                 error: function(jqXHR, textStatus, errorThrown) {
+        //                     if (jqXHR.status) {
+        //                         if (jqXHR.status == 500) {
+        //                             Swal.fire('', 'Request Timeout / Internal Server Error', 'error');
+        //                         } else {
+        //                             Swal.fire('', jqXHR.status, 'error');
+        //                         }
+        //                     } else if (textStatus) {
+        //                         Swal.fire('', textStatus, 'error');
+        //                     } else {
+        //                         Swal.fire('', 'Request Failed With Status: ' + jqXHR.statusText, "error");
+        //                     }
+        //                 }
+        //             })
+        //         }
+        //     }
+        // }
 
-        function get_periodsForCompo(element) {
-            let alter_date = $(element).val();
-            let off_date = $("#off_date").val();
-            $("#view_staff").html('');
-            if (alter_date != '') {
-                if (off_date != '') {
-                    if (off_date != alter_date) {
-                        $("input, select").prop("disabled", true);
-                        $("#loader").show();
-                        $("#save").hide();
-                        $.ajax({
-                            url: '{{ route('admin.staff-request-leaves.check_for_compo') }}',
-                            method: 'POST',
-                            headers: {
-                                'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
-                            },
-                            data: {
-                                'leave_date': off_date,
-                                'alter_date': alter_date,
-                            },
-                            success: function(response) {
-                                let status = response.status;
-                                let data = response.data;
-                                if (status == false) {
-                                    Swal.fire('', data, "error");
-                                    $('#off_date').val('');
-                                    $('#alter_date').val('');
-                                } else if (status == true) {
+        // function get_periodsForCompo(element) {
+        //     let alter_date = $(element).val();
+        //     let off_date = $("#off_date").val();
+        //     $("#view_staff").html('');
+        //     if (alter_date != '') {
+        //         if (off_date != '') {
+        //             if (off_date != alter_date) {
+        //                 $("input, select").prop("disabled", true);
+        //                 $("#loader").show();
+        //                 $("#save").hide();
+        //                 $.ajax({
+        //                     url: '{{ route('admin.staff-request-leaves.check_for_compo') }}',
+        //                     method: 'POST',
+        //                     headers: {
+        //                         'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+        //                     },
+        //                     data: {
+        //                         'leave_date': off_date,
+        //                         'alter_date': alter_date,
+        //                     },
+        //                     success: function(response) {
+        //                         let status = response.status;
+        //                         let data = response.data;
+        //                         if (status == false) {
+        //                             Swal.fire('', data, "error");
+        //                             $('#off_date').val('');
+        //                             $('#alter_date').val('');
+        //                         } else if (status == true) {
 
-                                    if (response.data != '') {
-                                        let data = response.data;
-                                        let len = data.length;
+        //                             if (response.data != '') {
+        //                                 let data = response.data;
+        //                                 let len = data.length;
 
-                                        let labels = '';
-                                        if (len > 0) {
-                                            for (let a = 0; a < len; a++) {
+        //                                 let labels = '';
+        //                                 if (len > 0) {
+        //                                     for (let a = 0; a < len; a++) {
 
-                                                labels += `<form class="alter_forms"><div class="form-group">
-                                                                <input type="hidden" name="class" value="${data[a]['class_name']}">
-                                                                <input type="hidden" name="day" value="${data[a]['day']}">
-                                                                <input type="hidden" name="period" value="${data[a]['period']}">
-                                                                <div style="width:80%;display:flex;justify-content:space-around;font-weight:bold;margin-bottom:5px;">
-                                                                    <div>${data[a]['shortform']}</div>
-                                                                    <div>|</div>
-                                                                    <div>${data[a]['day']} </div>
-                                                                    <div>|</div>
-                                                                    <div>PERIOD  ${data[a]['period_name']}</div>
-                                                                </div>
-                                                                   <select class="form-control select2 alteration_selecter" name="selected_staff" id="selected_staff" style="width:100%;" onchange="check_availability(this)">
-                                                                       <option value="">Select Staff For Alteration</option>
-                                                                       @foreach ($users as $user)
-                                                                                <option value="{{ $user->user_name_id }}">{{ $user->name }}   ({{ $user->StaffCode }})</option>
-                                                                       @endforeach
-                                                                   </select>
-                                                                </div>
-                                                            </form>`;
-                                            }
-                                            labels +=
-                                                `<p id="p" class="text-primary" style="font-size:0.90rem;"></p>`;
+        //                                         labels += `<form class="alter_forms"><div class="form-group">
+        //                                                         <input type="hidden" name="class" value="${data[a]['class_name']}">
+        //                                                         <input type="hidden" name="day" value="${data[a]['day']}">
+        //                                                         <input type="hidden" name="period" value="${data[a]['period']}">
+        //                                                         <div style="width:80%;display:flex;justify-content:space-around;font-weight:bold;margin-bottom:5px;">
+        //                                                             <div>${data[a]['shortform']}</div>
+        //                                                             <div>|</div>
+        //                                                             <div>${data[a]['day']} </div>
+        //                                                             <div>|</div>
+        //                                                             <div>PERIOD  ${data[a]['period_name']}</div>
+        //                                                         </div>
+        //                                                            <select class="form-control select2 alteration_selecter" name="selected_staff" id="selected_staff" style="width:100%;" onchange="check_availability(this)">
+        //                                                                <option value="">Select Staff For Alteration</option>
+        //                                                                @foreach ($users as $user)
+        //                                                                         <option value="{{ $user->user_name_id }}">{{ $user->name }}   ({{ $user->StaffCode }})</option>
+        //                                                                @endforeach
+        //                                                            </select>
+        //                                                         </div>
+        //                                                     </form>`;
+        //                                     }
+        //                                     labels +=
+        //                                         `<p id="p" class="text-primary" style="font-size:0.90rem;"></p>`;
 
-                                            $("#modal_body").html(labels);
-                                            $("select").select2();
-                                            $("#myModal").modal();
-                                        } else {
+        //                                     $("#modal_body").html(labels);
+        //                                     $("select").select2();
+        //                                     $("#myModal").modal();
+        //                                 } else {
 
-                                            Swal.fire("No Class Hours For This Date!", "info");
+        //                                     Swal.fire("No Class Hours For This Date!", "info");
 
-                                        }
+        //                                 }
 
-                                    }
-                                }
-                                $("#loader").hide();
-                                $("input, select").prop("disabled", false);
-                            },
-                            error: function(jqXHR, textStatus, errorThrown) {
-                                if (jqXHR.status) {
-                                    if (jqXHR.status == 500) {
-                                        Swal.fire('', 'Request Timeout / Internal Server Error', 'error');
-                                    } else {
-                                        Swal.fire('', jqXHR.status, 'error');
-                                    }
-                                } else if (textStatus) {
-                                    Swal.fire('', textStatus, 'error');
-                                } else {
-                                    Swal.fire('', 'Request Failed With Status: ' + jqXHR.statusText, "error");
-                                }
-                            }
-                        })
-                    } else {
-                        Swal.fire('', 'Off Date & Alter Date Can\'t Be A Same Date !', 'warning');
-                        $(element).val('')
-                    }
-                } else {
-                    Swal.fire('', 'Please Choose The Off Date', 'warning');
-                    $(element).val('')
-                }
-            } else {
-                Swal.fire('', 'Please Choose The Alter Date', 'warning');
-            }
-        }
+        //                             }
+        //                         }
+        //                         $("#loader").hide();
+        //                         $("input, select").prop("disabled", false);
+        //                     },
+        //                     error: function(jqXHR, textStatus, errorThrown) {
+        //                         if (jqXHR.status) {
+        //                             if (jqXHR.status == 500) {
+        //                                 Swal.fire('', 'Request Timeout / Internal Server Error', 'error');
+        //                             } else {
+        //                                 Swal.fire('', jqXHR.status, 'error');
+        //                             }
+        //                         } else if (textStatus) {
+        //                             Swal.fire('', textStatus, 'error');
+        //                         } else {
+        //                             Swal.fire('', 'Request Failed With Status: ' + jqXHR.statusText, "error");
+        //                         }
+        //                     }
+        //                 })
+        //             } else {
+        //                 Swal.fire('', 'Off Date & Alter Date Can\'t Be A Same Date !', 'warning');
+        //                 $(element).val('')
+        //             }
+        //         } else {
+        //             Swal.fire('', 'Please Choose The Off Date', 'warning');
+        //             $(element).val('')
+        //         }
+        //     } else {
+        //         Swal.fire('', 'Please Choose The Alter Date', 'warning');
+        //     }
+        // }
+
     </script>
 @endsection

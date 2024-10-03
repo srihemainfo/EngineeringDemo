@@ -6,6 +6,8 @@ use App\Http\Controllers\Controller;
 use App\Http\Controllers\Traits\CsvImportTrait;
 use App\Http\Requests\MassDestroyHrmRequestLeafRequest;
 use App\Http\Requests\UpdateHrmRequestLeafRequest;
+use App\Models\AcademicDetail;
+use App\Models\AcademicYear;
 use App\Models\ClassTimeTableOne;
 use App\Models\ClassTimeTableTwo;
 use App\Models\CourseEnrollMaster;
@@ -18,6 +20,7 @@ use App\Models\NonTeachingStaff;
 use App\Models\StaffAlteration;
 use App\Models\StaffAlterationRegister;
 use App\Models\StaffBiometric;
+use App\Models\Staffs;
 use App\Models\TeachingStaff;
 use App\Models\ToolsCourse;
 use App\Models\User;
@@ -54,20 +57,20 @@ class HrmRequestLeaveController extends Controller
         $query1 = [];
         if ($status == 'Pending') {
 
-            if (auth()->user()->roles[0]->id == 14 || auth()->user()->roles[0]->id == 42) { // HOD || R & D Head
+            if (auth()->user()->roles[0]->id == 1 || auth()->user()->roles[0]->id == 2 || auth()->user()->roles[0]->id == 3) { // HOD || R & D Head
                 $query = HrmRequestLeaf::where(['status' => 'Pending', 'level' => 0])->whereBetween('created_at', [$retrieveDateStart, $retrieveDateEnd])->get();
-            } elseif (auth()->user()->roles[0]->id == 15) { //Pricipal
-                $principal = true;
-                $query = HrmRequestLeaf::where(['status' => 'Pending', 'level' => 1])->whereIn('leave_type', [2, 3, 4, 6, 7, 8])->whereBetween('created_at', [$retrieveDateStart, $retrieveDateEnd])->get();
-            } elseif (auth()->user()->roles[0]->id == 13 || auth()->user()->roles[0]->id == 1) { // Hr || Admin
-                // $query = HrmRequestLeaf::where(['status' => 'Pending', 'level' => 0])->get();
-                // $query = HrmRequestLeaf::where(['status' => 'Pending'])->whereIn('level', [0,1])->get();
-                $query = HrmRequestLeaf::where(['status' => 'Pending'])->whereIn('level', [0, 1])->whereIn('leave_type', [2, 3, 4, 6, 7, 8])->whereBetween('created_at', [$retrieveDateStart, $retrieveDateEnd])->get();
-                $query1 = HrmRequestLeaf::where(['status' => 'Pending', 'level' => 0])->whereIn('leave_type', [1, 5])->whereBetween('created_at', [$retrieveDateStart, $retrieveDateEnd])->get();
-                // dd($query);
-            } else {
-                $query = [];
             }
+            // elseif (auth()->user()->roles[0]->id == 15) { //Pricipal
+            //     $principal = true;
+            //     $query = HrmRequestLeaf::where(['status' => 'Pending', 'level' => 1])->whereIn('leave_type', [2, 3, 4, 6, 7, 8])->whereBetween('created_at', [$retrieveDateStart, $retrieveDateEnd])->get();
+            // } elseif (auth()->user()->roles[0]->id == 13 || auth()->user()->roles[0]->id == 1) { // Hr || Admin
+            //     // $query = HrmRequestLeaf::where(['status' => 'Pending', 'level' => 0])->get();
+            //     // $query = HrmRequestLeaf::where(['status' => 'Pending'])->whereIn('level', [0,1])->get();
+            //     $query = HrmRequestLeaf::where(['status' => 'Pending'])->whereIn('level', [0, 1])->whereIn('leave_type', [2, 3, 4, 6, 7, 8])->whereBetween('created_at', [$retrieveDateStart, $retrieveDateEnd])->get();
+            //     $query1 = HrmRequestLeaf::where(['status' => 'Pending', 'level' => 0])->whereIn('leave_type', [1, 5])->whereBetween('created_at', [$retrieveDateStart, $retrieveDateEnd])->get();
+            //     // dd($query);
+            // } 
+
 
             $list = $query;
         } elseif ($status == 'Approved') {
@@ -106,47 +109,30 @@ class HrmRequestLeaveController extends Controller
         }
 
         $unwanted = [];
-        if ($query1 != '' && count($query1) > 0) {
-            if (auth()->user()->roles[0]->id == 15) { //Pricipal
-                for ($i = 0; $i < count($query1); $i++) {
-                    $staff = TeachingStaff::where(['user_name_id' => $query1[$i]->user_id])->select('name', 'user_name_id', 'Dept', 'StaffCode')->first();
-                    if ($staff) {
-                        $query1[$i]->name = $staff->name;
-                        $query1[$i]->dept = $staff->Dept;
-                        $query1[$i]->staff_code = $staff->StaffCode;
-                        $query1[$i]->url = 'teaching-staff-edge';
-                    } else {
-                        $n_staff = NonTeachingStaff::where(['user_name_id' => $query1[$i]->user_id])->select('name', 'user_name_id', 'Dept', 'StaffCode')->first();
-                        $getRole = DB::table('role_user')->leftJoin('roles', 'roles.id', '=', 'role_user.role_id')->where(['role_user.user_id' => $query1[$i]->user_id])->select('roles.type_id')->first();
-                        if ($getRole != '') {
-                            if ($getRole->type_id == 2) {
-                                $query1[$i]->name = $n_staff->name;
-                                $query1[$i]->dept = $n_staff->Dept;
-                                $query1[$i]->staff_code = $n_staff->StaffCode;
-                                $query1[$i]->url = 'non-teaching-staff-edge';
-                            } else {
-                                array_push($unwanted, $i);
-                            }
-                        }
-                    }
+        // dd($query);
+        if ($query != '' && count($query) > 0) {
+            for ($i = 0; $i < count($query); $i++) {
+                $staff = Staffs::where(['user_name_id' => $query[$i]->user_id])->first();
+                if ($staff) {
+                    $query[$i]->name = $staff->name;
+                    // $query[$i]->dept = $staff->Dept;
+                    $query[$i]->staff_code = $staff->StaffCode;
+                    $query[$i]->url = 'teaching-staff-edge';
                 }
-            } else {
-                for ($i = 0; $i < count($query1); $i++) {
-                    $staff = TeachingStaff::where(['user_name_id' => $query1[$i]->user_id])->select('name', 'user_name_id', 'Dept', 'StaffCode')->first();
-
-                    if ($staff) {
-                        $query1[$i]->name = $staff->name;
-                        $query1[$i]->dept = $staff->Dept;
-                        $query1[$i]->staff_code = $staff->StaffCode;
-                        $query1[$i]->url = 'teaching-staff-edge';
-                    } else {
-                        $n_staff = NonTeachingStaff::where(['user_name_id' => $query1[$i]->user_id])->select('name', 'user_name_id', 'Dept', 'StaffCode')->first();
-                        $query1[$i]->name = $n_staff->name;
-                        $query1[$i]->dept = $n_staff->Dept;
-                        $query1[$i]->staff_code = $n_staff->StaffCode;
-                        $query1[$i]->url = 'non-teaching-staff-edge';
-                    }
-                }
+                // else {
+                //     $n_staff = NonTeachingStaff::where(['user_name_id' => $query1[$i]->user_id])->select('name', 'user_name_id', 'Dept', 'StaffCode')->first();
+                //     $getRole = DB::table('role_user')->leftJoin('roles', 'roles.id', '=', 'role_user.role_id')->where(['role_user.user_id' => $query1[$i]->user_id])->select('roles.type_id')->first();
+                //     if ($getRole != '') {
+                //         if ($getRole->type_id == 2) {
+                //             $query1[$i]->name = $n_staff->name;
+                //             $query1[$i]->dept = $n_staff->Dept;
+                //             $query1[$i]->staff_code = $n_staff->StaffCode;
+                //             $query1[$i]->url = 'non-teaching-staff-edge';
+                //         } else {
+                //             array_push($unwanted, $i);
+                //         }
+                //     }
+                // }
             }
         }
         if ($list != '' && count($list) > 0) {
@@ -158,20 +144,21 @@ class HrmRequestLeaveController extends Controller
                         $list[$i]->dept = $staff->Dept;
                         $list[$i]->staff_code = $staff->StaffCode;
                         $list[$i]->url = 'teaching-staff-edge';
-                    } else {
-                        $n_staff = NonTeachingStaff::where(['user_name_id' => $list[$i]->user_id])->select('name', 'user_name_id', 'Dept', 'StaffCode')->first();
-                        $getRole = DB::table('role_user')->leftJoin('roles', 'roles.id', '=', 'role_user.role_id')->where(['role_user.user_id' => $list[$i]->user_id])->select('roles.type_id')->first();
-                        if ($getRole != '') {
-                            if ($getRole->type_id == 2) {
-                                $list[$i]->name = $n_staff->name;
-                                $list[$i]->dept = $n_staff->Dept;
-                                $list[$i]->staff_code = $n_staff->StaffCode;
-                                $list[$i]->url = 'non-teaching-staff-edge';
-                            } else {
-                                array_push($unwanted, $i);
-                            }
-                        }
-                    }
+                    } 
+                    // else {
+                    //     $n_staff = NonTeachingStaff::where(['user_name_id' => $list[$i]->user_id])->select('name', 'user_name_id', 'Dept', 'StaffCode')->first();
+                    //     $getRole = DB::table('role_user')->leftJoin('roles', 'roles.id', '=', 'role_user.role_id')->where(['role_user.user_id' => $list[$i]->user_id])->select('roles.type_id')->first();
+                    //     if ($getRole != '') {
+                    //         if ($getRole->type_id == 2) {
+                    //             $list[$i]->name = $n_staff->name;
+                    //             $list[$i]->dept = $n_staff->Dept;
+                    //             $list[$i]->staff_code = $n_staff->StaffCode;
+                    //             $list[$i]->url = 'non-teaching-staff-edge';
+                    //         } else {
+                    //             array_push($unwanted, $i);
+                    //         }
+                    //     }
+                    // }
                 }
             } else if (auth()->user()->roles[0]->id == 42) { // R & D Head
                 for ($i = 0; $i < count($list); $i++) {
@@ -257,26 +244,11 @@ class HrmRequestLeaveController extends Controller
 
     public function staff_index(Request $request)
     {
-
-        // abort_if(Gate::denies('hrm_request_leaf_access'), Response::HTTP_FORBIDDEN, '403 Forbidden');
+        abort_if(Gate::denies('add_leave_access'), Response::HTTP_FORBIDDEN, '403 Forbidden');
         $user_name_id = auth()->user()->id;
         $leave_type = LeaveType::pluck('name', 'id');
 
-        $teaching_staff = TeachingStaff::where(['user_name_id' => $user_name_id])->first();
-
-        if (empty($teaching_staff)) {
-            $non_tech_staff = NonTeachingStaff::where(['user_name_id' => $user_name_id])->first();
-            $got_staff = $non_tech_staff;
-
-            $who = 'non_tech';
-        } else {
-            $got_staff = $teaching_staff;
-
-            $who = 'tech';
-        }
-        if ($got_staff == null || $got_staff == '') {
-            return redirect()->route('admin.home');
-        }
+        $staff = Staffs::where(['user_name_id' => $user_name_id])->first();
 
         if (!$request->updater) {
             $query = HrmRequestLeaf::where(['user_id' => $user_name_id])->get();
@@ -296,7 +268,7 @@ class HrmRequestLeaveController extends Controller
                 $query->off_date = null;
                 $query->half_day_leave = null;
                 $query->noon = null;
-                $query->avail_cl = $got_staff->casual_leave;
+                $query->avail_cl = $staff->casual_leave;
                 $query->alter_date = '';
                 $query->add = 'Submit';
 
@@ -330,7 +302,7 @@ class HrmRequestLeaveController extends Controller
                 $staff_edit->alter_date = null;
                 $staff_edit->half_day_leave = null;
                 $staff_edit->noon = '';
-                $staff_edit->avail_cl = $got_staff->casual_leave;
+                $staff_edit->avail_cl = $staff->casual_leave;
             }
             $get_AssignedStaff = [];
         } else {
@@ -348,7 +320,7 @@ class HrmRequestLeaveController extends Controller
 
                 $query_two[0]['leave_types'] = $leave_type;
 
-                $query_two[0]['avail_cl'] = $got_staff->casual_leave;
+                $query_two[0]['avail_cl'] = $staff->casual_leave;
 
                 $staff = $query_one[0];
 
@@ -363,93 +335,23 @@ class HrmRequestLeaveController extends Controller
             } else {
                 dd('Error');
             }
-            $get_AssignedStaff = StaffAlteration::where(['from_date' => $staff_edit->from_date, 'to_date' => $staff_edit->to_date, 'from_id' => $staff_edit->user_id])->get();
 
-            if ($get_AssignedStaff->count() > 0) {
-                foreach ($get_AssignedStaff as $AssignedStaff) {
-                    $get_Staff = TeachingStaff::where(['user_name_id' => $AssignedStaff->to_id])->select('name', 'user_name_id', 'StaffCode')->first();
-                    if ($get_Staff != '') {
-                        $AssignedStaff->staff_name = $get_Staff->name;
-                        $AssignedStaff->staff_code = $get_Staff->StaffCode;
-                    } else {
-                        $AssignedStaff->staff_name = null;
-                        $AssignedStaff->staff_code = null;
-                    }
-
-                    $get_Class = CourseEnrollMaster::where(['id' => $AssignedStaff->classname])->first();
-
-                    if ($get_Class != '') {
-
-                        $explode = explode('/', $get_Class->enroll_master_number);
-
-                        $get_short_form = ToolsCourse::where(['name' => $explode[1]])->select('short_form')->first();
-
-                        if ($get_short_form != '') {
-                            $AssignedStaff->class = $get_short_form->short_form . ' / ' . $explode[3] . ' / ' . $explode[4];
-                        } else {
-                            $AssignedStaff->class = null;
-                        }
-                    } else {
-                        $AssignedStaff->class = null;
-                    }
-                }
-            }
         }
 
         $check = 'leave_details';
         $user_id = auth()->user()->id;
-        if ($who == 'tech') {
-            $staffName = TeachingStaff::where('user_name_id', $user_name_id)->first();
-            $department = $staffName->Dept;
-            $users = TeachingStaff::where('user_name_id', '!=', $user_id)->select('name', 'user_name_id', 'StaffCode')->get();
-        }
+        $staffName = Staffs::where('user_name_id', $user_name_id)->first();
+        $department = $staffName->Dept;
+        $users = Staffs::where('user_name_id', '!=', $user_id)->select('name', 'user_name_id')->get();
 
-        $staffAlter = StaffAlteration::where(['status' => '0', 'to_id' => auth()->user()->id])
-            ->get();
-        // dd($staffAlter);
-        if ($staffAlter->count() > 0) {
-            foreach ($staffAlter as $checkings) {
-                $checkings->classID = $checkings->classname;
-                $checkings->class_period = $checkings->period;
-                $checkings->to_id = $checkings->to_id;
 
-                $staffName = TeachingStaff::where('user_name_id', $checkings->from_id)->first();
-                if ($staffName) {
-                    $checkings->name = $staffName->name;
-                    $checkings->staff_code = $staffName->StaffCode;
-                }
+        return view('admin.addLeave.staff_leaveindex', compact('staff', 'check', 'list', 'staff_edit', 'users'));
 
-                $enroll = CourseEnrollMaster::find($checkings->classname);
-                if ($enroll) {
-                    $className = explode('/', $enroll->enroll_master_number);
-                    if (isset($className[1])) {
-                        $get_short_form = ToolsCourse::where('name', $className[1])->value('short_form');
-                        if ($get_short_form) {
-                            $className[1] = $get_short_form;
-                        }
-                        $checkings->classname = $className[1] . ' / ' . $className[3] . ' / ' . $className[4];
-                    }
-                }
-
-                //     $checkings->approveButton = "<button class='btn btn-xs btn-primary' type='submit' name='approve' value='$checkings->id'>Approve</button>";
-                //     $checkings->rejectButton = "<button class='btn btn-xs btn-danger' type='submit' name='reject' value='$checkings->id'>Reject</button>";
-            }
-            $checking = $staffAlter;
-        } else {
-            $checking = [];
-        }
-
-        if ($who == 'tech') {
-            return view('admin.addLeave.staff_leaveindex', compact('staff', 'check', 'list', 'staff_edit', 'users', 'checking', 'get_AssignedStaff'));
-        }
-        if ($who == 'non_tech') {
-            return view('admin.addLeave.nt_staff_leaveindex', compact('staff', 'check', 'list', 'staff_edit'));
-        }
     }
 
     public function alter_staff(Request $request)
     {
-        // dd($request);
+        dd($request);
         if ($request->data != '') {
             $form_data = $request->data;
             $alter_data = [];
@@ -554,6 +456,7 @@ class HrmRequestLeaveController extends Controller
 
     public function staff_update(UpdateHrmRequestLeafRequest $request, HrmRequestLeaf $hrmRequestLeaf, Document $document)
     {
+        // dd($request);
         $role = DB::table('role_user')->where(['user_id' => $request->user_name_id])->first();
         $level = 0;
 
@@ -596,11 +499,13 @@ class HrmRequestLeaveController extends Controller
                 $diffInDays_f_month = $remainingDays;
 
                 $diffInDays_t_month = $t_daysInMonth;
+                dd($diffInDays_f_month, $t_daysInMonth);
             } else {
                 $date1 = Carbon::parse($request->from_date);
                 $date2 = Carbon::parse($request->to_date);
 
                 $diffInDays_f_month = $date1->diffInDays($date2) + 1;
+                // dd($diffInDays_f_month);
                 $diffInDays_t_month = 0;
             }
         } elseif ($request->half_day_leave != '' && $request->noon != '') {
@@ -616,21 +521,22 @@ class HrmRequestLeaveController extends Controller
         $assigned_staff = [];
 
         $explode = explode(',', $request->assign_staff);
-
+        // dd($explode);
+        // dd()
         if (count($explode) > 0) {
             foreach ($explode as $data) {
                 if ($data != '') {
-                    $get_Staff = TeachingStaff::where(['user_name_id' => $data])->first();
+                    $get_Staff = Staffs::where(['user_name_id' => $data])->first();
 
                     if ($get_Staff != '') {
-                        array_push($assigned_staff, $get_Staff->name . '(' . $get_Staff->StaffCode . ')');
+                        array_push($assigned_staff, $get_Staff->name . '(' . $get_Staff->employee_id . ')');
                     }
                 }
             }
         }
 
         $json_data = json_encode($assigned_staff, true);
-
+        // dd($request);
         if (!$request->id == 0 || $request->id != '') {
             $leave_reqg = $hrmRequestLeaf->where(['user_id' => $request->user_name_id, 'id' => $request->id])->first();
             if ($leave_reqg) {
@@ -640,26 +546,26 @@ class HrmRequestLeaveController extends Controller
                     unlink($filePath);
                 }
             }
-            $getcl = TeachingStaff::where(['user_name_id' => $request->user_name_id])->select('casual_leave')->first();
-            if ($getcl == '') {
-                $getcl = NonTeachingStaff::where(['user_name_id' => $request->user_name_id])->select('casual_leave')->first();
-                $level = 1;
-                $checkRole = auth()->user()->roles[0]->id;
-                if ($checkRole == 33 || $checkRole == 34) {
+            $getcl = Staffs::where(['user_name_id' => $request->user_name_id])->select('casual_leave')->first();
+            // if ($getcl == '') {
+            //     $getcl = NonTeachingStaff::where(['user_name_id' => $request->user_name_id])->select('casual_leave')->first();
+            //     $level = 1;
+            //     $checkRole = auth()->user()->roles[0]->id;
+            //     if ($checkRole == 33 || $checkRole == 34) {
+            //         $level = 0;
+            //     }
+            // } else {
+            // }
+            $checkRole = auth()->user()->roles[0]->id;
+            // dd($checkRole);
+            if ($checkRole == 4) {
+                if ($request->leave_type != '') {
                     $level = 0;
                 }
-            } else {
-                $checkRole = auth()->user()->roles[0]->id;
-                if ($checkRole == 50) {
-                    if ($request->leave_type == 1 || $request->leave_type == 5) {
-                        $level = 1;
-                    } else {
-                        $level = 95;
-                    }
-                } else if ($checkRole == 51 || $checkRole == 52) {
-                    $level = 1;
-                }
+            } else if ($checkRole == 3) {
+                $level = 1;
             }
+
             if ($getcl != '') {
                 $balance_cl = $getcl->casual_leave;
             } else {
@@ -693,30 +599,27 @@ class HrmRequestLeaveController extends Controller
             $checkLeaveType = LeaveType::where(['id' => $request->leave_type])->first();
             if ($checkLeaveType != '') {
                 $leaveType = $checkLeaveType->name;
+                $alertReceiver = DB::table('role_user')->whereIn('role_id', [1, 2, 3])->get();
             } else {
                 $leaveType = '';
             }
-            if ($request->leave_type == '2' || $request->leave_type == '3' || $request->leave_type == '4' || $request->leave_type == '6' || $request->leave_type == '7' || $request->leave_type == '8') {
-                $alertReceiver = DB::table('role_user')->whereIn('role_id', [1, 13, 15])->get();
-            } else {
-                $alertReceiver = DB::table('role_user')->whereIn('role_id', [1, 13])->get();
-            }
+
             $receiverArray = [];
             $checkDeptOfStaff = TeachingStaff::where(['user_name_id' => $request->user_name_id])->first();
-            if ($checkDeptOfStaff != '') {
-                $dept = $checkDeptOfStaff->Dept;
-                $getHOD = DB::table('role_user')->where(['role_id' => 14])->get();
-                if (count($getHOD) > 0) {
-                    foreach ($getHOD as $hod) {
-                        $checkUser = User::where(['id' => $hod->user_id, 'dept' => $dept])->select('id')->get();
-                        if (count($checkUser) > 0) {
-                            foreach ($checkUser as $user) {
-                                array_push($receiverArray, $user->id);
-                            }
-                        }
-                    }
-                }
-            }
+            // if ($checkDeptOfStaff != '') {
+            //     $dept = $checkDeptOfStaff->Dept;
+            //     $getHOD = DB::table('role_user')->where(['role_id' => 14])->get();
+            //     if (count($getHOD) > 0) {
+            //         foreach ($getHOD as $hod) {
+            //             $checkUser = User::where(['id' => $hod->user_id, 'dept' => $dept])->select('id')->get();
+            //             if (count($checkUser) > 0) {
+            //                 foreach ($checkUser as $user) {
+            //                     array_push($receiverArray, $user->id);
+            //                 }
+            //             }
+            //         }
+            //     }
+            // }
 
             if (count($alertReceiver) > 0) {
                 foreach ($alertReceiver as $receiver) {
@@ -728,26 +631,25 @@ class HrmRequestLeaveController extends Controller
             $userAlert->alert_link = url('admin/hrm-request-leaves/' . $request->id);
             $userAlert->save();
             $userAlert->users()->sync($receiverArray);
+
         } else {
-            $getcl = TeachingStaff::where(['user_name_id' => $request->user_name_id])->select('casual_leave')->first();
-            if ($getcl == '') {
-                $getcl = NonTeachingStaff::where(['user_name_id' => $request->user_name_id])->select('casual_leave')->first();
-                $level = 1;
-                $checkRole = auth()->user()->roles[0]->id;
-                if ($checkRole == 33 || $checkRole == 34) {
+            $getcl = Staffs::where(['user_name_id' => $request->user_name_id])->select('casual_leave')->first();
+            // if ($getcl == '') {
+            //     $getcl = NonTeachingStaff::where(['user_name_id' => $request->user_name_id])->select('casual_leave')->first();
+            //     $level = 1;
+            //     $checkRole = auth()->user()->roles[0]->id;
+            //     if ($checkRole == 33 || $checkRole == 34) {
+            //         $level = 0;
+            //     }
+            // } else {
+            // }
+            $checkRole = auth()->user()->roles[0]->id;
+            if ($checkRole == 4) {
+                if ($request->leave_type == '') {
                     $level = 0;
                 }
-            } else {
-                $checkRole = auth()->user()->roles[0]->id;
-                if ($checkRole == 50) {
-                    if ($request->leave_type == 1 || $request->leave_type == 5) {
-                        $level = 1;
-                    } else {
-                        $level = 95;
-                    }
-                } else if ($checkRole == 51) {
-                    $level = 1;
-                }
+            } else if ($checkRole == 3) {
+                $level = 1;
             }
             if ($getcl != '') {
                 $balance_cl = $getcl->casual_leave;
@@ -784,30 +686,26 @@ class HrmRequestLeaveController extends Controller
                 $checkLeaveType = LeaveType::where(['id' => $request->leave_type])->first();
                 if ($checkLeaveType != '') {
                     $leaveType = $checkLeaveType->name;
+                    $alertReceiver = DB::table('role_user')->whereIn('role_id', [1, 2, 3])->get();
                 } else {
                     $leaveType = '';
                 }
-                if ($request->leave_type == '2' || $request->leave_type == '3' || $request->leave_type == '4' || $request->leave_type == '6' || $request->leave_type == '7' || $request->leave_type == '8') {
-                    $alertReceiver = DB::table('role_user')->whereIn('role_id', [1, 13, 15])->get();
-                } else {
-                    $alertReceiver = DB::table('role_user')->whereIn('role_id', [1, 13])->get();
-                }
                 $receiverArray = [];
-                $checkDeptOfStaff = TeachingStaff::where(['user_name_id' => $request->user_name_id])->first();
-                if ($checkDeptOfStaff != '') {
-                    $dept = $checkDeptOfStaff->Dept;
-                    $getHOD = DB::table('role_user')->where(['role_id' => 14])->get();
-                    if (count($getHOD) > 0) {
-                        foreach ($getHOD as $hod) {
-                            $checkUser = User::where(['id' => $hod->user_id, 'dept' => $dept])->select('id')->get();
-                            if (count($checkUser) > 0) {
-                                foreach ($checkUser as $user) {
-                                    array_push($receiverArray, $user->id);
-                                }
-                            }
-                        }
-                    }
-                }
+                $checkDeptOfStaff = Staffs::where(['user_name_id' => $request->user_name_id])->first();
+                // if ($checkDeptOfStaff != '') {
+                //     $dept = $checkDeptOfStaff->Dept;
+                //     $getHOD = DB::table('role_user')->where(['role_id' => 14])->get();
+                //     if (count($getHOD) > 0) {
+                //         foreach ($getHOD as $hod) {
+                //             $checkUser = User::where(['id' => $hod->user_id, 'dept' => $dept])->select('id')->get();
+                //             if (count($checkUser) > 0) {
+                //                 foreach ($checkUser as $user) {
+                //                     array_push($receiverArray, $user->id);
+                //                 }
+                //             }
+                //         }
+                //     }
+                // }
 
                 if (count($alertReceiver) > 0) {
                     foreach ($alertReceiver as $receiver) {
@@ -832,7 +730,7 @@ class HrmRequestLeaveController extends Controller
 
     public function update_hr(Request $request)
     {
-
+        // dd($request);
         $who = auth()->user()->roles[0]->id;
         $mannualStatus = '';
         if ($request->data['id'] != '') {
@@ -844,102 +742,7 @@ class HrmRequestLeaveController extends Controller
                 $leaveType = '';
             }
 
-            if (($who == 14 || $who == 42) && $check_hr->level == 0) {
-                if ($request->data['status'] == 'Approved') {
-
-                    $action = HrmRequestLeaf::where(['id' => $request->data['id']])->update([
-                        'level' => 1,
-                        'approved_by' => auth()->user()->name,
-                    ]);
-
-                    $update_level = 1;
-                } elseif ($request->data['status'] == 'Rejected') {
-
-                    $updatedAction = HrmRequestLeaf::find($request->data['id']);
-
-                    if ($updatedAction != '') {
-                        $from_date = $updatedAction->from_date;
-                        $to_date = $updatedAction->to_date;
-                        $from_id = $updatedAction->user_id;
-                    } else {
-                        $from_date = null;
-                        $to_date = null;
-                        $from_id = null;
-                    }
-
-                    if ($from_id != null) {
-                        $get_alterData = StaffAlteration::where(['from_id' => $from_id, 'from_date' => $from_date, 'to_date' => $to_date])->get();
-
-                        if (count($get_alterData) > 0) {
-                            foreach ($get_alterData as $data) {
-
-                                $updateAlteration = StaffAlteration::where(['id' => $data['id']])->update(['status' => '2', 'approval' => '2']);
-                                $updateAlterRegister = StaffAlterationRegister::where(['from_date' => $data['from_date'], 'to_date' => $data['to_date'], 'staff_id' => $data['from_id'], 'alter_staffid' => $data['to_id'], 'period' => $data['period'], 'day' => $data['day'], 'class_name' => $data['classname']])->update([
-                                    'deleted_at' => Carbon::now(),
-                                ]);
-                            }
-                        }
-                    } else {
-                        return response()->json(['status' => 'Technical Error']);
-                    }
-
-                    $action = HrmRequestLeaf::where(['id' => $request->data['id']])->update([
-                        'level' => 0,
-                        'status' => $request->data['status'],
-                        'rejected_reason' => $request->data['rejected_reason'],
-                        'approved_by' => auth()->user()->name,
-                    ]);
-
-                    $update_level = 0;
-
-                    $userAlert = new UserAlert;
-                    $userAlert->alert_text = 'HOD Rejected Your ' . $leaveType . ' Request';
-                    $userAlert->alert_link = url('admin/staff-request-leaves/staff_index');
-                    $userAlert->save();
-                    $userAlert->users()->sync($updatedAction->user_id);
-                } elseif ($request->data['status'] == 'NeedClarification') {
-                    $updatedAction = HrmRequestLeaf::find($request->data['id']);
-
-                    if ($updatedAction != '') {
-                        $from_date = $updatedAction->from_date;
-                        $to_date = $updatedAction->to_date;
-                        $from_id = $updatedAction->user_id;
-                    } else {
-                        $from_date = null;
-                        $to_date = null;
-                        $from_id = null;
-                    }
-
-                    if ($from_id != null) {
-                        $get_alterData = StaffAlteration::where(['from_id' => $from_id, 'from_date' => $from_date, 'to_date' => $to_date])->get();
-
-                        if (count($get_alterData) > 0) {
-                            foreach ($get_alterData as $data) {
-
-                                $updateAlteration = StaffAlteration::where(['id' => $data['id']])->update(['status' => '2', 'approval' => '2']);
-                                $updateAlterRegister = StaffAlterationRegister::where(['from_date' => $data['from_date'], 'to_date' => $data['to_date'], 'staff_id' => $data['from_id'], 'alter_staffid' => $data['to_id'], 'period' => $data['period'], 'day' => $data['day'], 'class_name' => $data['classname']])->update([
-                                    'deleted_at' => Carbon::now(),
-                                ]);
-                            }
-                        }
-                    } else {
-                        return response()->json(['status' => 'Technical Error']);
-                    }
-
-                    $action = HrmRequestLeaf::where(['id' => $request->data['id']])->update([
-                        'level' => 99,
-                        'status' => $request->data['status'],
-                        'clarification_reason' => $request->data['clarification_reason'],
-                        'approved_by' => auth()->user()->name,
-                    ]);
-
-                    $userAlert = new UserAlert;
-                    $userAlert->alert_text = 'HOD Need Clarification For Your ' . $leaveType . ' Request';
-                    $userAlert->alert_link = url('admin/staff-request-leaves/staff_index');
-                    $userAlert->save();
-                    $userAlert->users()->sync($updatedAction->user_id);
-                }
-            } elseif ($who == 15 || $who == 1 || $who == 13) {
+            if ($who == 1 || $who == 2 || $who == 3) {
                 if ($request->data['status'] == 'Approved') {
                     $update_level = 2;
                     $mannualStatus = $request->data['status'];
@@ -1000,6 +803,7 @@ class HrmRequestLeaveController extends Controller
                 // $update_hr = true; // Test
                 if ($update_hr) {
                     $get = HrmRequestLeaf::where(['id' => $request->data['id']])->first();
+                    // dd($get);
                     if ($get->status == 'NeedClarification') {
                         $userAlert = new UserAlert;
                         $userAlert->alert_text = $who . ' Need Clarification For Your ' . $leaveType . ' Request';
@@ -1023,3786 +827,56 @@ class HrmRequestLeaveController extends Controller
                     $get_from_date = Carbon::parse($get->from_date)->month;
                     $get_to_date = Carbon::parse($get->to_date)->month;
                     // $get->status = 'Approved'; // Test
-                    if ($get->status == 'Approved' && auth()->user()->roles[0]->id == 13) {
-                        $teaching_staff_get = TeachingStaff::where(['user_name_id' => $get->user_id])->select('casual_leave', 'past_casual_leave', 'subtracted_cl', 'casual_leave_taken', 'user_name_id')->first();
+                    if ($get->status == 'Approved' && (auth()->user()->roles[0]->id == 1 || auth()->user()->roles[0]->id == 2 || auth()->user()->roles[0]->id == 3)) {
+                        // dd($get->status);
 
-                        if ($teaching_staff_get == '' || $teaching_staff_get == null) {
-                            $non_tech_staff = NonTeachingStaff::where(['user_name_id' => $get->user_id])->select('casual_leave', 'past_casual_leave', 'subtracted_cl', 'casual_leave_taken', 'user_name_id')->first();
-                            $teaching_staff_get = $non_tech_staff;
-                        }
+                        $teaching_staff_get = Staffs::where(['user_name_id' => $get->user_id])->first();
+
                         $first_date = $get->from_date;
                         $last_date = $get->to_date;
-
+                        $isHalfDay = $get->half_day_leave == null ? false : true;
                         if ($get->leave_type == 1) {
-                            $forward = false;
-                            $getDOJ = ExperienceDetail::where(['user_name_id' => $get->user_id])->select('doj')->first();
-                            if ($getDOJ != '' && $getDOJ->doj != null) {
-                                $theDoj = Carbon::parse($getDOJ->doj);
-                                $month = $theDoj->month;
-                                $year = $theDoj->year;
-                                if ($month < 12) {
-                                    $theMonth = $month + 1;
-                                    $theYear = $year;
-                                } else {
-                                    $theMonth = 1;
-                                    $theYear = $year + 1;
-                                }
-                                $checkableMonth = $theYear . '-' . $theMonth;
-                                $nextMonth25th = Carbon::parse($checkableMonth)->day(25);
-                                $dateToCheck = Carbon::now();
-                                if ($dateToCheck->gt($nextMonth25th)) {
-                                    $forward = true;
-                                } else {
-                                    $forward = false;
+                            if ($isHalfDay) {
+                                $currentDates = [];
+                                $first_date = $get->half_day_leave;
+                                $last_date = $get->half_day_leave;
+                                $halfDay = true;
+                                $cl_deduct = 0.5;
+                                $dates = Carbon::parse($first_date)->daysUntil($last_date);
+                                foreach ($dates as $date) {
+                                    array_push($currentDates, $date->format('Y-m-d'));
                                 }
                             } else {
-                                $forward = true;
+                                $currentDates = [];
+                                $date1 = Carbon::parse($get->from_date);
+                                $date2 = Carbon::parse($get->to_date);
+
+                                $diffInDays = $date1->diffInDays($date2) + 1;
+                                $dates = Carbon::parse($first_date)->daysUntil($last_date);
+                                $cl_deduct = 1;
+                                foreach ($dates as $date) {
+                                    array_push($currentDates, $date->format('Y-m-d'));
+                                }
                             }
-                            if ($forward == true) {
-                                if ($teaching_staff_get->casual_leave > 0 || $teaching_staff_get->past_casual_leave > 0) {
-                                    $leaveDaysCurrent = 0;
-                                    $leaveDaysPast = 0;
-                                    $thisMonth = false;
-                                    $pastMonth = false;
-                                    $lateApprove = false;
-                                    $leave_days = 0;
-                                    $halfDay = false;
-                                    if ($first_date == null) {
-                                        $first_date = $get->half_day_leave;
-                                        $last_date = $get->half_day_leave;
-                                        $halfDay = true;
-                                    }
-                                    $fromMonth = Carbon::parse($first_date)->month;
-                                    $fromYear = Carbon::parse($first_date)->year;
-                                    $toMonth = Carbon::parse($last_date)->month;
-                                    $toYear = Carbon::parse($last_date)->year;
-                                    $currentMonth = Carbon::now()->month;
-                                    $currentYear = Carbon::now()->year;
-                                    $currentDate = (int) Carbon::now()->format('d');
-                                    // $currentDate = 25;
-                                    $getFromDate = (int) Carbon::parse($first_date)->format('d');
-                                    $getToDate = (int) Carbon::parse($last_date)->format('d');
-                                    $month = Carbon::parse($first_date)->month;
 
-                                    $leaveInCurrent = 0;
-                                    $leaveInPast = 0;
-                                    $pastDates = [];
-                                    $currentDates = [];
+                            if ($teaching_staff_get->casual_leave > 0) {
 
-                                    if ($fromMonth == $toMonth) {
-
-                                        if ($fromMonth == $currentMonth) {
-                                            if ($getFromDate <= 25 && $getToDate <= 25) {
-                                                if ($currentDate > 25) {
-                                                    $dates = Carbon::parse($first_date)->daysUntil($last_date);
-                                                    foreach ($dates as $date) {
-                                                        array_push($pastDates, $date->format('Y-m-d'));
-                                                    }
-                                                    $leaveInPast += $check_hr->total_days;
-                                                    $thisMonth = true;
-                                                } else {
-                                                    $dates = Carbon::parse($first_date)->daysUntil($last_date);
-                                                    foreach ($dates as $date) {
-                                                        array_push($currentDates, $date->format('Y-m-d'));
-                                                    }
-                                                    $leaveInCurrent += $check_hr->total_days;
-                                                }
-                                            } elseif ($getFromDate > 25 && $getToDate > 25) {
-                                                if ($currentDate > 25) {
-                                                    $dates = Carbon::parse($first_date)->daysUntil($last_date);
-                                                    foreach ($dates as $date) {
-                                                        array_push($currentDates, $date->format('Y-m-d'));
-                                                    }
-                                                    $leaveInCurrent += $check_hr->total_days;
-                                                }
-                                            } else {
-                                                $theFromLeaveDays = (25 - $getFromDate) + 1;
-                                                $theToLeaveDays = $getToDate - 25;
-                                                if ($theFromLeaveDays > 0) {
-                                                    if ($getFromDate > 25) {
-                                                        if ($currentDate > 25) {
-                                                            $leaveInCurrent += $theFromLeaveDays;
-                                                            for ($i = $getFromDate; $i <= 25; $i++) {
-                                                                $makeDate = Carbon::createFromDate($fromYear, $fromMonth, $i);
-                                                                $formattedDate = $makeDate->format('Y-m-d');
-                                                                array_push($currentDates, $formattedDate);
-                                                            }
-                                                        } else {
-                                                            $thisMonth = true;
-                                                            $leaveInPast += $theFromLeaveDays;
-                                                            for ($i = $getFromDate; $i <= 25; $i++) {
-                                                                $makeDate = Carbon::createFromDate($fromYear, $fromMonth, $i);
-                                                                $formattedDate = $makeDate->format('Y-m-d');
-                                                                array_push($pastDates, $formattedDate);
-                                                            }
-                                                        }
-                                                    } else {
-                                                        if ($currentDate > 25) {
-                                                            $thisMonth = true;
-                                                            $leaveInPast += $theFromLeaveDays;
-                                                            for ($i = $getFromDate; $i <= 25; $i++) {
-                                                                $makeDate = Carbon::createFromDate($fromYear, $fromMonth, $i);
-                                                                $formattedDate = $makeDate->format('Y-m-d');
-                                                                array_push($pastDates, $formattedDate);
-                                                            }
-                                                        } else {
-                                                            $leaveInCurrent += $theFromLeaveDays;
-                                                            for ($i = $getFromDate; $i <= 25; $i++) {
-                                                                $makeDate = Carbon::createFromDate($fromYear, $fromMonth, $i);
-                                                                $formattedDate = $makeDate->format('Y-m-d');
-                                                                array_push($currentDates, $formattedDate);
-                                                            }
-                                                        }
-                                                    }
-                                                }
-                                                if ($theToLeaveDays > 0) {
-                                                    if ($currentDate > 25) {
-                                                        $leaveInCurrent += $theToLeaveDays;
-                                                        for ($i = 26; $i <= $getToDate; $i++) {
-                                                            $makeDate = Carbon::createFromDate($toYear, $toMonth, $i);
-                                                            $formattedDate = $makeDate->format('Y-m-d');
-                                                            array_push($currentDates, $formattedDate);
-                                                        }
-                                                    }
-                                                }
-                                            }
-                                        } else if ((int) $fromMonth < (int) $currentMonth) {
-                                            if ($fromYear <= $currentYear) {
-
-                                                if ($getFromDate <= 25 && $getToDate <= 25) {
-                                                    $pastMonth = true;
-                                                    $leaveInPast += $check_hr->total_days;
-                                                    $dates = Carbon::parse($first_date)->daysUntil($last_date);
-                                                    foreach ($dates as $date) {
-                                                        array_push($pastDates, $date->format('Y-m-d'));
-                                                    }
-                                                } elseif ($getFromDate > 25 && $getToDate > 25) {
-                                                    if ($currentDate > 25) {
-                                                        $thisMonth = true;
-                                                        $leaveInPast += $check_hr->total_days;
-                                                        $dates = Carbon::parse($first_date)->daysUntil($last_date);
-                                                        foreach ($dates as $date) {
-                                                            array_push($pastDates, $date->format('Y-m-d'));
-                                                        }
-                                                    } else {
-                                                        $leaveInCurrent += $check_hr->total_days;
-                                                        $dates = Carbon::parse($first_date)->daysUntil($last_date);
-                                                        foreach ($dates as $date) {
-                                                            array_push($currentDates, $date->format('Y-m-d'));
-                                                        }
-                                                    }
-                                                } else {
-                                                    $theFromLeaveDays = (25 - $getFromDate) + 1;
-                                                    $theToLeaveDays = $getToDate - 25;
-
-                                                    if ($theFromLeaveDays > 0) {
-                                                        if ($getFromDate > 25) {
-                                                            if ($currentDate > 25) {
-                                                                $thisMonth = true;
-                                                                $leaveInPast += $theFromLeaveDays;
-                                                                for ($i = $getFromDate; $i <= 25; $i++) {
-                                                                    $makeDate = Carbon::createFromDate($fromYear, $fromMonth, $i);
-                                                                    $formattedDate = $makeDate->format('Y-m-d');
-                                                                    array_push($pastDates, $formattedDate);
-                                                                }
-                                                            } else {
-                                                                $leaveInCurrent += $theFromLeaveDays;
-                                                                for ($i = $getFromDate; $i <= 25; $i++) {
-                                                                    $makeDate = Carbon::createFromDate($fromYear, $fromMonth, $i);
-                                                                    $formattedDate = $makeDate->format('Y-m-d');
-                                                                    array_push($currentDates, $formattedDate);
-                                                                }
-                                                            }
-                                                        } else {
-                                                            // if ($currentDate > 25) {
-                                                            $pastMonth = true;
-                                                            // } else {
-                                                            //     $thisMonth = true;
-                                                            // }
-
-                                                            $leaveInPast += $theFromLeaveDays;
-                                                            for ($i = $getFromDate; $i <= 25; $i++) {
-                                                                $makeDate = Carbon::createFromDate($fromYear, $fromMonth, $i);
-                                                                $formattedDate = $makeDate->format('Y-m-d');
-                                                                array_push($pastDates, $formattedDate);
-                                                            }
-                                                        }
-                                                    } elseif ($theFromLeaveDays == 0) {
-                                                        dd('Wrong');
-                                                    }
-                                                    if ($theToLeaveDays > 0) {
-                                                        if ($currentDate <= 25) {
-                                                            $leaveInCurrent += $theToLeaveDays;
-                                                            for ($i = 26; $i <= $getToDate; $i++) {
-                                                                $makeDate = Carbon::createFromDate($toYear, $toMonth, $i);
-                                                                $formattedDate = $makeDate->format('Y-m-d');
-                                                                array_push($currentDates, $formattedDate);
-                                                            }
-                                                        }
-                                                    }
-                                                }
-                                            } else {
-                                                if ($getFromDate <= 25 && $getToDate <= 25 && $currentDate > 25) {
-                                                    $leaveInPast += $check_hr->total_days;
-                                                    $pastMonth = true;
-                                                    for ($i = $getFromDate; $i <= $getToDate; $i++) {
-                                                        $makeDate = Carbon::createFromDate($fromYear, $fromMonth, $i);
-                                                        $formattedDate = $makeDate->format('Y-m-d');
-                                                        array_push($pastDates, $formattedDate);
-                                                    }
-                                                } else if ($getFromDate > 25 && $getToDate > 25 && $currentDate < 25) {
-                                                    $leaveInCurrent += $check_hr->total_days;
-                                                    $thisMonth = true;
-                                                    for ($i = $getFromDate; $i <= $getToDate; $i++) {
-                                                        $makeDate = Carbon::createFromDate($fromYear, $fromMonth, $i);
-                                                        $formattedDate = $makeDate->format('Y-m-d');
-                                                        array_push($pastDates, $formattedDate);
-                                                    }
-                                                } else {
-                                                    $theFromLeaveDays = (25 - $getFromDate) + 1;
-                                                    $theToLeaveDays = $getToDate - 25;
-
-                                                    if ($theFromLeaveDays > 0) {
-                                                        if ($getFromDate > 25) {
-                                                            if ($currentDate > 25) {
-                                                                $thisMonth = true;
-                                                                $leaveInPast += $theFromLeaveDays;
-                                                                for ($i = $getFromDate; $i <= 25; $i++) {
-                                                                    $makeDate = Carbon::createFromDate($fromYear, $fromMonth, $i);
-                                                                    $formattedDate = $makeDate->format('Y-m-d');
-                                                                    array_push($pastDates, $formattedDate);
-                                                                }
-                                                            } else {
-                                                                $leaveInCurrent += $theFromLeaveDays;
-                                                                for ($i = $getFromDate; $i <= 25; $i++) {
-                                                                    $makeDate = Carbon::createFromDate($fromYear, $fromMonth, $i);
-                                                                    $formattedDate = $makeDate->format('Y-m-d');
-                                                                    array_push($currentDates, $formattedDate);
-                                                                }
-                                                            }
-                                                        } else {
-                                                            // if ($currentDate > 25) {
-                                                            $pastMonth = true;
-                                                            // } else {
-                                                            // $thisMonth = true;
-                                                            // }
-                                                            $leaveInPast += $theFromLeaveDays;
-                                                            for ($i = $getFromDate; $i <= 25; $i++) {
-                                                                $makeDate = Carbon::createFromDate($fromYear, $fromMonth, $i);
-                                                                $formattedDate = $makeDate->format('Y-m-d');
-                                                                array_push($pastDates, $formattedDate);
-                                                            }
-                                                        }
-                                                    } elseif ($theFromLeaveDays == 0) {
-                                                        dd('Wrong');
-                                                    }
-                                                    if ($theToLeaveDays > 0) {
-                                                        if ($currentDate <= 25) {
-                                                            $leaveInCurrent += $theToLeaveDays;
-                                                            for ($i = 26; $i <= $getToDate; $i++) {
-                                                                $makeDate = Carbon::createFromDate($toYear, $toMonth, $i);
-                                                                $formattedDate = $makeDate->format('Y-m-d');
-                                                                array_push($currentDates, $formattedDate);
-                                                            }
-                                                        }
-                                                    }
-                                                }
-                                            }
-                                        } else if ((int) $fromMonth > (int) $currentMonth) {
-                                            if ($fromYear < $currentYear) {
-                                                // dd($getFromDate > 25 && $getToDate > 25);
-                                                if ($getFromDate <= 25 && $getToDate <= 25) {
-                                                    $pastMonth = true;
-                                                    $leaveInPast += $check_hr->total_days;
-                                                    $dates = Carbon::parse($first_date)->daysUntil($last_date);
-                                                    foreach ($dates as $date) {
-                                                        array_push($pastDates, $date->format('Y-m-d'));
-                                                    }
-                                                } elseif ($getFromDate > 25 && $getToDate > 25) {
-                                                    if ($currentDate > 25) {
-                                                        $thisMonth = true;
-                                                        $leaveInPast += $check_hr->total_days;
-                                                        $dates = Carbon::parse($first_date)->daysUntil($last_date);
-                                                        foreach ($dates as $date) {
-                                                            array_push($pastDates, $date->format('Y-m-d'));
-                                                        }
-                                                    } else {
-                                                        $leaveInCurrent += $check_hr->total_days;
-                                                        $dates = Carbon::parse($first_date)->daysUntil($last_date);
-                                                        foreach ($dates as $date) {
-                                                            array_push($currentDates, $date->format('Y-m-d'));
-                                                        }
-                                                    }
-                                                } else {
-                                                    $theFromLeaveDays = (25 - $getFromDate) + 1;
-                                                    $theToLeaveDays = $getToDate - 25;
-
-                                                    if ($theFromLeaveDays > 0) {
-                                                        if ($getFromDate > 25) {
-                                                            if ($currentDate > 25) {
-                                                                $thisMonth = true;
-                                                                $leaveInPast += $theFromLeaveDays;
-                                                                for ($i = $getFromDate; $i <= 25; $i++) {
-                                                                    $makeDate = Carbon::createFromDate($fromYear, $fromMonth, $i);
-                                                                    $formattedDate = $makeDate->format('Y-m-d');
-                                                                    array_push($pastDates, $formattedDate);
-                                                                }
-                                                            } else {
-                                                                $leaveInCurrent += $theFromLeaveDays;
-                                                                for ($i = $getFromDate; $i <= 25; $i++) {
-                                                                    $makeDate = Carbon::createFromDate($fromYear, $fromMonth, $i);
-                                                                    $formattedDate = $makeDate->format('Y-m-d');
-                                                                    array_push($currentDates, $formattedDate);
-                                                                }
-                                                            }
-                                                        } else {
-                                                            // if ($currentDate > 25) {
-                                                            $pastMonth = true;
-                                                            // } else {
-                                                            //     $thisMonth = true;
-                                                            // }
-
-                                                            $leaveInPast += $theFromLeaveDays;
-                                                            for ($i = $getFromDate; $i <= 25; $i++) {
-                                                                $makeDate = Carbon::createFromDate($fromYear, $fromMonth, $i);
-                                                                $formattedDate = $makeDate->format('Y-m-d');
-                                                                array_push($pastDates, $formattedDate);
-                                                            }
-                                                        }
-                                                    } elseif ($theFromLeaveDays == 0) {
-                                                        dd('Wrong');
-                                                    }
-                                                    if ($theToLeaveDays > 0) {
-                                                        if ($currentDate <= 25) {
-                                                            $leaveInCurrent += $theToLeaveDays;
-                                                            for ($i = 26; $i <= $getToDate; $i++) {
-                                                                $makeDate = Carbon::createFromDate($toYear, $toMonth, $i);
-                                                                $formattedDate = $makeDate->format('Y-m-d');
-                                                                array_push($currentDates, $formattedDate);
-                                                            }
-                                                        }
-                                                    }
-                                                }
-                                            } else if ($fromYear == $currentYear) {
-                                                if ($currentDate >= 26) {
-                                                    if ($getFromDate <= 25 && $getToDate <= 25) {
-                                                        $thisMonth = true;
-                                                        $leaveInCurrent += $check_hr->total_days;
-                                                        $dates = Carbon::parse($first_date)->daysUntil($last_date);
-                                                        foreach ($dates as $date) {
-                                                            array_push($currentDates, $date->format('Y-m-d'));
-                                                        }
-                                                    }
-                                                }
-                                            }
-                                        }
-                                    } else {
-                                        if ($fromMonth == $currentMonth) {
-                                            if ($getFromDate > 25 && $getToDate <= 25) {
-                                                $getLastDay = (int) Carbon::parse($first_date)->lastOfMonth()->format('d');
-                                                $theDays = ($getLastDay - (int) $getFromDate) + (int) $getToDate + 1;
-                                                if ($currentDate > 25) {
-                                                    $leaveInCurrent += $theDays;
-                                                    $getDayOfMonth = Carbon::createFromDate($year, $month, 1);
-                                                    $daysInMonth = $getDayOfMonth->daysInMonth;
-                                                    for ($i = $getFromDate; $i <= $daysInMonth; $i++) {
-                                                        $makeDate = Carbon::createFromDate($fromYear, $fromMonth, $i);
-                                                        $formattedDate = $makeDate->format('Y-m-d');
-                                                        array_push($currentDates, $formattedDate);
-                                                    }
-                                                    for ($i = 1; $i <= $getToDate; $i++) {
-                                                        $makeDate = Carbon::createFromDate($toYear, $toMonth, $i);
-                                                        $formattedDate = $makeDate->format('Y-m-d');
-                                                        array_push($currentDates, $formattedDate);
-                                                    }
-                                                }
-                                            } elseif ($getFromDate > 25 && $getToDate > 25) {
-                                                $getLastDay = (int) Carbon::parse($first_date)->lastOfMonth()->format('d');
-                                                $theDays = ($getLastDay - (int) $getFromDate) + 25 + 1;
-                                                if ($currentDate > 25) {
-                                                    $leaveInCurrent += $theDays;
-                                                    for ($i = $getFromDate; $i <= $getLastDay; $i++) {
-                                                        $makeDate = Carbon::createFromDate($fromYear, $fromMonth, $i);
-                                                        $formattedDate = $makeDate->format('Y-m-d');
-                                                        array_push($currentDates, $formattedDate);
-                                                    }
-                                                    for ($i = 1; $i <= 25; $i++) {
-                                                        $makeDate = Carbon::createFromDate($toYear, $toMonth, $i);
-                                                        $formattedDate = $makeDate->format('Y-m-d');
-                                                        array_push($currentDates, $formattedDate);
-                                                    }
-                                                }
-                                            } elseif ($getFromDate <= 25 && $getToDate <= 25) {
-                                                $getLastDay = (int) Carbon::parse($first_date)->lastOfMonth()->format('d');
-                                                $theDays = (25 - (int) $getFromDate) + 1;
-                                                if ($currentDate > 25) {
-                                                    $leaveInPast = $theDays;
-                                                    $thisMonth = true;
-                                                    $leaveInCurrent += ($getLastDay - 25);
-                                                    for ($i = $getFromDate; $i <= 25; $i++) {
-                                                        $makeDate = Carbon::createFromDate($fromYear, $fromMonth, $i);
-                                                        $formattedDate = $makeDate->format('Y-m-d');
-                                                        array_push($pastDates, $formattedDate);
-                                                    }
-                                                    for ($i = 26; $i <= $getLastDay; $i++) {
-                                                        $makeDate = Carbon::createFromDate($fromYear, $fromMonth, $i);
-                                                        $formattedDate = $makeDate->format('Y-m-d');
-                                                        array_push($currentDates, $formattedDate);
-                                                    }
-                                                    for ($i = 1; $i <= $getToDate; $i++) {
-                                                        $makeDate = Carbon::createFromDate($toYear, $toMonth, $i);
-                                                        $formattedDate = $makeDate->format('Y-m-d');
-                                                        array_push($currentDates, $formattedDate);
-                                                    }
-                                                } else {
-                                                    $leaveInCurrent += $theDays;
-                                                    for ($i = $getFromDate; $i <= 25; $i++) {
-                                                        $makeDate = Carbon::createFromDate($fromYear, $fromMonth, $i);
-                                                        $formattedDate = $makeDate->format('Y-m-d');
-                                                        array_push($currentDates, $formattedDate);
-                                                    }
-                                                }
-                                            } elseif ($getFromDate <= 25 && $getToDate > 25) {
-                                                $getLastDay = (int) Carbon::parse($first_date)->lastOfMonth()->format('d');
-                                                $theDays = (25 - (int) $getFromDate) + 1;
-                                                $theBalanceLeaveDays = (int) $getToDate - 25;
-                                                if ($currentDate > 25) {
-                                                    $leaveInPast = $theDays;
-                                                    $thisMonth = true;
-                                                    $leaveInCurrent += ($getLastDay - 25) + 25;
-
-                                                    for ($i = $getFromDate; $i <= 25; $i++) {
-                                                        $makeDate = Carbon::createFromDate($fromYear, $fromMonth, $i);
-                                                        $formattedDate = $makeDate->format('Y-m-d');
-                                                        array_push($pastDates, $formattedDate);
-                                                    }
-                                                    for ($i = 26; $i <= $getLastDay; $i++) {
-                                                        $makeDate = Carbon::createFromDate($fromYear, $fromMonth, $i);
-                                                        $formattedDate = $makeDate->format('Y-m-d');
-                                                        array_push($currentDates, $formattedDate);
-                                                    }
-                                                    for ($i = 1; $i <= 25; $i++) {
-                                                        $makeDate = Carbon::createFromDate($toYear, $toMonth, $i);
-                                                        $formattedDate = $makeDate->format('Y-m-d');
-                                                        array_push($currentDates, $formattedDate);
-                                                    }
-                                                } else {
-                                                    $leaveInCurrent += $theDays;
-                                                    for ($i = $getFromDate; $i <= 25; $i++) {
-                                                        $makeDate = Carbon::createFromDate($fromYear, $fromMonth, $i);
-                                                        $formattedDate = $makeDate->format('Y-m-d');
-                                                        array_push($currentDates, $formattedDate);
-                                                    }
-                                                }
-                                            } else {
-                                                dd('Wrong');
-                                            }
-                                        } elseif ($toMonth == $currentMonth) {
-
-                                            if ($getFromDate > 25 && $getToDate <= 25) {
-                                                $getLastDay = (int) Carbon::parse($first_date)->lastOfMonth()->format('d');
-                                                $theDays = ($getLastDay - (int) $getFromDate) + (int) $getToDate + 1;
-                                                if ($currentDate > 25) {
-                                                    $thisMonth = true;
-                                                    $leaveInPast += $theDays;
-                                                    for ($i = $getFromDate; $i <= $getLastDay; $i++) {
-                                                        $makeDate = Carbon::createFromDate($fromYear, $fromMonth, $i);
-                                                        $formattedDate = $makeDate->format('Y-m-d');
-                                                        array_push($pastDates, $formattedDate);
-                                                    }
-                                                    for ($i = 1; $i <= $getToDate; $i++) {
-                                                        $makeDate = Carbon::createFromDate($toYear, $toMonth, $i);
-                                                        $formattedDate = $makeDate->format('Y-m-d');
-                                                        array_push($pastDates, $formattedDate);
-                                                    }
-                                                } else {
-                                                    $leaveInCurrent += $theDays;
-                                                    for ($i = $getFromDate; $i <= $getLastDay; $i++) {
-                                                        $makeDate = Carbon::createFromDate($fromYear, $fromMonth, $i);
-                                                        $formattedDate = $makeDate->format('Y-m-d');
-                                                        array_push($currentDates, $formattedDate);
-                                                    }
-                                                    for ($i = 1; $i <= $getToDate; $i++) {
-                                                        $makeDate = Carbon::createFromDate($toYear, $toMonth, $i);
-                                                        $formattedDate = $makeDate->format('Y-m-d');
-                                                        array_push($currentDates, $formattedDate);
-                                                    }
-                                                }
-                                            } elseif ($getFromDate > 25 && $getToDate > 25) {
-                                                $getLastDay = (int) Carbon::parse($first_date)->lastOfMonth()->format('d');
-                                                $theDays = ($getLastDay - (int) $getFromDate) + 25 + 1;
-                                                $theBalanceLeaveDays = (int) $getToDate - 25;
-                                                if ($currentDate > 25) {
-                                                    $leaveInPast += $theDays;
-                                                    $thisMonth = true;
-                                                    $leaveInCurrent += $theBalanceLeaveDays;
-                                                    for ($i = $getFromDate; $i <= $getLastDay; $i++) {
-                                                        $makeDate = Carbon::createFromDate($fromYear, $fromMonth, $i);
-                                                        $formattedDate = $makeDate->format('Y-m-d');
-                                                        array_push($pastDates, $formattedDate);
-                                                    }
-                                                    for ($i = 1; $i <= 25; $i++) {
-                                                        $makeDate = Carbon::createFromDate($toYear, $toMonth, $i);
-                                                        $formattedDate = $makeDate->format('Y-m-d');
-                                                        array_push($pastDates, $formattedDate);
-                                                    }
-                                                    for ($i = 26; $i <= $getToDate; $i++) {
-                                                        $makeDate = Carbon::createFromDate($toYear, $toMonth, $i);
-                                                        $formattedDate = $makeDate->format('Y-m-d');
-                                                        array_push($currentDates, $formattedDate);
-                                                    }
-                                                } else {
-                                                    $leaveInCurrent += $theDays;
-                                                    for ($i = $getFromDate; $i <= $getLastDay; $i++) {
-                                                        $makeDate = Carbon::createFromDate($fromYear, $fromMonth, $i);
-                                                        $formattedDate = $makeDate->format('Y-m-d');
-                                                        array_push($currentDates, $formattedDate);
-                                                    }
-                                                    for ($i = 1; $i <= 25; $i++) {
-                                                        $makeDate = Carbon::createFromDate($toYear, $toMonth, $i);
-                                                        $formattedDate = $makeDate->format('Y-m-d');
-                                                        array_push($currentDates, $formattedDate);
-                                                    }
-                                                }
-                                            } elseif ($getFromDate <= 25 && $getToDate <= 25) {
-                                                $getLastDay = (int) Carbon::parse($first_date)->lastOfMonth()->format('d');
-                                                $theDays = (25 - (int) $getFromDate) + 1;
-                                                $theBalanceLeaveDays = (int) $getToDate;
-                                                if ($currentDate > 25) {
-                                                    $pastMonth = true;
-                                                    $leaveInPast = $theDays + ($getLastDay - 25) + $theBalanceLeaveDays;
-
-                                                    for ($i = $getFromDate; $i <= $getLastDay; $i++) {
-                                                        $makeDate = Carbon::createFromDate($fromYear, $fromMonth, $i);
-                                                        $formattedDate = $makeDate->format('Y-m-d');
-                                                        array_push($pastDates, $formattedDate);
-                                                    }
-                                                    for ($i = 1; $i <= $getToDate; $i++) {
-                                                        $makeDate = Carbon::createFromDate($toYear, $toMonth, $i);
-                                                        $formattedDate = $makeDate->format('Y-m-d');
-                                                        array_push($pastDates, $formattedDate);
-                                                    }
-                                                } else {
-                                                    $leaveInPast += $theDays;
-                                                    $thisMonth = true;
-                                                    $leaveInCurrent += ($getLastDay - 25) + $theBalanceLeaveDays;
-                                                    for ($i = $getFromDate; $i <= 25; $i++) {
-                                                        $makeDate = Carbon::createFromDate($fromYear, $fromMonth, $i);
-                                                        $formattedDate = $makeDate->format('Y-m-d');
-                                                        array_push($pastDates, $formattedDate);
-                                                    }
-                                                    for ($i = 26; $i <= $getLastDay; $i++) {
-                                                        $makeDate = Carbon::createFromDate($fromYear, $fromMonth, $i);
-                                                        $formattedDate = $makeDate->format('Y-m-d');
-                                                        array_push($pastDates, $formattedDate);
-                                                    }
-                                                    for ($i = 1; $i <= $getToDate; $i++) {
-                                                        $makeDate = Carbon::createFromDate($toYear, $toMonth, $i);
-                                                        $formattedDate = $makeDate->format('Y-m-d');
-                                                        array_push($currentDates, $formattedDate);
-                                                    }
-                                                }
-                                            } elseif ($getFromDate <= 25 && $getToDate > 25) {
-                                                $getLastDay = (int) Carbon::parse($first_date)->lastOfMonth()->format('d');
-                                                $theDays = (25 - (int) $getFromDate) + 1;
-                                                $theBalanceLeaveDays = (int) $getToDate - 25;
-                                                if ($currentDate > 25) {
-                                                    $pastMonth = true;
-                                                    $leaveInPast = $theDays + ($getLastDay - 25) + 25;
-                                                    $leaveInCurrent += $theBalanceLeaveDays;
-
-                                                    for ($i = $getFromDate; $i <= $getLastDay; $i++) {
-                                                        $makeDate = Carbon::createFromDate($fromYear, $fromMonth, $i);
-                                                        $formattedDate = $makeDate->format('Y-m-d');
-                                                        array_push($pastDates, $formattedDate);
-                                                    }
-                                                    for ($i = 1; $i <= 25; $i++) {
-                                                        $makeDate = Carbon::createFromDate($toYear, $toMonth, $i);
-                                                        $formattedDate = $makeDate->format('Y-m-d');
-                                                        array_push($pastDates, $formattedDate);
-                                                    }
-                                                    for ($i = 26; $i <= $getToDate; $i++) {
-                                                        $makeDate = Carbon::createFromDate($toYear, $toMonth, $i);
-                                                        $formattedDate = $makeDate->format('Y-m-d');
-                                                        array_push($currentDates, $formattedDate);
-                                                    }
-                                                } else {
-                                                    $thisMonth = true;
-                                                    $leaveInPast += $theDays;
-                                                    $leaveInCurrent += ($getLastDay - 25) + 25;
-                                                    for ($i = $getFromDate; $i <= 25; $i++) {
-                                                        $makeDate = Carbon::createFromDate($fromYear, $frotmMonth, $i);
-                                                        $formattedDate = $makeDate->format('Y-m-d');
-                                                        array_push($pastDates, $formattedDate);
-                                                    }
-                                                    for ($i = 26; $i <= $getLastDay; $i++) {
-                                                        $makeDate = Carbon::createFromDate($fromYear, $fromMonth, $i);
-                                                        $formattedDate = $makeDate->format('Y-m-d');
-                                                        array_push($currentDates, $formattedDate);
-                                                    }
-                                                    for ($i = 1; $i <= 25; $i++) {
-                                                        $makeDate = Carbon::createFromDate($toYear, $toMonth, $i);
-                                                        $formattedDate = $makeDate->format('Y-m-d');
-                                                        array_push($currentDates, $formattedDate);
-                                                    }
-                                                }
-                                            } else {
-                                                dd('Wrong');
-                                            }
-                                        } elseif ($fromMonth < $currentMonth && $toMonth < $currentMonth) {
-
-                                            $getLastDay = (int) Carbon::parse($first_date)->lastOfMonth()->format('d');
-                                            $pastMonth = true;
-                                            $theDays = ($getLastDay - (int) $getFromDate) + (int) $getToDate + 1;
-                                            $leaveInPast += $theDays;
-
-                                            for ($i = $getFromDate; $i <= $getLastDay; $i++) {
-                                                $makeDate = Carbon::createFromDate($fromYear, $fromMonth, $i);
-                                                $formattedDate = $makeDate->format('Y-m-d');
-                                                array_push($pastDates, $formattedDate);
-                                            }
-                                            for ($i = 1; $i <= $getToDate; $i++) {
-                                                $makeDate = Carbon::createFromDate($toYear, $toMonth, $i);
-                                                $formattedDate = $makeDate->format('Y-m-d');
-                                                array_push($pastDates, $formattedDate);
-                                            }
-                                            $lateApprove = true;
-                                        }
-                                    }
-                                    if ($halfDay == true) {
-                                        if ($leaveInCurrent > 0) {
-                                            $leaveInCurrent = 0.5;
-                                        } elseif ($leaveInPast > 0) {
-                                            $leaveInPast = 0.5;
-                                        }
-                                    }
-
-                                    if ($leaveInCurrent > 0 && $leaveInPast == 0) {
-                                        if ($fromMonth == $toMonth) {
-                                            $dateToCheck_From = Carbon::create(null, $month - 1, 25);
-                                            $dateToCheck_FromForHalf = Carbon::create(null, $month - 1, 26);
-                                            $dateToCheck_To = Carbon::create(null, $month, 25);
-                                        } else {
-                                            $dateToCheck_From = Carbon::create(null, $month, 25);
-                                            $dateToCheck_FromForHalf = Carbon::create(null, $month, 26);
-                                            $dateToCheck_To = Carbon::create(null, $month + 1, 25);
-                                        }
-
-                                        $check_the_month = HrmRequestLeaf::where('from_date', '>', $dateToCheck_From)->where('to_date', '<=', $dateToCheck_To)->where(['leave_type' => 1, 'status' => 'Approved', 'user_id' => $check_hr->user_id])->whereNot('id', $check_hr->id)->get();
-                                        $check_the_month_1 = HrmRequestLeaf::where('from_date', '<=', $dateToCheck_From)->where('to_date', '>', $dateToCheck_From)->where(['leave_type' => 1, 'status' => 'Approved', 'user_id' => $check_hr->user_id])->whereNot('id', $check_hr->id)->get();
-                                        $check_the_month_2 = HrmRequestLeaf::whereBetween('half_day_leave', [$dateToCheck_FromForHalf, $dateToCheck_To])->where(['leave_type' => 1, 'status' => 'Approved', 'user_id' => $check_hr->user_id])->whereNot('id', $check_hr->id)->get();
-
-                                        if (count($check_the_month) > 0) {
-                                            foreach ($check_the_month as $req) {
-                                                $date1 = Carbon::parse($req->from_date);
-                                                $date2 = Carbon::parse($req->to_date);
-
-                                                $diffInDays = $date1->diffInDays($date2) + 1;
-                                                $leaveDaysCurrent += $diffInDays;
-                                            }
-                                        }
-                                        if (count($check_the_month_1) > 0) {
-                                            foreach ($check_the_month_1 as $req) {
-                                                $theToDate = (int) Carbon::parse($req->to_date)->format('d');
-                                                $getDays = $theToDate - 25;
-                                                $leaveDaysCurrent += $getDays;
-                                            }
-                                        }
-                                        if (count($check_the_month_2) > 0) {
-                                            foreach ($check_the_month_2 as $req) {
-                                                $leaveDaysCurrent += 0.5;
-                                            }
-                                        }
-                                    } else if ($leaveInCurrent == 0 && $leaveInPast > 0) {
-
-                                        if ($pastMonth == true) {
-                                            $dateToCheck_From = Carbon::create(null, $month - 1, 25);
-                                            $dateToCheck_FromForHalf = Carbon::create(null, $month - 1, 26);
-                                            $dateToCheck_To = Carbon::create(null, $month, 25);
-                                        } else {
-                                            $dateToCheck_From = Carbon::create(null, $month - 1, 25);
-                                            $dateToCheck_FromForHalf = Carbon::create(null, $month - 1, 26);
-                                            $dateToCheck_To = Carbon::create(null, $month, 25);
-                                        }
-
-                                        $check_the_month = HrmRequestLeaf::where('from_date', '>', $dateToCheck_From)->where('to_date', '<=', $dateToCheck_To)->where(['leave_type' => 1, 'status' => 'Approved', 'user_id' => $check_hr->user_id])->whereNot('id', $check_hr->id)->get();
-                                        $check_the_month_1 = HrmRequestLeaf::where('from_date', '<=', $dateToCheck_From)->where('to_date', '>', $dateToCheck_From)->where(['leave_type' => 1, 'status' => 'Approved', 'user_id' => $check_hr->user_id])->whereNot('id', $check_hr->id)->get();
-                                        $check_the_month_2 = HrmRequestLeaf::whereBetween('half_day_leave', [$dateToCheck_FromForHalf, $dateToCheck_To])->where(['leave_type' => 1, 'status' => 'Approved', 'user_id' => $check_hr->user_id])->whereNot('id', $check_hr->id)->get();
-
-                                        if (count($check_the_month) > 0) {
-                                            foreach ($check_the_month as $req) {
-                                                $date1 = Carbon::parse($req->from_date);
-                                                $date2 = Carbon::parse($req->to_date);
-
-                                                $diffInDays = $date1->diffInDays($date2) + 1;
-                                                $leaveDaysPast += $diffInDays;
-                                            }
-                                        }
-                                        if (count($check_the_month_1) > 0) {
-                                            foreach ($check_the_month_1 as $req) {
-                                                $theToDate = (int) Carbon::parse($req->to_date)->format('d');
-                                                $getDays = $theToDate - 25;
-                                                $leaveDaysPast += $getDays;
-                                            }
-                                        }
-                                        if (count($check_the_month_2) > 0) {
-                                            foreach ($check_the_month_2 as $req) {
-                                                $leaveDaysPast += 0.5;
-                                            }
-                                        }
-                                    } else if ($leaveInCurrent > 0 && $leaveInPast > 0) {
-
-                                        if ($pastMonth == true) {
-
-                                            $dateToCheck_From = Carbon::create(null, $month - 1, 25);
-                                            $dateToCheck_FromForHalf = Carbon::create(null, $month - 1, 26);
-                                            $dateToCheck_To = Carbon::create(null, $month, 25);
-                                            $check_the_month = HrmRequestLeaf::where('from_date', '>', $dateToCheck_From)->where('to_date', '<=', $dateToCheck_To)->where(['leave_type' => 1, 'status' => 'Approved', 'user_id' => $check_hr->user_id])->whereNot('id', $check_hr->id)->get();
-                                            $check_the_month_1 = HrmRequestLeaf::where('from_date', '<=', $dateToCheck_From)->where('to_date', '>', $dateToCheck_From)->where(['leave_type' => 1, 'status' => 'Approved', 'user_id' => $check_hr->user_id])->whereNot('id', $check_hr->id)->get();
-                                            $check_the_month_2 = HrmRequestLeaf::whereBetween('half_day_leave', [$dateToCheck_FromForHalf, $dateToCheck_To])->where(['leave_type' => 1, 'status' => 'Approved', 'user_id' => $check_hr->user_id])->whereNot('id', $check_hr->id)->get();
-
-                                            if (count($check_the_month) > 0) {
-                                                foreach ($check_the_month as $req) {
-                                                    $date1 = Carbon::parse($req->from_date);
-                                                    $date2 = Carbon::parse($req->to_date);
-
-                                                    $diffInDays = $date1->diffInDays($date2) + 1;
-                                                    $leaveDaysPast += $diffInDays;
-                                                }
-                                            }
-                                            if (count($check_the_month_1) > 0) {
-                                                foreach ($check_the_month_1 as $req) {
-                                                    $theToDate = (int) Carbon::parse($req->to_date)->format('d');
-                                                    $getDays = $theToDate - 25;
-                                                    $leaveDaysPast += $getDays;
-                                                }
-                                            }
-                                            if (count($check_the_month_2) > 0) {
-                                                foreach ($check_the_month_2 as $req) {
-                                                    $leaveDaysPast += 0.5;
-                                                }
-                                            }
-                                        } else {
-
-                                            $dateToCheck_From = Carbon::create(null, $month - 1, 25);
-                                            $dateToCheck_FromForHalf = Carbon::create(null, $month - 1, 26);
-                                            $dateToCheck_To = Carbon::create(null, $month, 25);
-
-                                            $check_the_month = HrmRequestLeaf::where('from_date', '>', $dateToCheck_From)->where('to_date', '<=', $dateToCheck_To)->where(['leave_type' => 1, 'status' => 'Approved', 'user_id' => $check_hr->user_id])->whereNot('id', $check_hr->id)->get();
-                                            $check_the_month_1 = HrmRequestLeaf::where('from_date', '<=', $dateToCheck_From)->where('to_date', '>', $dateToCheck_From)->where(['leave_type' => 1, 'status' => 'Approved', 'user_id' => $check_hr->user_id])->whereNot('id', $check_hr->id)->get();
-                                            $check_the_month_2 = HrmRequestLeaf::whereBetween('half_day_leave', [$dateToCheck_FromForHalf, $dateToCheck_To])->where(['leave_type' => 1, 'status' => 'Approved', 'user_id' => $check_hr->user_id])->whereNot('id', $check_hr->id)->get();
-
-                                            if (count($check_the_month) > 0) {
-                                                foreach ($check_the_month as $req) {
-                                                    $date1 = Carbon::parse($req->from_date);
-                                                    $date2 = Carbon::parse($req->to_date);
-
-                                                    $diffInDays = $date1->diffInDays($date2) + 1;
-                                                    $leaveDaysCurrent += $diffInDays;
-                                                }
-                                            }
-                                            if (count($check_the_month_1) > 0) {
-                                                foreach ($check_the_month_1 as $req) {
-                                                    $theToDate = (int) Carbon::parse($req->to_date)->format('d');
-                                                    $getDays = $theToDate - 25;
-                                                    $leaveDaysCurrent += $getDays;
-                                                }
-                                            }
-                                            if (count($check_the_month_2) > 0) {
-                                                foreach ($check_the_month_2 as $req) {
-                                                    $leaveDaysCurrent += 0.5;
-                                                }
-                                            }
-                                        }
-                                    }
-                                    if ($leaveDaysCurrent >= 3) {
-                                        $clAllocatedForCurrent = '';
-                                    } else {
-                                        $clAllocatedForCurrent = $leaveDaysCurrent;
-                                    }
-                                    if ($lateApprove == true) {
-                                        $clAllocatedForPast = '';
-                                    } else {
-                                        if ($leaveDaysPast >= 3) {
-                                            $clAllocatedForPast = '';
-                                        } else {
-                                            $clAllocatedForPast = $leaveDaysPast;
-                                        }
-                                    }
-                                    if ($leaveInPast > 0) {
-                                        if ($clAllocatedForPast != 0) {
-                                            if ($clAllocatedForPast != '') {
-                                                if ($teaching_staff_get->past_casual_leave > 0) {
-
-                                                    if ($leaveInPast >= 3) {
-
-                                                        $check_cl = 3 - $clAllocatedForPast;
-
-                                                        $deduct_cl = $check_cl - $teaching_staff_get->past_casual_leave;
-
-                                                        if ($deduct_cl > 0) {
-                                                            $cl = 0;
-                                                            $subtracted_cl = $teaching_staff_get->subtracted_cl + $deduct_cl;
-
-                                                            if ($halfDay == false) {
-                                                                for ($i = 0; $i < count($pastDates); $i++) {
-                                                                    if ($i <= $deduct_cl) {
-
-                                                                        $staff_biometric = StaffBiometric::where(['date' => $pastDates[$i], 'user_name_id' => $teaching_staff_get->user_name_id])->select('id', 'details', 'update_status', 'status')->first();
-                                                                        if ($staff_biometric != '') {
-                                                                            if ($staff_biometric->details != null) {
-                                                                                $tempDetail = $staff_biometric->details;
-                                                                                if ($staff_biometric->details != 'Sunday' && $staff_biometric->details != 'Holiday') {
-                                                                                    $tempDetail = 'Casual Leave (CL Provided)';
-                                                                                }
-                                                                                $staff_biometric->status = 'Absent';
-                                                                                $staff_biometric->details = $tempDetail;
-                                                                                $staff_biometric->updated_at = Carbon::now();
-                                                                                $staff_biometric->save();
-                                                                            } else {
-                                                                                $staff_biometric->status = 'Absent';
-                                                                                $staff_biometric->details = 'Casual Leave (CL Provided)';
-                                                                                $staff_biometric->update_status = 1;
-                                                                                $staff_biometric->updated_at = Carbon::now();
-                                                                                $staff_biometric->save();
-                                                                            }
-                                                                        }
-                                                                    } else {
-                                                                        $staff_biometric = StaffBiometric::where(['date' => $pastDates[$i], 'user_name_id' => $get->user_id])->select('id', 'details', 'update_status', 'status')->first();
-                                                                        if ($staff_biometric != '') {
-                                                                            if ($staff_biometric->details != null) {
-                                                                                $tempDetail = $staff_biometric->details;
-                                                                                if ($staff_biometric->details != 'Sunday' && $staff_biometric->details != 'Holiday') {
-                                                                                    $tempDetail = 'Casual Leave';
-                                                                                }
-                                                                                $staff_biometric->status = 'Absent';
-                                                                                $staff_biometric->details = $tempDetail;
-                                                                                $staff_biometric->updated_at = Carbon::now();
-                                                                                $staff_biometric->save();
-                                                                            } else {
-                                                                                $staff_biometric->status = 'Absent';
-                                                                                $staff_biometric->details = 'Casual Leave';
-                                                                                $staff_biometric->update_status = 1;
-                                                                                $staff_biometric->updated_at = Carbon::now();
-                                                                                $staff_biometric->save();
-                                                                            }
-                                                                        }
-                                                                    }
-                                                                }
-                                                            } else {
-                                                                foreach ($pastDates as $date) {
-                                                                    $staff_biometric = StaffBiometric::where(['date' => $date, 'user_name_id' => $get->user_id])->select('id', 'details', 'update_status', 'status')->first();
-                                                                    if ($staff_biometric != '') {
-                                                                        if ($staff_biometric->details != null) {
-                                                                            $tempDetail = $staff_biometric->details;
-                                                                            $status = $staff_biometric->status;
-                                                                            if ($staff_biometric->details != 'Sunday' && $staff_biometric->details != 'Holiday') {
-                                                                                if ($get->noon == 'Fore Noon' && strpos($staff_biometric->details, 'Late') !== false) {
-                                                                                    if (strpos($staff_biometric->details, ',') !== false) {
-                                                                                        $explode = explode(',', $staff_biometric->details);
-                                                                                        if (in_array('Late', $explode)) {
-                                                                                            $theIndex = array_search('Late', $explode);
-                                                                                            unset($explode[$theIndex]);
-                                                                                        } else if (in_array('Too Late', $explode)) {
-                                                                                            $theIndex = array_search('Too Late', $explode);
-                                                                                            unset($explode[$theIndex]);
-                                                                                        }
-                                                                                        $implode = implode(',', $explode);
-                                                                                        $tempDetail = $implode . ',' . $get->noon . ' Casual Leave (CL Provided)';
-                                                                                    } else {
-                                                                                        if ($staff_biometric->details == 'Late' || $staff_biometric->details == 'Too Late') {
-                                                                                            $tempDetail = $get->noon . ' Casual Leave (CL Provided)';
-                                                                                        }
-                                                                                    }
-
-                                                                                } else if ($get->noon == 'After Noon' && strpos($staff_biometric->details, 'Early Out') !== false) {
-                                                                                    if (strpos($staff_biometric->details, ',') !== false) {
-                                                                                        $explode = explode(',', $staff_biometric->details);
-                                                                                        if (in_array('Early Out', $explode)) {
-                                                                                            $theIndex = array_search('Early Out', $explode);
-                                                                                            unset($explode[$theIndex]);
-                                                                                            $status = 'Present';
-                                                                                        }
-                                                                                        $implode = implode(',', $explode);
-                                                                                        $tempDetail = $implode . ',' . $get->noon . ' Casual Leave (CL Provided)';
-                                                                                    } else {
-                                                                                        if ($staff_biometric->details == 'Early Out') {
-                                                                                            $tempDetail = $get->noon . ' Casual Leave (CL Provided)';
-                                                                                            $status = 'Present';
-                                                                                        }
-                                                                                    }
-                                                                                }
-                                                                            }
-                                                                            //$staff_biometric->status = 'Present';
-                                                                            $staff_biometric->details = $tempDetail;
-                                                                            $staff_biometric->updated_at = Carbon::now();
-                                                                            $staff_biometric->status = $status;
-                                                                            $staff_biometric->save();
-                                                                        } else {
-                                                                            //$staff_biometric->status = 'Present';
-                                                                            $staff_biometric->details = $get->noon . ' Casual Leave (CL Provided)';
-                                                                            $staff_biometric->update_status = 1;
-                                                                            $staff_biometric->updated_at = Carbon::now();
-                                                                            $staff_biometric->save();
-                                                                        }
-                                                                    }
-                                                                }
-                                                            }
-
-                                                            $check_teaching_staff = TeachingStaff::where(['user_name_id' => $get->user_id])->get();
-
-                                                            if (count($check_teaching_staff) > 0) {
-                                                                $teaching_staff = TeachingStaff::where(['user_name_id' => $get->user_id])->update([
-                                                                    'subtracted_cl' => $subtracted_cl,
-                                                                    'past_casual_leave' => $cl,
-                                                                    'casual_leave' => $cl,
-                                                                ]);
-                                                            } else {
-                                                                $non_teaching_staff = NonTeachingStaff::where(['user_name_id' => $get->user_id])->update([
-                                                                    'subtracted_cl' => $subtracted_cl,
-                                                                    'past_casual_leave' => $cl,
-                                                                    'casual_leave' => $cl,
-                                                                ]);
-                                                            }
-                                                        } else {
-                                                            $cl = abs($deduct_cl);
-                                                            $subtracted_cl = $teaching_staff_get->subtracted_cl + $check_cl;
-
-                                                            if ($halfDay == false) {
-                                                                for ($i = 0; $i < count($pastDates); $i++) {
-                                                                    if ($i <= $check_cl) {
-
-                                                                        $staff_biometric = StaffBiometric::where(['date' => $pastDates[$i], 'user_name_id' => $get->user_id])->select('id', 'details', 'update_status', 'status')->first();
-                                                                        if ($staff_biometric != '') {
-                                                                            if ($staff_biometric->details != null) {
-                                                                                $tempDetail = $staff_biometric->details;
-                                                                                if ($staff_biometric->details != 'Sunday' && $staff_biometric->details != 'Holiday') {
-                                                                                    $tempDetail = 'Casual Leave (CL Provided)';
-                                                                                }
-                                                                                $staff_biometric->status = 'Absent';
-                                                                                $staff_biometric->details = $tempDetail;
-                                                                                $staff_biometric->updated_at = Carbon::now();
-                                                                                $staff_biometric->save();
-                                                                            } else {
-
-                                                                                $staff_biometric->status = 'Absent';
-                                                                                $staff_biometric->details = 'Casual Leave (CL Provided)';
-                                                                                $staff_biometric->update_status = 1;
-                                                                                $staff_biometric->updated_at = Carbon::now();
-                                                                                $staff_biometric->save();
-                                                                            }
-                                                                        }
-                                                                    } else {
-
-                                                                        $staff_biometric = StaffBiometric::where(['date' => $pastDates[$i], 'user_name_id' => $get->user_id])->select('id', 'details', 'update_status', 'status')->first();
-                                                                        if ($staff_biometric != '') {
-                                                                            if ($staff_biometric->details != null) {
-                                                                                $tempDetail = $staff_biometric->details;
-                                                                                if ($staff_biometric->details != 'Sunday' && $staff_biometric->details != 'Holiday') {
-                                                                                    $tempDetail = 'Casual Leave';
-                                                                                }
-                                                                                $staff_biometric->status = 'Absent';
-                                                                                $staff_biometric->details = $tempDetail;
-                                                                                $staff_biometric->updated_at = Carbon::now();
-                                                                                $staff_biometric->save();
-                                                                            } else {
-
-                                                                                $staff_biometric->status = 'Absent';
-                                                                                $staff_biometric->details = 'Casual Leave';
-                                                                                $staff_biometric->update_status = 1;
-                                                                                $staff_biometric->updated_at = Carbon::now();
-                                                                                $staff_biometric->save();
-                                                                            }
-                                                                        }
-                                                                    }
-                                                                }
-                                                            } else {
-                                                                foreach ($pastDates as $date) {
-                                                                    $staff_biometric = StaffBiometric::where(['date' => $date, 'user_name_id' => $get->user_id])->select('id', 'details', 'update_status', 'status')->first();
-                                                                    if ($staff_biometric != '') {
-                                                                        if ($staff_biometric->details != null) {
-                                                                            $tempDetail = $staff_biometric->details;
-                                                                            $status = $staff_biometric->status;
-                                                                            if ($staff_biometric->details != 'Sunday' && $staff_biometric->details != 'Holiday') {
-                                                                                if ($get->noon == 'Fore Noon' && strpos($staff_biometric->details, 'Late') !== false) {
-                                                                                    if (strpos($staff_biometric->details, ',') !== false) {
-                                                                                        $explode = explode(',', $staff_biometric->details);
-                                                                                        if (in_array('Late', $explode)) {
-                                                                                            $theIndex = array_search('Late', $explode);
-                                                                                            unset($explode[$theIndex]);
-                                                                                        } else if (in_array('Too Late', $explode)) {
-                                                                                            $theIndex = array_search('Too Late', $explode);
-                                                                                            unset($explode[$theIndex]);
-                                                                                        }
-                                                                                        $implode = implode(',', $explode);
-                                                                                        $tempDetail = $implode . ',' . $get->noon . ' Casual Leave (CL Provided)';
-                                                                                    } else {
-                                                                                        if ($staff_biometric->details == 'Late' || $staff_biometric->details == 'Too Late') {
-                                                                                            $tempDetail = $get->noon . ' Casual Leave (CL Provided)';
-                                                                                        }
-                                                                                    }
-
-                                                                                } else if ($get->noon == 'After Noon' && strpos($staff_biometric->details, 'Early Out') !== false) {
-                                                                                    if (strpos($staff_biometric->details, ',') !== false) {
-                                                                                        $explode = explode(',', $staff_biometric->details);
-                                                                                        if (in_array('Early Out', $explode)) {
-                                                                                            $theIndex = array_search('Early Out', $explode);
-                                                                                            unset($explode[$theIndex]);
-                                                                                            $status = 'Present';
-                                                                                        }
-                                                                                        $implode = implode(',', $explode);
-                                                                                        $tempDetail = $implode . ',' . $get->noon . ' Casual Leave (CL Provided)';
-                                                                                    } else {
-                                                                                        if ($staff_biometric->details == 'Early Out') {
-                                                                                            $tempDetail = $get->noon . ' Casual Leave (CL Provided)';
-                                                                                            $status = 'Present';
-                                                                                        }
-                                                                                    }
-                                                                                }
-                                                                            }
-                                                                            //$staff_biometric->status = 'Present';
-                                                                            $staff_biometric->details = $tempDetail;
-                                                                            $staff_biometric->updated_at = Carbon::now();
-                                                                            $staff_biometric->status = $status;
-                                                                            $staff_biometric->save();
-                                                                        } else {
-
-                                                                            //$staff_biometric->status = 'Present';
-                                                                            $staff_biometric->details = $get->noon . ' Casual Leave (CL Provided)';
-                                                                            $staff_biometric->update_status = 1;
-                                                                            $staff_biometric->updated_at = Carbon::now();
-                                                                            $staff_biometric->save();
-                                                                        }
-                                                                    }
-                                                                }
-                                                            }
-
-                                                            $check_teaching_staff = TeachingStaff::where(['user_name_id' => $get->user_id])->get();
-
-                                                            if (count($check_teaching_staff) > 0) {
-                                                                $teaching_staff = TeachingStaff::where(['user_name_id' => $get->user_id])->update([
-                                                                    'subtracted_cl' => $subtracted_cl,
-                                                                    'past_casual_leave' => $cl,
-                                                                    'casual_leave' => $cl,
-                                                                ]);
-                                                            } else {
-                                                                $non_teaching_staff = NonTeachingStaff::where(['user_name_id' => $get->user_id])->update([
-                                                                    'subtracted_cl' => $subtracted_cl,
-                                                                    'past_casual_leave' => $cl,
-                                                                    'casual_leave' => $cl,
-                                                                ]);
-                                                            }
-                                                        }
-                                                    } else {
-
-                                                        if ($clAllocatedForPast < 3) {
-
-                                                            $deduct_cl = $teaching_staff_get->past_casual_leave - $leaveInPast;
-
-                                                            if ($deduct_cl > 0) {
-                                                                $cl = $deduct_cl;
-                                                                $subtracted_cl = $teaching_staff_get->subtracted_cl + $leaveInPast;
-
-                                                                if ($halfDay == false) {
-                                                                    for ($i = 0; $i < count($pastDates); $i++) {
-                                                                        if ($i <= $clAllocatedForPast) {
-
-                                                                            $staff_biometric = StaffBiometric::where(['date' => $pastDates[$i], 'user_name_id' => $get->user_id])->select('id', 'details', 'update_status', 'status')->first();
-                                                                            if ($staff_biometric != '') {
-                                                                                if ($staff_biometric->details != null) {
-                                                                                    $tempDetail = $staff_biometric->details;
-                                                                                    if ($staff_biometric->details != 'Sunday' && $staff_biometric->details != 'Holiday') {
-                                                                                        $tempDetail = 'Casual Leave (CL Provided)';
-                                                                                    }
-                                                                                    $staff_biometric->status = 'Absent';
-                                                                                    $staff_biometric->details = $tempDetail;
-                                                                                    $staff_biometric->updated_at = Carbon::now();
-                                                                                    $staff_biometric->save();
-                                                                                } else {
-                                                                                    $staff_biometric->status = 'Absent';
-                                                                                    $staff_biometric->details = 'Casual Leave (CL Provided)';
-                                                                                    $staff_biometric->update_status = 1;
-                                                                                    $staff_biometric->updated_at = Carbon::now();
-                                                                                    $staff_biometric->save();
-                                                                                }
-                                                                            }
-                                                                        } else {
-                                                                            $staff_biometric = StaffBiometric::where(['date' => $pastDates[$i], 'user_name_id' => $get->user_id])->select('id', 'details', 'update_status', 'status')->first();
-                                                                            if ($staff_biometric != '') {
-                                                                                if ($staff_biometric->details != null) {
-                                                                                    $tempDetail = $staff_biometric->details;
-                                                                                    if ($staff_biometric->details != 'Sunday' && $staff_biometric->details != 'Holiday') {
-                                                                                        $tempDetail = 'Casual Leave';
-                                                                                    }
-                                                                                    $staff_biometric->status = 'Absent';
-                                                                                    $staff_biometric->details = $tempDetail;
-                                                                                    $staff_biometric->updated_at = Carbon::now();
-                                                                                    $staff_biometric->save();
-                                                                                } else {
-                                                                                    $staff_biometric->status = 'Absent';
-                                                                                    $staff_biometric->details = 'Casual Leave';
-                                                                                    $staff_biometric->update_status = 1;
-                                                                                    $staff_biometric->updated_at = Carbon::now();
-                                                                                    $staff_biometric->save();
-                                                                                }
-                                                                            }
-                                                                        }
-                                                                    }
-                                                                } else {
-                                                                    foreach ($pastDates as $date) {
-
-                                                                        $staff_biometric = StaffBiometric::where(['date' => $date, 'user_name_id' => $get->user_id])->select('id', 'details', 'update_status', 'status')->first();
-                                                                        if ($staff_biometric != '') {
-                                                                            if ($staff_biometric->details != null) {
-                                                                                $tempDetail = $staff_biometric->details;
-                                                                                $status = $staff_biometric->status;
-                                                                                if ($staff_biometric->details != 'Sunday' && $staff_biometric->details != 'Holiday') {
-                                                                                    if ($get->noon == 'Fore Noon' && strpos($staff_biometric->details, 'Late') !== false) {
-                                                                                        if (strpos($staff_biometric->details, ',') !== false) {
-                                                                                            $explode = explode(',', $staff_biometric->details);
-                                                                                            if (in_array('Late', $explode)) {
-                                                                                                $theIndex = array_search('Late', $explode);
-                                                                                                unset($explode[$theIndex]);
-                                                                                            } else if (in_array('Too Late', $explode)) {
-                                                                                                $theIndex = array_search('Too Late', $explode);
-                                                                                                unset($explode[$theIndex]);
-                                                                                            }
-                                                                                            $implode = implode(',', $explode);
-                                                                                            $tempDetail = $implode . ',' . $get->noon . ' Casual Leave (CL Provided)';
-
-                                                                                        } else {
-                                                                                            if ($staff_biometric->details == 'Late' || $staff_biometric->details == 'Too Late') {
-                                                                                                $tempDetail = $get->noon . ' Casual Leave (CL Provided)';
-
-                                                                                            }
-                                                                                        }
-
-                                                                                    } else if ($get->noon == 'After Noon' && strpos($staff_biometric->details, 'Early Out') !== false) {
-                                                                                        if (strpos($staff_biometric->details, ',') !== false) {
-                                                                                            $explode = explode(',', $staff_biometric->details);
-                                                                                            if (in_array('Early Out', $explode)) {
-                                                                                                $theIndex = array_search('Early Out', $explode);
-                                                                                                unset($explode[$theIndex]);
-                                                                                                $status = 'Present';
-                                                                                            }
-                                                                                            $implode = implode(',', $explode);
-                                                                                            $tempDetail = $implode . ',' . $get->noon . ' Casual Leave (CL Provided)';
-
-                                                                                        } else {
-                                                                                            if ($staff_biometric->details == 'Early Out') {
-                                                                                                $tempDetail = $get->noon . ' Casual Leave (CL Provided)';
-
-                                                                                                $status = 'Present';
-                                                                                            }
-                                                                                        }
-                                                                                    }
-                                                                                }
-                                                                                //$staff_biometric->status = 'Present';
-                                                                                $staff_biometric->details = $tempDetail;
-                                                                                $staff_biometric->updated_at = Carbon::now();
-                                                                                $staff_biometric->status = $status;
-                                                                                $staff_biometric->save();
-                                                                            } else {
-                                                                                //$staff_biometric->status = 'Present';
-                                                                                $staff_biometric->details = $get->noon . ' Casual Leave (CL Provided)';
-
-                                                                                $staff_biometric->update_status = 1;
-                                                                                $staff_biometric->updated_at = Carbon::now();
-                                                                                $staff_biometric->save();
-                                                                            }
-                                                                        }
-                                                                    }
-                                                                }
-
-                                                                $check_teaching_staff = TeachingStaff::where(['user_name_id' => $get->user_id])->get();
-
-                                                                $theCl = $teaching_staff_get->casual_leave - $leaveInPast;
-                                                                if (count($check_teaching_staff) > 0) {
-                                                                    $teaching_staff = TeachingStaff::where(['user_name_id' => $get->user_id])->update([
-                                                                        'subtracted_cl' => $subtracted_cl,
-                                                                        'past_casual_leave' => $cl,
-                                                                        'casual_leave' => $theCl,
-                                                                    ]);
-                                                                } else {
-                                                                    $non_teaching_staff = NonTeachingStaff::where(['user_name_id' => $get->user_id])->update([
-                                                                        'subtracted_cl' => $subtracted_cl,
-                                                                        'past_casual_leave' => $cl,
-                                                                        'casual_leave' => $theCl,
-                                                                    ]);
-                                                                }
-                                                            } else {
-                                                                $cl = 0;
-                                                                $subtracted_cl = $teaching_staff_get->subtracted_cl + $teaching_staff_get->past_casual_leave;
-
-                                                                if ($halfDay == false) {
-                                                                    for ($i = 0; $i < count($pastDates); $i++) {
-                                                                        if ($i <= $teaching_staff_get->past_casual_leave) {
-                                                                            $staff_biometric = StaffBiometric::where(['date' => $pastDates[$i], 'user_name_id' => $get->user_id])->select('id', 'details', 'update_status', 'status')->first();
-                                                                            if ($staff_biometric != '') {
-                                                                                if ($staff_biometric->details != null) {
-                                                                                    $tempDetail = $staff_biometric->details;
-                                                                                    if ($staff_biometric->details != 'Sunday' && $staff_biometric->details != 'Holiday') {
-                                                                                        $tempDetail = 'Casual Leave (CL Provided)';
-                                                                                    }
-                                                                                    $staff_biometric->status = 'Absent';
-                                                                                    $staff_biometric->details = $tempDetail;
-                                                                                    $staff_biometric->updated_at = Carbon::now();
-                                                                                    $staff_biometric->save();
-                                                                                } else {
-                                                                                    $staff_biometric->status = 'Absent';
-                                                                                    $staff_biometric->details = 'Casual Leave (CL Provided)';
-                                                                                    $staff_biometric->update_status = 1;
-                                                                                    $staff_biometric->updated_at = Carbon::now();
-                                                                                    $staff_biometric->save();
-                                                                                }
-                                                                            }
-                                                                        } else {
-                                                                            $staff_biometric = StaffBiometric::where(['date' => $pastDates[$i], 'user_name_id' => $get->user_id])->select('id', 'details', 'update_status', 'status')->first();
-                                                                            if ($staff_biometric != '') {
-                                                                                if ($staff_biometric->details != null) {
-                                                                                    $tempDetail = $staff_biometric->details;
-                                                                                    if ($staff_biometric->details != 'Sunday' && $staff_biometric->details != 'Holiday') {
-                                                                                        $tempDetail = 'Casual Leave';
-                                                                                    }
-                                                                                    $staff_biometric->status = 'Absent';
-                                                                                    $staff_biometric->details = $tempDetail;
-                                                                                    $staff_biometric->updated_at = Carbon::now();
-                                                                                    $staff_biometric->save();
-                                                                                } else {
-                                                                                    $staff_biometric->status = 'Absent';
-                                                                                    $staff_biometric->details = 'Casual Leave';
-                                                                                    $staff_biometric->update_status = 1;
-                                                                                    $staff_biometric->updated_at = Carbon::now();
-                                                                                    $staff_biometric->save();
-                                                                                }
-                                                                            }
-                                                                        }
-                                                                    }
-                                                                } else {
-                                                                    foreach ($pastDates as $date) {
-                                                                        $staff_biometric = StaffBiometric::where(['date' => $date, 'user_name_id' => $get->user_id])->select('id', 'details', 'update_status', 'status')->first();
-                                                                        if ($staff_biometric != '') {
-                                                                            if ($staff_biometric->details != null) {
-                                                                                $tempDetail = $staff_biometric->details;
-                                                                                $status = $staff_biometric->status;
-                                                                                if ($staff_biometric->details != 'Sunday' && $staff_biometric->details != 'Holiday') {
-                                                                                    if ($get->noon == 'Fore Noon' && strpos($staff_biometric->details, 'Late') !== false) {
-                                                                                        if (strpos($staff_biometric->details, ',') !== false) {
-                                                                                            $explode = explode(',', $staff_biometric->details);
-                                                                                            if (in_array('Late', $explode)) {
-                                                                                                $theIndex = array_search('Late', $explode);
-                                                                                                unset($explode[$theIndex]);
-                                                                                            } else if (in_array('Too Late', $explode)) {
-                                                                                                $theIndex = array_search('Too Late', $explode);
-                                                                                                unset($explode[$theIndex]);
-                                                                                            }
-                                                                                            $implode = implode(',', $explode);
-                                                                                            $tempDetail = $implode . ',' . $get->noon . ' Casual Leave (CL Provided)';
-                                                                                        } else {
-                                                                                            if ($staff_biometric->details == 'Late' || $staff_biometric->details == 'Too Late') {
-                                                                                                $tempDetail = $get->noon . ' Casual Leave (CL Provided)';
-                                                                                            }
-                                                                                        }
-
-                                                                                    } else if ($get->noon == 'After Noon' && strpos($staff_biometric->details, 'Early Out') !== false) {
-                                                                                        if (strpos($staff_biometric->details, ',') !== false) {
-                                                                                            $explode = explode(',', $staff_biometric->details);
-                                                                                            if (in_array('Early Out', $explode)) {
-                                                                                                $theIndex = array_search('Early Out', $explode);
-                                                                                                unset($explode[$theIndex]);
-                                                                                                $status = 'Present';
-                                                                                            }
-                                                                                            $implode = implode(',', $explode);
-                                                                                            $tempDetail = $implode . ',' . $get->noon . ' Casual Leave (CL Provided)';
-
-                                                                                        } else {
-                                                                                            if ($staff_biometric->details == 'Early Out') {
-                                                                                                $tempDetail = $get->noon . ' Casual Leave (CL Provided)';
-
-                                                                                                $status = 'Present';
-                                                                                            }
-                                                                                        }
-                                                                                    }
-                                                                                }
-                                                                                //$staff_biometric->status = 'Present';
-                                                                                $staff_biometric->details = $tempDetail;
-                                                                                $staff_biometric->updated_at = Carbon::now();
-                                                                                $staff_biometric->status = $status;
-                                                                                $staff_biometric->save();
-                                                                            } else {
-
-                                                                                //$staff_biometric->status = 'Present';
-                                                                                $staff_biometric->details = $get->noon . ' Casual Leave (CL Provided)';
-
-                                                                                $staff_biometric->update_status = 1;
-                                                                                $staff_biometric->updated_at = Carbon::now();
-                                                                                $staff_biometric->save();
-                                                                            }
-                                                                        }
-                                                                    }
-                                                                }
-                                                                $check_teaching_staff = TeachingStaff::where(['user_name_id' => $get->user_id])->get();
-
-                                                                $theCl = $teaching_staff_get->casual_leave - $teaching_staff_get->past_casual_leave;
-
-                                                                if (count($check_teaching_staff) > 0) {
-                                                                    $teaching_staff = TeachingStaff::where(['user_name_id' => $get->user_id])->update([
-                                                                        'subtracted_cl' => $subtracted_cl,
-                                                                        'past_casual_leave' => $cl,
-                                                                        'casual_leave' => $theCl,
-                                                                    ]);
-                                                                } else {
-                                                                    $non_teaching_staff = NonTeachingStaff::where(['user_name_id' => $get->user_id])->update([
-                                                                        'subtracted_cl' => $subtracted_cl,
-                                                                        'past_casual_leave' => $cl,
-                                                                        'casual_leave' => $theCl,
-                                                                    ]);
-                                                                }
-                                                            }
-                                                        } else {
-
-                                                            if ($halfDay == false) {
-                                                                foreach ($pastDates as $date) {
-
-                                                                    $staff_biometric = StaffBiometric::where(['date' => $date, 'user_name_id' => $get->user_id])->select('id', 'details', 'update_status', 'status')->first();
-                                                                    if ($staff_biometric != '') {
-                                                                        if ($staff_biometric->details != null) {
-                                                                            $tempDetail = $staff_biometric->details;
-                                                                            if ($staff_biometric->details != 'Sunday' && $staff_biometric->details != 'Holiday') {
-                                                                                $tempDetail = 'Casual Leave';
-                                                                            }
-                                                                            $staff_biometric->status = 'Absent';
-                                                                            $staff_biometric->details = $tempDetail;
-                                                                            $staff_biometric->updated_at = Carbon::now();
-                                                                            $staff_biometric->save();
-                                                                        } else {
-                                                                            $staff_biometric->status = 'Absent';
-                                                                            $staff_biometric->details = 'Casual Leave';
-                                                                            $staff_biometric->update_status = 1;
-                                                                            $staff_biometric->updated_at = Carbon::now();
-                                                                            $staff_biometric->save();
-                                                                        }
-                                                                    }
-                                                                }
-                                                            } else {
-                                                                foreach ($pastDates as $date) {
-                                                                    $staff_biometric = StaffBiometric::where(['date' => $date, 'user_name_id' => $get->user_id])->select('id', 'details', 'update_status', 'status')->first();
-                                                                    if ($staff_biometric != '') {
-                                                                        if ($staff_biometric->details != null) {
-                                                                            $tempDetail = $staff_biometric->details;
-                                                                            $status = $staff_biometric->status;
-                                                                            if ($staff_biometric->details != 'Sunday' && $staff_biometric->details != 'Holiday') {
-                                                                                if ($get->noon == 'Fore Noon' && strpos($staff_biometric->details, 'Late') !== false) {
-                                                                                    if (strpos($staff_biometric->details, ',') !== false) {
-                                                                                        $explode = explode(',', $staff_biometric->details);
-                                                                                        if (in_array('Late', $explode)) {
-                                                                                            $theIndex = array_search('Late', $explode);
-                                                                                            unset($explode[$theIndex]);
-                                                                                        } else if (in_array('Too Late', $explode)) {
-                                                                                            $theIndex = array_search('Too Late', $explode);
-                                                                                            unset($explode[$theIndex]);
-                                                                                        }
-                                                                                        $implode = implode(',', $explode);
-                                                                                        $tempDetail = $implode . ',' . $get->noon . ' Casual Leave';
-                                                                                    } else {
-                                                                                        if ($staff_biometric->details == 'Late' || $staff_biometric->details == 'Too Late') {
-                                                                                            $tempDetail = $get->noon . ' Casual Leave';
-                                                                                        }
-                                                                                    }
-
-                                                                                } else if ($get->noon == 'After Noon' && strpos($staff_biometric->details, 'Early Out') !== false) {
-                                                                                    if (strpos($staff_biometric->details, ',') !== false) {
-                                                                                        $explode = explode(',', $staff_biometric->details);
-                                                                                        if (in_array('Early Out', $explode)) {
-                                                                                            $theIndex = array_search('Early Out', $explode);
-                                                                                            unset($explode[$theIndex]);
-                                                                                            $status = 'Present';
-                                                                                        }
-                                                                                        $implode = implode(',', $explode);
-                                                                                        $tempDetail = $implode . ',' . $get->noon . ' Casual Leave';
-                                                                                    } else {
-                                                                                        if ($staff_biometric->details == 'Early Out') {
-                                                                                            $tempDetail = $get->noon . ' Casual Leave';
-                                                                                            $status = 'Present';
-                                                                                        }
-                                                                                    }
-                                                                                }
-                                                                            }
-                                                                            //$staff_biometric->status = 'Present';
-                                                                            $staff_biometric->details = $tempDetail;
-                                                                            $staff_biometric->updated_at = Carbon::now();
-                                                                            $staff_biometric->status = $status;
-                                                                            $staff_biometric->save();
-                                                                        } else {
-
-                                                                            //$staff_biometric->status = 'Present';
-                                                                            $staff_biometric->details = $get->noon . ' Casual Leave';
-                                                                            $staff_biometric->update_status = 1;
-                                                                            $staff_biometric->updated_at = Carbon::now();
-                                                                            $staff_biometric->save();
-                                                                        }
-                                                                    }
-                                                                }
-                                                            }
-                                                        }
-                                                    }
-                                                } else {
-
-                                                    if ($halfDay == false) {
-                                                        foreach ($pastDates as $date) {
-                                                            $staff_biometric = StaffBiometric::where(['date' => $date, 'user_name_id' => $get->user_id])->select('id', 'details', 'update_status', 'status')->first();
-                                                            if ($staff_biometric != '') {
-                                                                if ($staff_biometric->details != null) {
-                                                                    $tempDetail = $staff_biometric->details;
-                                                                    if ($staff_biometric->details != 'Sunday' && $staff_biometric->details != 'Holiday') {
-                                                                        $tempDetail = 'Casual Leave';
-                                                                    }
-                                                                    $staff_biometric->status = 'Absent';
-                                                                    $staff_biometric->details = $tempDetail;
-                                                                    $staff_biometric->updated_at = Carbon::now();
-                                                                    $staff_biometric->save();
-                                                                } else {
-
-                                                                    $staff_biometric->status = 'Absent';
-                                                                    $staff_biometric->details = 'Casual Leave';
-                                                                    $staff_biometric->update_status = 1;
-                                                                    $staff_biometric->updated_at = Carbon::now();
-                                                                    $staff_biometric->save();
-                                                                }
-                                                            }
-                                                        }
-                                                    } else {
-                                                        foreach ($pastDates as $date) {
-                                                            $staff_biometric = StaffBiometric::where(['date' => $date, 'user_name_id' => $get->user_id])->select('id', 'details', 'update_status', 'status')->first();
-                                                            if ($staff_biometric != '') {
-                                                                if ($staff_biometric->details != null) {
-                                                                    $tempDetail = $staff_biometric->details;
-                                                                    $status = $staff_biometric->status;
-                                                                    if ($staff_biometric->details != 'Sunday' && $staff_biometric->details != 'Holiday') {
-                                                                        if ($get->noon == 'Fore Noon' && strpos($staff_biometric->details, 'Late') !== false) {
-                                                                            if (strpos($staff_biometric->details, ',') !== false) {
-                                                                                $explode = explode(',', $staff_biometric->details);
-                                                                                if (in_array('Late', $explode)) {
-                                                                                    $theIndex = array_search('Late', $explode);
-                                                                                    unset($explode[$theIndex]);
-                                                                                } else if (in_array('Too Late', $explode)) {
-                                                                                    $theIndex = array_search('Too Late', $explode);
-                                                                                    unset($explode[$theIndex]);
-                                                                                }
-                                                                                $implode = implode(',', $explode);
-                                                                                $tempDetail = $implode . ',' . $get->noon . ' Casual Leave';
-                                                                            } else {
-                                                                                if ($staff_biometric->details == 'Late' || $staff_biometric->details == 'Too Late') {
-                                                                                    $tempDetail = $get->noon . ' Casual Leave';
-                                                                                }
-                                                                            }
-
-                                                                        } else if ($get->noon == 'After Noon' && strpos($staff_biometric->details, 'Early Out') !== false) {
-                                                                            if (strpos($staff_biometric->details, ',') !== false) {
-                                                                                $explode = explode(',', $staff_biometric->details);
-                                                                                if (in_array('Early Out', $explode)) {
-                                                                                    $theIndex = array_search('Early Out', $explode);
-                                                                                    unset($explode[$theIndex]);
-                                                                                    $status = 'Present';
-                                                                                }
-                                                                                $implode = implode(',', $explode);
-                                                                                $tempDetail = $implode . ',' . $get->noon . ' Casual Leave';
-                                                                            } else {
-                                                                                if ($staff_biometric->details == 'Early Out') {
-                                                                                    $tempDetail = $get->noon . ' Casual Leave';
-                                                                                    $status = 'Present';
-                                                                                }
-                                                                            }
-                                                                        }
-                                                                    }
-                                                                    //$staff_biometric->status = 'Present';
-                                                                    $staff_biometric->details = $tempDetail;
-                                                                    $staff_biometric->updated_at = Carbon::now();
-                                                                    $staff_biometric->status = $status;
-                                                                    $staff_biometric->save();
-                                                                } else {
-                                                                    //$staff_biometric->status = 'Present';
-                                                                    $staff_biometric->details = $get->noon . ' Casual Leave';
-                                                                    $staff_biometric->update_status = 1;
-                                                                    $staff_biometric->updated_at = Carbon::now();
-                                                                    $staff_biometric->save();
-                                                                }
-                                                            }
-                                                        }
-                                                    }
-                                                }
-                                            } else {
-
-                                                if ($halfDay == false) {
-                                                    foreach ($pastDates as $date) {
-                                                        $staff_biometric = StaffBiometric::where(['date' => $date, 'user_name_id' => $get->user_id])->select('id', 'details', 'update_status', 'status')->first();
-                                                        if ($staff_biometric != '') {
-                                                            if ($staff_biometric->details != null) {
-                                                                $tempDetail = $staff_biometric->details;
-                                                                if ($staff_biometric->details != 'Sunday' && $staff_biometric->details != 'Holiday') {
-                                                                    $tempDetail = 'Casual Leave';
-                                                                }
-                                                                $staff_biometric->status = 'Absent';
-                                                                $staff_biometric->details = $tempDetail;
-                                                                $staff_biometric->updated_at = Carbon::now();
-                                                                $staff_biometric->save();
-                                                            } else {
-                                                                $staff_biometric->status = 'Absent';
-                                                                $staff_biometric->details = 'Casual Leave';
-                                                                $staff_biometric->update_status = 1;
-                                                                $staff_biometric->updated_at = Carbon::now();
-                                                                $staff_biometric->save();
-                                                            }
-                                                        }
-                                                    }
-                                                } else {
-                                                    foreach ($pastDates as $date) {
-                                                        $staff_biometric = StaffBiometric::where(['date' => $date, 'user_name_id' => $get->user_id])->select('id', 'details', 'update_status', 'status')->first();
-                                                        if ($staff_biometric != '') {
-                                                            if ($staff_biometric->details != null) {
-                                                                $tempDetail = $staff_biometric->details;
-                                                                $status = $staff_biometric->status;
-                                                                if ($staff_biometric->details != 'Sunday' && $staff_biometric->details != 'Holiday') {
-                                                                    if ($get->noon == 'Fore Noon' && strpos($staff_biometric->details, 'Late') !== false) {
-                                                                        if (strpos($staff_biometric->details, ',') !== false) {
-                                                                            $explode = explode(',', $staff_biometric->details);
-                                                                            if (in_array('Late', $explode)) {
-                                                                                $theIndex = array_search('Late', $explode);
-                                                                                unset($explode[$theIndex]);
-                                                                            } else if (in_array('Too Late', $explode)) {
-                                                                                $theIndex = array_search('Too Late', $explode);
-                                                                                unset($explode[$theIndex]);
-                                                                            }
-                                                                            $implode = implode(',', $explode);
-                                                                            $tempDetail = $implode . ',' . $get->noon . ' Casual Leave';
-                                                                        } else {
-                                                                            if ($staff_biometric->details == 'Late' || $staff_biometric->details == 'Too Late') {
-                                                                                $tempDetail = $get->noon . ' Casual Leave';
-                                                                            }
-                                                                        }
-
-                                                                    } else if ($get->noon == 'After Noon' && strpos($staff_biometric->details, 'Early Out') !== false) {
-                                                                        if (strpos($staff_biometric->details, ',') !== false) {
-                                                                            $explode = explode(',', $staff_biometric->details);
-                                                                            if (in_array('Early Out', $explode)) {
-                                                                                $theIndex = array_search('Early Out', $explode);
-                                                                                unset($explode[$theIndex]);
-                                                                                $status = 'Present';
-                                                                            }
-                                                                            $implode = implode(',', $explode);
-                                                                            $tempDetail = $implode . ',' . $get->noon . ' Casual Leave';
-                                                                        } else {
-                                                                            if ($staff_biometric->details == 'Early Out') {
-                                                                                $tempDetail = $get->noon . ' Casual Leave';
-                                                                                $status = 'Present';
-                                                                            }
-                                                                        }
-                                                                    }
-                                                                }
-                                                                //$staff_biometric->status = 'Present';
-                                                                $staff_biometric->details = $tempDetail;
-                                                                $staff_biometric->updated_at = Carbon::now();
-                                                                $staff_biometric->status = $status;
-                                                                $staff_biometric->save();
-                                                            } else {
-                                                                //$staff_biometric->status = 'Present';
-                                                                $staff_biometric->details = $get->noon . ' Casual Leave';
-                                                                $staff_biometric->update_status = 1;
-                                                                $staff_biometric->updated_at = Carbon::now();
-                                                                $staff_biometric->save();
-                                                            }
-                                                        }
-                                                    }
-                                                }
-                                            }
-                                        } else {
-                                            if ($teaching_staff_get->past_casual_leave > 0) {
-
-                                                if ($leaveInPast >= 3) {
-
-                                                    $deduct_cl = 3 - $teaching_staff_get->past_casual_leave;
-
-                                                    if ($deduct_cl > 0) {
-                                                        $cl = 0;
-                                                        $subtracted_cl = $teaching_staff_get->subtracted_cl + $teaching_staff_get->past_casual_leave;
-
-                                                        if ($halfDay == false) {
-                                                            for ($i = 0; $i < count($pastDates); $i++) {
-                                                                if ($i <= $teaching_staff_get->past_casual_leave) {
-                                                                    $staff_biometric = StaffBiometric::where(['date' => $pastDates[$i], 'user_name_id' => $get->user_id])->select('id', 'details', 'update_status', 'status')->first();
-                                                                    if ($staff_biometric != '') {
-                                                                        if ($staff_biometric->details != null) {
-                                                                            $tempDetail = $staff_biometric->details;
-                                                                            if ($staff_biometric->details != 'Sunday' && $staff_biometric->details != 'Holiday') {
-                                                                                $tempDetail = 'Casual Leave (CL Provided)';
-                                                                            }
-                                                                            $staff_biometric->status = 'Absent';
-                                                                            $staff_biometric->details = $tempDetail;
-                                                                            $staff_biometric->updated_at = Carbon::now();
-                                                                            $staff_biometric->save();
-                                                                        } else {
-                                                                            $staff_biometric->status = 'Absent';
-                                                                            $staff_biometric->details = 'Casual Leave (CL Provided)';
-                                                                            $staff_biometric->update_status = 1;
-                                                                            $staff_biometric->updated_at = Carbon::now();
-                                                                            $staff_biometric->save();
-                                                                        }
-                                                                    }
-                                                                } else {
-                                                                    $staff_biometric = StaffBiometric::where(['date' => $pastDates[$i], 'user_name_id' => $get->user_id])->select('id', 'details', 'update_status', 'status')->first();
-                                                                    if ($staff_biometric != '') {
-                                                                        if ($staff_biometric->details != null) {
-                                                                            $tempDetail = $staff_biometric->details;
-                                                                            if ($staff_biometric->details != 'Sunday' && $staff_biometric->details != 'Holiday') {
-                                                                                $tempDetail = 'Casual Leave';
-                                                                            }
-                                                                            $staff_biometric->status = 'Absent';
-                                                                            $staff_biometric->details = $tempDetail;
-                                                                            $staff_biometric->updated_at = Carbon::now();
-                                                                            $staff_biometric->save();
-                                                                        } else {
-                                                                            $staff_biometric->status = 'Absent';
-                                                                            $staff_biometric->details = 'Casual Leave';
-                                                                            $staff_biometric->update_status = 1;
-                                                                            $staff_biometric->updated_at = Carbon::now();
-                                                                            $staff_biometric->save();
-                                                                        }
-                                                                    }
-                                                                }
-                                                            }
-                                                        } else {
-                                                            foreach ($pastDates as $date) {
-                                                                $staff_biometric = StaffBiometric::where(['date' => $date, 'user_name_id' => $get->user_id])->select('id', 'details', 'update_status', 'status')->first();
-                                                                if ($staff_biometric != '') {
-                                                                    if ($staff_biometric->details != null) {
-                                                                        $tempDetail = $staff_biometric->details;
-                                                                        $status = $staff_biometric->status;
-                                                                        if ($staff_biometric->details != 'Sunday' && $staff_biometric->details != 'Holiday') {
-                                                                            if ($get->noon == 'Fore Noon' && strpos($staff_biometric->details, 'Late') !== false) {
-                                                                                if (strpos($staff_biometric->details, ',') !== false) {
-                                                                                    $explode = explode(',', $staff_biometric->details);
-                                                                                    if (in_array('Late', $explode)) {
-                                                                                        $theIndex = array_search('Late', $explode);
-                                                                                        unset($explode[$theIndex]);
-                                                                                    } else if (in_array('Too Late', $explode)) {
-                                                                                        $theIndex = array_search('Too Late', $explode);
-                                                                                        unset($explode[$theIndex]);
-                                                                                    }
-                                                                                    $implode = implode(',', $explode);
-                                                                                    $tempDetail = $implode . ',' . $get->noon . ' Casual Leave (CL Provided)';
-
-                                                                                } else {
-                                                                                    if ($staff_biometric->details == 'Late' || $staff_biometric->details == 'Too Late') {
-                                                                                        $tempDetail = $get->noon . ' Casual Leave (CL Provided)';
-
-                                                                                    }
-                                                                                }
-
-                                                                            } else if ($get->noon == 'After Noon' && strpos($staff_biometric->details, 'Early Out') !== false) {
-                                                                                if (strpos($staff_biometric->details, ',') !== false) {
-                                                                                    $explode = explode(',', $staff_biometric->details);
-                                                                                    if (in_array('Early Out', $explode)) {
-                                                                                        $theIndex = array_search('Early Out', $explode);
-                                                                                        unset($explode[$theIndex]);
-                                                                                        $status = 'Present';
-                                                                                    }
-                                                                                    $implode = implode(',', $explode);
-                                                                                    $tempDetail = $implode . ',' . $get->noon . ' Casual Leave (CL Provided)';
-
-                                                                                } else {
-                                                                                    if ($staff_biometric->details == 'Early Out') {
-                                                                                        $tempDetail = $get->noon . ' Casual Leave (CL Provided)';
-
-                                                                                        $status = 'Present';
-                                                                                    }
-                                                                                }
-                                                                            }
-                                                                        }
-                                                                        //$staff_biometric->status = 'Present';
-                                                                        $staff_biometric->details = $tempDetail;
-                                                                        $staff_biometric->updated_at = Carbon::now();
-                                                                        $staff_biometric->status = $status;
-                                                                        $staff_biometric->save();
-                                                                    } else {
-                                                                        //$staff_biometric->status = 'Present';
-                                                                        $staff_biometric->details = $get->noon . ' Casual Leave (CL Provided)';
-
-                                                                        $staff_biometric->update_status = 1;
-                                                                        $staff_biometric->updated_at = Carbon::now();
-                                                                        $staff_biometric->save();
-                                                                    }
-                                                                }
-                                                            }
-                                                        }
-                                                        $check_teaching_staff = TeachingStaff::where(['user_name_id' => $get->user_id])->get();
-
-                                                        $theCl = $teaching_staff_get->casual_leave - $cl;
-                                                        if (count($check_teaching_staff) > 0) {
-                                                            $teaching_staff = TeachingStaff::where(['user_name_id' => $get->user_id])->update([
-                                                                'subtracted_cl' => $subtracted_cl,
-                                                                'past_casual_leave' => $cl,
-                                                                'casual_leave' => $theCl,
-                                                            ]);
-                                                        } else {
-                                                            $non_teaching_staff = NonTeachingStaff::where(['user_name_id' => $get->user_id])->update([
-                                                                'subtracted_cl' => $subtracted_cl,
-                                                                'past_casual_leave' => $cl,
-                                                                'casual_leave' => $theCl,
-                                                            ]);
-                                                        }
-                                                    } else {
-                                                        $cl = abs($deduct_cl);
-                                                        $subtracted_cl = $teaching_staff_get->subtracted_cl + 3;
-
-                                                        if ($halfDay == false) {
-                                                            for ($i = 0; $i < count($pastDates); $i++) {
-                                                                if ($i <= 3) {
-                                                                    $staff_biometric = StaffBiometric::where(['date' => $pastDates[$i], 'user_name_id' => $get->user_id])->select('id', 'details', 'update_status', 'status')->first();
-                                                                    if ($staff_biometric != '') {
-                                                                        if ($staff_biometric->details != null) {
-                                                                            $tempDetail = $staff_biometric->details;
-                                                                            if ($staff_biometric->details != 'Sunday' && $staff_biometric->details != 'Holiday') {
-                                                                                $tempDetail = 'Casual Leave (CL Provided)';
-                                                                            }
-                                                                            $staff_biometric->status = 'Absent';
-                                                                            $staff_biometric->details = $tempDetail;
-                                                                            $staff_biometric->updated_at = Carbon::now();
-                                                                            $staff_biometric->save();
-                                                                        } else {
-                                                                            $staff_biometric->status = 'Absent';
-                                                                            $staff_biometric->details = 'Casual Leave (CL Provided)';
-                                                                            $staff_biometric->update_status = 1;
-                                                                            $staff_biometric->updated_at = Carbon::now();
-                                                                            $staff_biometric->save();
-                                                                        }
-                                                                    }
-                                                                } else {
-                                                                    $staff_biometric = StaffBiometric::where(['date' => $pastDates[$i], 'user_name_id' => $get->user_id])->select('id', 'details', 'update_status', 'status')->first();
-                                                                    if ($staff_biometric != '') {
-                                                                        if ($staff_biometric->details != null) {
-                                                                            $tempDetail = $staff_biometric->details;
-                                                                            if ($staff_biometric->details != 'Sunday' && $staff_biometric->details != 'Holiday') {
-                                                                                $tempDetail = 'Casual Leave';
-                                                                            }
-                                                                            $staff_biometric->status = 'Absent';
-                                                                            $staff_biometric->details = $tempDetail;
-                                                                            $staff_biometric->updated_at = Carbon::now();
-                                                                            $staff_biometric->save();
-                                                                        } else {
-                                                                            $staff_biometric->status = 'Absent';
-                                                                            $staff_biometric->details = 'Casual Leave';
-                                                                            $staff_biometric->update_status = 1;
-                                                                            $staff_biometric->updated_at = Carbon::now();
-                                                                            $staff_biometric->save();
-                                                                        }
-                                                                    }
-                                                                }
-                                                            }
-                                                        } else {
-                                                            foreach ($pastDates as $date) {
-                                                                $staff_biometric = StaffBiometric::where(['date' => $date, 'user_name_id' => $get->user_id])->select('id', 'details', 'update_status', 'status')->first();
-                                                                if ($staff_biometric != '') {
-                                                                    if ($staff_biometric->details != null) {
-                                                                        $tempDetail = $staff_biometric->details;
-                                                                        $status = $staff_biometric->status;
-                                                                        if ($staff_biometric->details != 'Sunday' && $staff_biometric->details != 'Holiday') {
-                                                                            if ($get->noon == 'Fore Noon' && strpos($staff_biometric->details, 'Late') !== false) {
-                                                                                if (strpos($staff_biometric->details, ',') !== false) {
-                                                                                    $explode = explode(',', $staff_biometric->details);
-                                                                                    if (in_array('Late', $explode)) {
-                                                                                        $theIndex = array_search('Late', $explode);
-                                                                                        unset($explode[$theIndex]);
-                                                                                    } else if (in_array('Too Late', $explode)) {
-                                                                                        $theIndex = array_search('Too Late', $explode);
-                                                                                        unset($explode[$theIndex]);
-                                                                                    }
-                                                                                    $implode = implode(',', $explode);
-                                                                                    $tempDetail = $implode . ',' . $get->noon . ' Casual Leave (CL Provided)';
-
-                                                                                } else {
-                                                                                    if ($staff_biometric->details == 'Late' || $staff_biometric->details == 'Too Late') {
-                                                                                        $tempDetail = $get->noon . ' Casual Leave (CL Provided)';
-
-                                                                                    }
-                                                                                }
-
-                                                                            } else if ($get->noon == 'After Noon' && strpos($staff_biometric->details, 'Early Out') !== false) {
-                                                                                if (strpos($staff_biometric->details, ',') !== false) {
-                                                                                    $explode = explode(',', $staff_biometric->details);
-                                                                                    if (in_array('Early Out', $explode)) {
-                                                                                        $theIndex = array_search('Early Out', $explode);
-                                                                                        unset($explode[$theIndex]);
-                                                                                        $status = 'Present';
-                                                                                    }
-                                                                                    $implode = implode(',', $explode);
-                                                                                    $tempDetail = $implode . ',' . $get->noon . ' Casual Leave (CL Provided)';
-
-                                                                                } else {
-                                                                                    if ($staff_biometric->details == 'Early Out') {
-                                                                                        $tempDetail = $get->noon . ' Casual Leave (CL Provided)';
-
-                                                                                        $status = 'Present';
-                                                                                    }
-                                                                                }
-                                                                            }
-                                                                        }
-                                                                        //$staff_biometric->status = 'Present';
-                                                                        $staff_biometric->details = $tempDetail;
-                                                                        $staff_biometric->updated_at = Carbon::now();
-                                                                        $staff_biometric->status = $status;
-                                                                        $staff_biometric->save();
-                                                                    } else {
-                                                                        //$staff_biometric->status = 'Present';
-                                                                        $staff_biometric->details = $get->noon . ' Casual Leave (CL Provided)';
-
-                                                                        $staff_biometric->update_status = 1;
-                                                                        $staff_biometric->updated_at = Carbon::now();
-                                                                        $staff_biometric->save();
-                                                                    }
-                                                                }
-                                                            }
-                                                        }
-                                                        $check_teaching_staff = TeachingStaff::where(['user_name_id' => $get->user_id])->get();
-
-                                                        $theCl = $teaching_staff_get->casual_leave - $cl;
-                                                        if (count($check_teaching_staff) > 0) {
-                                                            $teaching_staff = TeachingStaff::where(['user_name_id' => $get->user_id])->update([
-                                                                'subtracted_cl' => $subtracted_cl,
-                                                                'past_casual_leave' => $cl,
-                                                                'casual_leave' => $theCl,
-                                                            ]);
-                                                        } else {
-                                                            $non_teaching_staff = NonTeachingStaff::where(['user_name_id' => $get->user_id])->update([
-                                                                'subtracted_cl' => $subtracted_cl,
-                                                                'past_casual_leave' => $cl,
-                                                                'casual_leave' => $theCl,
-                                                            ]);
-                                                        }
-                                                    }
-                                                } else {
-
-                                                    $deduct_cl = $teaching_staff_get->past_casual_leave - $leaveInPast;
-
-                                                    if ($deduct_cl > 0) {
-                                                        $cl = $deduct_cl;
-                                                        $subtracted_cl = $teaching_staff_get->subtracted_cl + $leaveInPast;
-
-                                                        if ($halfDay == false) {
-                                                            for ($i = 0; $i < count($pastDates); $i++) {
-                                                                if ($i <= $leaveInPast) {
-                                                                    $staff_biometric = StaffBiometric::where(['date' => $pastDates[$i], 'user_name_id' => $get->user_id])->select('id', 'details', 'update_status', 'status')->first();
-                                                                    if ($staff_biometric != '') {
-                                                                        if ($staff_biometric->details != null) {
-                                                                            $tempDetail = $staff_biometric->details;
-                                                                            if ($staff_biometric->details != 'Sunday' && $staff_biometric->details != 'Holiday') {
-                                                                                $tempDetail = 'Casual Leave (CL Provided)';
-                                                                            }
-                                                                            $staff_biometric->status = 'Absent';
-                                                                            $staff_biometric->details = $tempDetail;
-                                                                            $staff_biometric->updated_at = Carbon::now();
-                                                                            $staff_biometric->save();
-                                                                        } else {
-                                                                            $staff_biometric->status = 'Absent';
-                                                                            $staff_biometric->details = 'Casual Leave (CL Provided)';
-                                                                            $staff_biometric->update_status = 1;
-                                                                            $staff_biometric->updated_at = Carbon::now();
-                                                                            $staff_biometric->save();
-                                                                        }
-                                                                    }
-                                                                } else {
-                                                                    $staff_biometric = StaffBiometric::where(['date' => $pastDates[$i], 'user_name_id' => $get->user_id])->select('id', 'details', 'update_status', 'status')->first();
-                                                                    if ($staff_biometric != '') {
-                                                                        if ($staff_biometric->details != null) {
-                                                                            $tempDetail = $staff_biometric->details;
-                                                                            if ($staff_biometric->details != 'Sunday' && $staff_biometric->details != 'Holiday') {
-                                                                                $tempDetail = 'Casual Leave';
-                                                                            }
-                                                                            $staff_biometric->status = 'Absent';
-                                                                            $staff_biometric->details = $tempDetail;
-                                                                            $staff_biometric->updated_at = Carbon::now();
-                                                                            $staff_biometric->save();
-                                                                        } else {
-                                                                            $staff_biometric->status = 'Absent';
-                                                                            $staff_biometric->details = 'Casual Leave';
-                                                                            $staff_biometric->update_status = 1;
-                                                                            $staff_biometric->updated_at = Carbon::now();
-                                                                            $staff_biometric->save();
-                                                                        }
-                                                                    }
-                                                                }
-                                                            }
-                                                        } else {
-                                                            foreach ($pastDates as $date) {
-                                                                $staff_biometric = StaffBiometric::where(['date' => $date, 'user_name_id' => $get->user_id])->select('id', 'details', 'update_status', 'status')->first();
-                                                                if ($staff_biometric != '') {
-                                                                    if ($staff_biometric->details != null) {
-                                                                        $tempDetail = $staff_biometric->details;
-                                                                        $status = $staff_biometric->status;
-                                                                        if ($staff_biometric->details != 'Sunday' && $staff_biometric->details != 'Holiday') {
-                                                                            if ($get->noon == 'Fore Noon' && strpos($staff_biometric->details, 'Late') !== false) {
-                                                                                if (strpos($staff_biometric->details, ',') !== false) {
-                                                                                    $explode = explode(',', $staff_biometric->details);
-                                                                                    if (in_array('Late', $explode)) {
-                                                                                        $theIndex = array_search('Late', $explode);
-                                                                                        unset($explode[$theIndex]);
-                                                                                    } else if (in_array('Too Late', $explode)) {
-                                                                                        $theIndex = array_search('Too Late', $explode);
-                                                                                        unset($explode[$theIndex]);
-                                                                                    }
-                                                                                    $implode = implode(',', $explode);
-                                                                                    $tempDetail = $implode . ',' . $get->noon . ' Casual Leave (CL Provided)';
-
-                                                                                } else {
-                                                                                    if ($staff_biometric->details == 'Late' || $staff_biometric->details == 'Too Late') {
-                                                                                        $tempDetail = $get->noon . ' Casual Leave (CL Provided)';
-
-                                                                                    }
-                                                                                }
-
-                                                                            } else if ($get->noon == 'After Noon' && strpos($staff_biometric->details, 'Early Out') !== false) {
-                                                                                if (strpos($staff_biometric->details, ',') !== false) {
-                                                                                    $explode = explode(',', $staff_biometric->details);
-                                                                                    if (in_array('Early Out', $explode)) {
-                                                                                        $theIndex = array_search('Early Out', $explode);
-                                                                                        unset($explode[$theIndex]);
-                                                                                        $status = 'Present';
-                                                                                    }
-                                                                                    $implode = implode(',', $explode);
-                                                                                    $tempDetail = $implode . ',' . $get->noon . ' Casual Leave (CL Provided)';
-
-                                                                                } else {
-                                                                                    if ($staff_biometric->details == 'Early Out') {
-                                                                                        $tempDetail = $get->noon . ' Casual Leave (CL Provided)';
-
-                                                                                        $status = 'Present';
-                                                                                    }
-                                                                                }
-                                                                            }
-                                                                        }
-                                                                        //$staff_biometric->status = 'Present';
-                                                                        $staff_biometric->details = $tempDetail;
-                                                                        $staff_biometric->updated_at = Carbon::now();
-                                                                        $staff_biometric->status = $status;
-                                                                        $staff_biometric->save();
-                                                                    } else {
-                                                                        //$staff_biometric->status = 'Present';
-                                                                        $staff_biometric->details = $get->noon . ' Casual Leave (CL Provided)';
-
-                                                                        $staff_biometric->update_status = 1;
-                                                                        $staff_biometric->updated_at = Carbon::now();
-                                                                        $staff_biometric->save();
-                                                                    }
-                                                                }
-
-                                                            }
-                                                        }
-                                                        $check_teaching_staff = TeachingStaff::where(['user_name_id' => $get->user_id])->get();
-
-                                                        $theCl = $teaching_staff_get->casual_leave - $leaveInPast;
-                                                        if (count($check_teaching_staff) > 0) {
-                                                            $teaching_staff = TeachingStaff::where(['user_name_id' => $get->user_id])->update([
-                                                                'subtracted_cl' => $subtracted_cl,
-                                                                'past_casual_leave' => $cl,
-                                                                'casual_leave' => $theCl,
-                                                            ]);
-                                                        } else {
-                                                            $non_teaching_staff = NonTeachingStaff::where(['user_name_id' => $get->user_id])->update([
-                                                                'subtracted_cl' => $subtracted_cl,
-                                                                'past_casual_leave' => $cl,
-                                                                'casual_leave' => $theCl,
-                                                            ]);
-                                                        }
-                                                    } else {
-                                                        $cl = 0;
-                                                        $subtracted_cl = $teaching_staff_get->subtracted_cl + $teaching_staff_get->past_casual_leave;
-
-                                                        if ($halfDay == false) {
-                                                            for ($i = 0; $i < count($pastDates); $i++) {
-                                                                if ($i <= $teaching_staff_get->past_casual_leave) {
-
-                                                                    $staff_biometric = StaffBiometric::where(['date' => $pastDates[$i], 'user_name_id' => $get->user_id])->select('id', 'details', 'update_status', 'status')->first();
-                                                                    if ($staff_biometric != '') {
-                                                                        if ($staff_biometric->details != null) {
-                                                                            $tempDetail = $staff_biometric->details;
-                                                                            if ($staff_biometric->details != 'Sunday' && $staff_biometric->details != 'Holiday') {
-                                                                                $tempDetail = 'Casual Leave (CL Provided)';
-                                                                            }
-                                                                            $staff_biometric->status = 'Absent';
-                                                                            $staff_biometric->details = $tempDetail;
-                                                                            $staff_biometric->updated_at = Carbon::now();
-                                                                            $staff_biometric->save();
-                                                                        } else {
-                                                                            $staff_biometric->status = 'Absent';
-                                                                            $staff_biometric->details = 'Casual Leave (CL Provided)';
-                                                                            $staff_biometric->update_status = 1;
-                                                                            $staff_biometric->updated_at = Carbon::now();
-                                                                            $staff_biometric->save();
-                                                                        }
-                                                                    }
-                                                                } else {
-                                                                    $staff_biometric = StaffBiometric::where(['date' => $pastDates[$i], 'user_name_id' => $get->user_id])->select('id', 'details', 'update_status', 'status')->first();
-                                                                    if ($staff_biometric != '') {
-                                                                        if ($staff_biometric->details != null) {
-                                                                            $tempDetail = $staff_biometric->details;
-                                                                            if ($staff_biometric->details != 'Sunday' && $staff_biometric->details != 'Holiday') {
-                                                                                $tempDetail = 'Casual Leave';
-                                                                            }
-                                                                            $staff_biometric->status = 'Absent';
-                                                                            $staff_biometric->details = $tempDetail;
-                                                                            $staff_biometric->updated_at = Carbon::now();
-                                                                            $staff_biometric->save();
-                                                                        } else {
-                                                                            $staff_biometric->status = 'Absent';
-                                                                            $staff_biometric->details = 'Casual Leave';
-                                                                            $staff_biometric->update_status = 1;
-                                                                            $staff_biometric->updated_at = Carbon::now();
-                                                                            $staff_biometric->save();
-                                                                        }
-                                                                    }
-                                                                }
-                                                            }
-                                                        } else {
-                                                            foreach ($pastDates as $date) {
-                                                                $staff_biometric = StaffBiometric::where(['date' => $date, 'user_name_id' => $get->user_id])->select('id', 'details', 'update_status', 'status')->first();
-                                                                if ($staff_biometric != '') {
-                                                                    if ($staff_biometric->details != null) {
-                                                                        $tempDetail = $staff_biometric->details;
-                                                                        $status = $staff_biometric->status;
-                                                                        if ($staff_biometric->details != 'Sunday' && $staff_biometric->details != 'Holiday') {
-                                                                            if ($get->noon == 'Fore Noon' && strpos($staff_biometric->details, 'Late') !== false) {
-                                                                                if (strpos($staff_biometric->details, ',') !== false) {
-                                                                                    $explode = explode(',', $staff_biometric->details);
-                                                                                    if (in_array('Late', $explode)) {
-                                                                                        $theIndex = array_search('Late', $explode);
-                                                                                        unset($explode[$theIndex]);
-                                                                                    } else if (in_array('Too Late', $explode)) {
-                                                                                        $theIndex = array_search('Too Late', $explode);
-                                                                                        unset($explode[$theIndex]);
-                                                                                    }
-                                                                                    $implode = implode(',', $explode);
-                                                                                    $tempDetail = $implode . ',' . $get->noon . ' Casual Leave (CL Provided)';
-
-                                                                                } else {
-                                                                                    if ($staff_biometric->details == 'Late' || $staff_biometric->details == 'Too Late') {
-                                                                                        $tempDetail = $get->noon . ' Casual Leave (CL Provided)';
-
-                                                                                    }
-                                                                                }
-
-                                                                            } else if ($get->noon == 'After Noon' && strpos($staff_biometric->details, 'Early Out') !== false) {
-                                                                                if (strpos($staff_biometric->details, ',') !== false) {
-                                                                                    $explode = explode(',', $staff_biometric->details);
-                                                                                    if (in_array('Early Out', $explode)) {
-                                                                                        $theIndex = array_search('Early Out', $explode);
-                                                                                        unset($explode[$theIndex]);
-                                                                                        $status = 'Present';
-                                                                                    }
-                                                                                    $implode = implode(',', $explode);
-                                                                                    $tempDetail = $implode . ',' . $get->noon . ' Casual Leave (CL Provided)';
-
-                                                                                } else {
-                                                                                    if ($staff_biometric->details == 'Early Out') {
-                                                                                        $tempDetail = $get->noon . ' Casual Leave (CL Provided)';
-
-                                                                                        $status = 'Present';
-                                                                                    }
-                                                                                }
-                                                                            }
-                                                                        }
-                                                                        //$staff_biometric->status = 'Present';
-                                                                        $staff_biometric->details = $tempDetail;
-                                                                        $staff_biometric->updated_at = Carbon::now();
-                                                                        $staff_biometric->status = $status;
-                                                                        $staff_biometric->save();
-                                                                    } else {
-                                                                        //$staff_biometric->status = 'Present';
-                                                                        $staff_biometric->details = $get->noon . ' Casual Leave (CL Provided)';
-
-                                                                        $staff_biometric->update_status = 1;
-                                                                        $staff_biometric->updated_at = Carbon::now();
-                                                                        $staff_biometric->save();
-                                                                    }
-                                                                }
-                                                            }
-                                                        }
-                                                        $check_teaching_staff = TeachingStaff::where(['user_name_id' => $get->user_id])->get();
-                                                        $theCl = $teaching_staff_get->casual_leave - $teaching_staff_get->past_casual_leave;
-
-                                                        if (count($check_teaching_staff) > 0) {
-                                                            $teaching_staff = TeachingStaff::where(['user_name_id' => $get->user_id])->update([
-                                                                'subtracted_cl' => $subtracted_cl,
-                                                                'past_casual_leave' => $cl,
-                                                                'casual_leave' => $theCl,
-                                                            ]);
-                                                        } else {
-                                                            $non_teaching_staff = NonTeachingStaff::where(['user_name_id' => $get->user_id])->update([
-                                                                'subtracted_cl' => $subtracted_cl,
-                                                                'past_casual_leave' => $cl,
-                                                                'casual_leave' => $theCl,
-                                                            ]);
-                                                        }
-                                                    }
-                                                }
-                                            } else {
-
-                                                if ($halfDay == false) {
-                                                    foreach ($pastDates as $date) {
-                                                        $staff_biometric = StaffBiometric::where(['date' => $date, 'user_name_id' => $get->user_id])->select('id', 'details', 'update_status', 'status')->first();
-                                                        if ($staff_biometric != '') {
-                                                            if ($staff_biometric->details != null) {
-                                                                $tempDetail = $staff_biometric->details;
-                                                                if ($staff_biometric->details != 'Sunday' && $staff_biometric->details != 'Holiday') {
-                                                                    $tempDetail = 'Casual Leave';
-                                                                }
-                                                                $staff_biometric->status = 'Absent';
-                                                                $staff_biometric->details = $tempDetail;
-                                                                $staff_biometric->updated_at = Carbon::now();
-                                                                $staff_biometric->save();
-                                                            } else {
-                                                                $staff_biometric->status = 'Absent';
-                                                                $staff_biometric->details = 'Casual Leave';
-                                                                $staff_biometric->update_status = 1;
-                                                                $staff_biometric->updated_at = Carbon::now();
-                                                                $staff_biometric->save();
-                                                            }
-                                                        }
-                                                    }
-                                                } else {
-                                                    foreach ($pastDates as $date) {
-                                                        $staff_biometric = StaffBiometric::where(['date' => $date, 'user_name_id' => $get->user_id])->select('id', 'details', 'update_status', 'status')->first();
-                                                        if ($staff_biometric != '') {
-                                                            if ($staff_biometric->details != null) {
-                                                                $tempDetail = $staff_biometric->details;
-                                                                $status = $staff_biometric->status;
-                                                                if ($staff_biometric->details != 'Sunday' && $staff_biometric->details != 'Holiday') {
-                                                                    if ($get->noon == 'Fore Noon' && strpos($staff_biometric->details, 'Late') !== false) {
-                                                                        if (strpos($staff_biometric->details, ',') !== false) {
-                                                                            $explode = explode(',', $staff_biometric->details);
-                                                                            if (in_array('Late', $explode)) {
-                                                                                $theIndex = array_search('Late', $explode);
-                                                                                unset($explode[$theIndex]);
-                                                                            } else if (in_array('Too Late', $explode)) {
-                                                                                $theIndex = array_search('Too Late', $explode);
-                                                                                unset($explode[$theIndex]);
-                                                                            }
-                                                                            $implode = implode(',', $explode);
-                                                                            $tempDetail = $implode . ',' . $get->noon . ' Casual Leave';
-                                                                        } else {
-                                                                            if ($staff_biometric->details == 'Late' || $staff_biometric->details == 'Too Late') {
-                                                                                $tempDetail = $get->noon . ' Casual Leave';
-                                                                            }
-                                                                        }
-
-                                                                    } else if ($get->noon == 'After Noon' && strpos($staff_biometric->details, 'Early Out') !== false) {
-                                                                        if (strpos($staff_biometric->details, ',') !== false) {
-                                                                            $explode = explode(',', $staff_biometric->details);
-                                                                            if (in_array('Early Out', $explode)) {
-                                                                                $theIndex = array_search('Early Out', $explode);
-                                                                                unset($explode[$theIndex]);
-                                                                                $status = 'Present';
-                                                                            }
-                                                                            $implode = implode(',', $explode);
-                                                                            $tempDetail = $implode . ',' . $get->noon . ' Casual Leave';
-                                                                        } else {
-                                                                            if ($staff_biometric->details == 'Early Out') {
-                                                                                $tempDetail = $get->noon . ' Casual Leave';
-                                                                                $status = 'Present';
-                                                                            }
-                                                                        }
-                                                                    }
-                                                                }
-                                                                //$staff_biometric->status = 'Present';
-                                                                $staff_biometric->details = $tempDetail;
-                                                                $staff_biometric->updated_at = Carbon::now();
-                                                                $staff_biometric->status = $status;
-                                                                $staff_biometric->save();
-                                                            } else {
-                                                                //$staff_biometric->status = 'Present';
-                                                                $staff_biometric->details = $get->noon . ' Casual Leave';
-                                                                $staff_biometric->update_status = 1;
-                                                                $staff_biometric->updated_at = Carbon::now();
-                                                                $staff_biometric->save();
-                                                            }
-                                                        }
-                                                    }
-                                                }
-                                            }
-                                        }
-                                    }
-
-                                    $teaching_staff_get = TeachingStaff::where(['user_name_id' => $get->user_id])->select('casual_leave', 'past_casual_leave', 'subtracted_cl', 'casual_leave_taken', 'user_name_id')->first();
-
-                                    if ($teaching_staff_get == '') {
-                                        $non_tech_staff = NonTeachingStaff::where(['user_name_id' => $get->user_id])->select('casual_leave', 'past_casual_leave', 'subtracted_cl', 'casual_leave_taken', 'user_name_id')->first();
-                                        $teaching_staff_get = $non_tech_staff;
-                                    }
-                                    if ($leaveInCurrent > 0) {
-                                        if ($clAllocatedForCurrent != 0) {
-                                            if ($clAllocatedForCurrent != '') {
-                                                if ($teaching_staff_get->casual_leave > 0) {
-
-                                                    if ($leaveInCurrent >= 3) {
-
-                                                        $check_cl = 3 - $clAllocatedForCurrent;
-
-                                                        $deduct_cl = $check_cl - $teaching_staff_get->casual_leave;
-
-                                                        if ($deduct_cl > 0) {
-                                                            $cl = 0;
-                                                            $subtracted_cl = $teaching_staff_get->subtracted_cl + $deduct_cl;
-
-                                                            if ($halfDay == false) {
-                                                                for ($i = 0; $i < count($currentDates); $i++) {
-                                                                    if ($i <= $deduct_cl) {
-
-                                                                        $staff_biometric = StaffBiometric::where(['date' => $currentDates[$i], 'user_name_id' => $get->user_id])->select('id', 'details', 'update_status', 'status')->first();
-                                                                        if ($staff_biometric != '') {
-                                                                            if ($staff_biometric->details != null) {
-                                                                                $tempDetail = $staff_biometric->details;
-                                                                                if ($staff_biometric->details != 'Sunday' && $staff_biometric->details != 'Holiday') {
-                                                                                    $tempDetail = 'Casual Leave (CL Provided)';
-                                                                                }
-                                                                                $staff_biometric->status = 'Absent';
-                                                                                $staff_biometric->details = $tempDetail;
-                                                                                $staff_biometric->updated_at = Carbon::now();
-                                                                                $staff_biometric->save();
-                                                                            } else {
-                                                                                $staff_biometric->status = 'Absent';
-                                                                                $staff_biometric->details = 'Casual Leave (CL Provided)';
-                                                                                $staff_biometric->update_status = 1;
-                                                                                $staff_biometric->updated_at = Carbon::now();
-                                                                                $staff_biometric->save();
-                                                                            }
-                                                                        }
-                                                                    } else {
-
-                                                                        $staff_biometric = StaffBiometric::where(['date' => $currentDates[$i], 'user_name_id' => $get->user_id])->select('id', 'details', 'update_status', 'status')->first();
-                                                                        if ($staff_biometric != '') {
-                                                                            if ($staff_biometric->details != null) {
-                                                                                $tempDetail = $staff_biometric->details;
-                                                                                if ($staff_biometric->details != 'Sunday' && $staff_biometric->details != 'Holiday') {
-                                                                                    $tempDetail = 'Casual Leave';
-                                                                                }
-                                                                                $staff_biometric->status = 'Absent';
-                                                                                $staff_biometric->details = $tempDetail;
-                                                                                $staff_biometric->updated_at = Carbon::now();
-                                                                                $staff_biometric->save();
-                                                                            } else {
-                                                                                $staff_biometric->status = 'Absent';
-                                                                                $staff_biometric->details = 'Casual Leave';
-                                                                                $staff_biometric->update_status = 1;
-                                                                                $staff_biometric->updated_at = Carbon::now();
-                                                                                $staff_biometric->save();
-                                                                            }
-                                                                        }
-                                                                    }
-                                                                }
-                                                            } else {
-                                                                foreach ($currentDates as $date) {
-                                                                    $staff_biometric = StaffBiometric::where(['date' => $date, 'user_name_id' => $get->user_id])->select('id', 'details', 'update_status', 'status')->first();
-                                                                    if ($staff_biometric != '') {
-                                                                        if ($staff_biometric->details != null) {
-                                                                            $tempDetail = $staff_biometric->details;
-                                                                            $status = $staff_biometric->status;
-                                                                            if ($staff_biometric->details != 'Sunday' && $staff_biometric->details != 'Holiday') {
-                                                                                if ($get->noon == 'Fore Noon' && strpos($staff_biometric->details, 'Late') !== false) {
-                                                                                    if (strpos($staff_biometric->details, ',') !== false) {
-                                                                                        $explode = explode(',', $staff_biometric->details);
-                                                                                        if (in_array('Late', $explode)) {
-                                                                                            $theIndex = array_search('Late', $explode);
-                                                                                            unset($explode[$theIndex]);
-                                                                                        } else if (in_array('Too Late', $explode)) {
-                                                                                            $theIndex = array_search('Too Late', $explode);
-                                                                                            unset($explode[$theIndex]);
-                                                                                        }
-                                                                                        $implode = implode(',', $explode);
-                                                                                        $tempDetail = $implode . ',' . $get->noon . ' Casual Leave (CL Provided)';
-
-                                                                                    } else {
-                                                                                        if ($staff_biometric->details == 'Late' || $staff_biometric->details == 'Too Late') {
-                                                                                            $tempDetail = $get->noon . ' Casual Leave (CL Provided)';
-
-                                                                                        }
-                                                                                    }
-
-                                                                                } else if ($get->noon == 'After Noon' && strpos($staff_biometric->details, 'Early Out') !== false) {
-                                                                                    if (strpos($staff_biometric->details, ',') !== false) {
-                                                                                        $explode = explode(',', $staff_biometric->details);
-                                                                                        if (in_array('Early Out', $explode)) {
-                                                                                            $theIndex = array_search('Early Out', $explode);
-                                                                                            unset($explode[$theIndex]);
-                                                                                            $status = 'Present';
-                                                                                        }
-                                                                                        $implode = implode(',', $explode);
-                                                                                        $tempDetail = $implode . ',' . $get->noon . ' Casual Leave (CL Provided)';
-
-                                                                                    } else {
-                                                                                        if ($staff_biometric->details == 'Early Out') {
-                                                                                            $tempDetail = $get->noon . ' Casual Leave (CL Provided)';
-
-                                                                                            $status = 'Present';
-                                                                                        }
-                                                                                    }
-                                                                                }
-                                                                            }
-                                                                            //$staff_biometric->status = 'Present';
-                                                                            $staff_biometric->details = $tempDetail;
-                                                                            $staff_biometric->updated_at = Carbon::now();
-                                                                            $staff_biometric->status = $status;
-                                                                            $staff_biometric->save();
-                                                                        } else {
-                                                                            //$staff_biometric->status = 'Present';
-                                                                            $staff_biometric->details = $get->noon . ' Casual Leave (CL Provided)';
-
-                                                                            $staff_biometric->update_status = 1;
-                                                                            $staff_biometric->updated_at = Carbon::now();
-                                                                            $staff_biometric->save();
-                                                                        }
-                                                                    }
-                                                                }
-                                                            }
-
-                                                            $check_teaching_staff = TeachingStaff::where(['user_name_id' => $get->user_id])->get();
-                                                            if (count($check_teaching_staff) > 0) {
-                                                                $teaching_staff = TeachingStaff::where(['user_name_id' => $get->user_id])->update([
-                                                                    'subtracted_cl' => $subtracted_cl,
-                                                                    'casual_leave' => 0,
-                                                                    'past_casual_leave' => 0,
-                                                                ]);
-                                                            } else {
-                                                                $non_teaching_staff = NonTeachingStaff::where(['user_name_id' => $get->user_id])->update([
-                                                                    'subtracted_cl' => $subtracted_cl,
-                                                                    'casual_leave' => 0,
-                                                                    'past_casual_leave' => 0,
-                                                                ]);
-                                                            }
-                                                        } else {
-                                                            $cl = abs($deduct_cl);
-                                                            $subtracted_cl = $teaching_staff_get->subtracted_cl + $check_cl;
-
-                                                            if ($halfDay == false) {
-                                                                for ($i = 0; $i < count($currentDates); $i++) {
-                                                                    if ($i <= $check_cl) {
-
-                                                                        $staff_biometric = StaffBiometric::where(['date' => $currentDates[$i], 'user_name_id' => $get->user_id])->select('id', 'details', 'update_status', 'status')->first();
-                                                                        if ($staff_biometric != '') {
-                                                                            if ($staff_biometric->details != null) {
-                                                                                $tempDetail = $staff_biometric->details;
-                                                                                if ($staff_biometric->details != 'Sunday' && $staff_biometric->details != 'Holiday') {
-                                                                                    $tempDetail = 'Casual Leave (CL Provided)';
-                                                                                }
-                                                                                $staff_biometric->status = 'Absent';
-                                                                                $staff_biometric->details = $tempDetail;
-                                                                                $staff_biometric->updated_at = Carbon::now();
-                                                                                $staff_biometric->save();
-                                                                            } else {
-                                                                                $staff_biometric->status = 'Absent';
-                                                                                $staff_biometric->details = 'Casual Leave (CL Provided)';
-                                                                                $staff_biometric->update_status = 1;
-                                                                                $staff_biometric->updated_at = Carbon::now();
-                                                                                $staff_biometric->save();
-                                                                            }
-                                                                        }
-                                                                    } else {
-
-                                                                        $staff_biometric = StaffBiometric::where(['date' => $currentDates[$i], 'user_name_id' => $get->user_id])->select('id', 'details', 'update_status', 'status')->first();
-                                                                        if ($staff_biometric != '') {
-                                                                            if ($staff_biometric->details != null) {
-                                                                                $tempDetail = $staff_biometric->details;
-                                                                                if ($staff_biometric->details != 'Sunday' && $staff_biometric->details != 'Holiday') {
-                                                                                    $tempDetail = 'Casual Leave';
-                                                                                }
-                                                                                $staff_biometric->status = 'Absent';
-                                                                                $staff_biometric->details = $tempDetail;
-                                                                                $staff_biometric->updated_at = Carbon::now();
-                                                                                $staff_biometric->save();
-                                                                            } else {
-                                                                                $staff_biometric->status = 'Absent';
-                                                                                $staff_biometric->details = 'Casual Leave';
-                                                                                $staff_biometric->update_status = 1;
-                                                                                $staff_biometric->updated_at = Carbon::now();
-                                                                                $staff_biometric->save();
-                                                                            }
-                                                                        }
-                                                                    }
-                                                                }
-                                                            } else {
-                                                                foreach ($currentDates as $date) {
-                                                                    $staff_biometric = StaffBiometric::where(['date' => $date, 'user_name_id' => $get->user_id])->select('id', 'details', 'update_status', 'status')->first();
-                                                                    if ($staff_biometric != '') {
-                                                                        if ($staff_biometric->details != null) {
-                                                                            $tempDetail = $staff_biometric->details;
-                                                                            $status = $staff_biometric->status;
-                                                                            if ($staff_biometric->details != 'Sunday' && $staff_biometric->details != 'Holiday') {
-                                                                                if ($get->noon == 'Fore Noon' && strpos($staff_biometric->details, 'Late') !== false) {
-                                                                                    if (strpos($staff_biometric->details, ',') !== false) {
-                                                                                        $explode = explode(',', $staff_biometric->details);
-                                                                                        if (in_array('Late', $explode)) {
-                                                                                            $theIndex = array_search('Late', $explode);
-                                                                                            unset($explode[$theIndex]);
-                                                                                        } else if (in_array('Too Late', $explode)) {
-                                                                                            $theIndex = array_search('Too Late', $explode);
-                                                                                            unset($explode[$theIndex]);
-                                                                                        }
-                                                                                        $implode = implode(',', $explode);
-                                                                                        $tempDetail = $implode . ',' . $get->noon . ' Casual Leave (CL Provided)';
-
-                                                                                    } else {
-                                                                                        if ($staff_biometric->details == 'Late' || $staff_biometric->details == 'Too Late') {
-                                                                                            $tempDetail = $get->noon . ' Casual Leave (CL Provided)';
-
-                                                                                        }
-                                                                                    }
-
-                                                                                } else if ($get->noon == 'After Noon' && strpos($staff_biometric->details, 'Early Out') !== false) {
-                                                                                    if (strpos($staff_biometric->details, ',') !== false) {
-                                                                                        $explode = explode(',', $staff_biometric->details);
-                                                                                        if (in_array('Early Out', $explode)) {
-                                                                                            $theIndex = array_search('Early Out', $explode);
-                                                                                            unset($explode[$theIndex]);
-                                                                                            $status = 'Present';
-                                                                                        }
-                                                                                        $implode = implode(',', $explode);
-                                                                                        $tempDetail = $implode . ',' . $get->noon . ' Casual Leave (CL Provided)';
-
-                                                                                    } else {
-                                                                                        if ($staff_biometric->details == 'Early Out') {
-                                                                                            $tempDetail = $get->noon . ' Casual Leave (CL Provided)';
-
-                                                                                            $status = 'Present';
-                                                                                        }
-                                                                                    }
-                                                                                }
-                                                                            }
-                                                                            //$staff_biometric->status = 'Present';
-                                                                            $staff_biometric->details = $tempDetail;
-                                                                            $staff_biometric->updated_at = Carbon::now();
-                                                                            $staff_biometric->status = $status;
-                                                                            $staff_biometric->save();
-                                                                        } else {
-                                                                            //$staff_biometric->status = 'Present';
-                                                                            $staff_biometric->details = $get->noon . ' Casual Leave (CL Provided)';
-
-                                                                            $staff_biometric->update_status = 1;
-                                                                            $staff_biometric->updated_at = Carbon::now();
-                                                                            $staff_biometric->save();
-                                                                        }
-                                                                    }
-                                                                }
-                                                            }
-
-                                                            $check_teaching_staff = TeachingStaff::where(['user_name_id' => $get->user_id])->get();
-                                                            if (count($check_teaching_staff) > 0) {
-                                                                $teaching_staff = TeachingStaff::where(['user_name_id' => $get->user_id])->update([
-                                                                    'subtracted_cl' => $subtracted_cl,
-                                                                    'casual_leave' => $cl,
-                                                                    'past_casual_leave' => $cl,
-                                                                ]);
-                                                            } else {
-                                                                $non_teaching_staff = NonTeachingStaff::where(['user_name_id' => $get->user_id])->update([
-                                                                    'subtracted_cl' => $subtracted_cl,
-                                                                    'casual_leave' => $cl,
-                                                                    'past_casual_leave' => $cl,
-                                                                ]);
-                                                            }
-                                                        }
-                                                    } else {
-                                                        if ($clAllocatedForCurrent <= 3) {
-                                                            $check_cl = 3 - $clAllocatedForCurrent;
-                                                            if ($clAllocatedForCurrent >= 1) {
-                                                                $deduct_cl = $teaching_staff_get->casual_leave - $check_cl;
-                                                            } else {
-                                                                $deduct_cl = $teaching_staff_get->casual_leave - 0.5;
-                                                            }
-
-                                                            if ($deduct_cl > 0) {
-                                                                $cl = $deduct_cl;
-                                                                $subtracted_cl = $teaching_staff_get->subtracted_cl + $clAllocatedForCurrent;
-
-                                                                if ($halfDay == false) {
-                                                                    for ($i = 0; $i < count($currentDates); $i++) {
-                                                                        if ($i <= $clAllocatedForCurrent) {
-
-                                                                            $staff_biometric = StaffBiometric::where(['date' => $currentDates[$i], 'user_name_id' => $get->user_id])->select('id', 'details', 'update_status', 'status')->first();
-                                                                            if ($staff_biometric != '') {
-                                                                                if ($staff_biometric->details != null) {
-                                                                                    $tempDetail = $staff_biometric->details;
-                                                                                    if ($staff_biometric->details != 'Sunday' && $staff_biometric->details != 'Holiday') {
-                                                                                        $tempDetail = 'Casual Leave (CL Provided)';
-                                                                                    }
-                                                                                    $staff_biometric->status = 'Absent';
-                                                                                    $staff_biometric->details = $tempDetail;
-                                                                                    $staff_biometric->updated_at = Carbon::now();
-                                                                                    $staff_biometric->save();
-                                                                                } else {
-                                                                                    $staff_biometric->status = 'Absent';
-                                                                                    $staff_biometric->details = 'Casual Leave (CL Provided)';
-                                                                                    $staff_biometric->update_status = 1;
-                                                                                    $staff_biometric->updated_at = Carbon::now();
-                                                                                    $staff_biometric->save();
-                                                                                }
-                                                                            }
-                                                                        } else {
-
-                                                                            $staff_biometric = StaffBiometric::where(['date' => $currentDates[$i], 'user_name_id' => $get->user_id])->select('id', 'details', 'update_status', 'status')->first();
-                                                                            if ($staff_biometric != '') {
-                                                                                if ($staff_biometric->details != null) {
-                                                                                    $tempDetail = $staff_biometric->details;
-                                                                                    if ($staff_biometric->details != 'Sunday' && $staff_biometric->details != 'Holiday') {
-                                                                                        $tempDetail = 'Casual Leave';
-                                                                                    }
-                                                                                    $staff_biometric->status = 'Absent';
-                                                                                    $staff_biometric->details = $tempDetail;
-                                                                                    $staff_biometric->updated_at = Carbon::now();
-                                                                                    $staff_biometric->save();
-                                                                                } else {
-                                                                                    $staff_biometric->status = 'Absent';
-                                                                                    $staff_biometric->details = 'Casual Leave';
-                                                                                    $staff_biometric->update_status = 1;
-                                                                                    $staff_biometric->updated_at = Carbon::now();
-                                                                                    $staff_biometric->save();
-                                                                                }
-                                                                            }
-                                                                        }
-                                                                    }
-                                                                } else {
-                                                                    foreach ($currentDates as $date) {
-                                                                        $staff_biometric = StaffBiometric::where(['date' => $date, 'user_name_id' => $get->user_id])->select('id', 'details', 'update_status', 'status')->first();
-                                                                        if ($staff_biometric != '') {
-                                                                            if ($staff_biometric->details != null) {
-                                                                                $tempDetail = $staff_biometric->details;
-                                                                                $status = $staff_biometric->status;
-                                                                                if ($staff_biometric->details != 'Sunday' && $staff_biometric->details != 'Holiday') {
-                                                                                    if ($get->noon == 'Fore Noon' && strpos($staff_biometric->details, 'Late') !== false) {
-                                                                                        if (strpos($staff_biometric->details, ',') !== false) {
-                                                                                            $explode = explode(',', $staff_biometric->details);
-                                                                                            if (in_array('Late', $explode)) {
-                                                                                                $theIndex = array_search('Late', $explode);
-                                                                                                unset($explode[$theIndex]);
-                                                                                            } else if (in_array('Too Late', $explode)) {
-                                                                                                $theIndex = array_search('Too Late', $explode);
-                                                                                                unset($explode[$theIndex]);
-                                                                                            }
-                                                                                            $implode = implode(',', $explode);
-                                                                                            $tempDetail = $implode . ',' . $get->noon . ' Casual Leave (CL Provided)';
-
-                                                                                        } else {
-                                                                                            if ($staff_biometric->details == 'Late' || $staff_biometric->details == 'Too Late') {
-                                                                                                $tempDetail = $get->noon . ' Casual Leave (CL Provided)';
-
-                                                                                            }
-                                                                                        }
-
-                                                                                    } else if ($get->noon == 'After Noon' && strpos($staff_biometric->details, 'Early Out') !== false) {
-                                                                                        if (strpos($staff_biometric->details, ',') !== false) {
-                                                                                            $explode = explode(',', $staff_biometric->details);
-                                                                                            if (in_array('Early Out', $explode)) {
-                                                                                                $theIndex = array_search('Early Out', $explode);
-                                                                                                unset($explode[$theIndex]);
-                                                                                                $status = 'Present';
-                                                                                            }
-                                                                                            $implode = implode(',', $explode);
-                                                                                            $tempDetail = $implode . ',' . $get->noon . ' Casual Leave (CL Provided)';
-
-                                                                                        } else {
-                                                                                            if ($staff_biometric->details == 'Early Out') {
-                                                                                                $tempDetail = $get->noon . ' Casual Leave (CL Provided)';
-
-                                                                                                $status = 'Present';
-                                                                                            }
-                                                                                        }
-                                                                                    }
-                                                                                }
-                                                                                //$staff_biometric->status = 'Present';
-                                                                                $staff_biometric->details = $tempDetail;
-                                                                                $staff_biometric->updated_at = Carbon::now();
-                                                                                $staff_biometric->status = $status;
-                                                                                $staff_biometric->save();
-                                                                            } else {
-                                                                                //$staff_biometric->status = 'Present';
-                                                                                $staff_biometric->details = $get->noon . ' Casual Leave (CL Provided)';
-
-                                                                                $staff_biometric->update_status = 1;
-                                                                                $staff_biometric->updated_at = Carbon::now();
-                                                                                $staff_biometric->save();
-                                                                            }
-                                                                        }
-                                                                    }
-                                                                }
-                                                                $check_teaching_staff = TeachingStaff::where(['user_name_id' => $get->user_id])->get();
-                                                                if (count($check_teaching_staff) > 0) {
-                                                                    $teaching_staff = TeachingStaff::where(['user_name_id' => $get->user_id])->update([
-                                                                        'subtracted_cl' => $subtracted_cl,
-                                                                        'casual_leave' => $cl,
-                                                                        'past_casual_leave' => $cl,
-                                                                    ]);
-                                                                } else {
-                                                                    $non_teaching_staff = NonTeachingStaff::where(['user_name_id' => $get->user_id])->update([
-                                                                        'subtracted_cl' => $subtracted_cl,
-                                                                        'casual_leave' => $cl,
-                                                                        'past_casual_leave' => $cl,
-                                                                    ]);
-                                                                }
-                                                            } else {
-                                                                $cl = 0;
-                                                                $subtracted_cl = $teaching_staff_get->subtracted_cl + $teaching_staff_get->casual_leave;
-
-                                                                if ($halfDay == false) {
-                                                                    for ($i = 0; $i < count($currentDates); $i++) {
-                                                                        if ($i <= $teaching_staff_get->casual_leave) {
-                                                                            $staff_biometric = StaffBiometric::where(['date' => $currentDates[$i], 'user_name_id' => $get->user_id])->select('id', 'details', 'update_status', 'status')->first();
-                                                                            if ($staff_biometric != '') {
-                                                                                if ($staff_biometric->details != null) {
-                                                                                    $tempDetail = $staff_biometric->details;
-                                                                                    if ($staff_biometric->details != 'Sunday' && $staff_biometric->details != 'Holiday') {
-                                                                                        $tempDetail = 'Casual Leave (CL Provided)';
-                                                                                    }
-                                                                                    $staff_biometric->status = 'Absent';
-                                                                                    $staff_biometric->details = $tempDetail;
-                                                                                    $staff_biometric->updated_at = Carbon::now();
-                                                                                    $staff_biometric->save();
-                                                                                } else {
-                                                                                    $staff_biometric->status = 'Absent';
-                                                                                    $staff_biometric->details = 'Casual Leave (CL Provided)';
-                                                                                    $staff_biometric->update_status = 1;
-                                                                                    $staff_biometric->updated_at = Carbon::now();
-                                                                                    $staff_biometric->save();
-                                                                                }
-                                                                            }
-
-                                                                        } else {
-                                                                            $staff_biometric = StaffBiometric::where(['date' => $currentDates[$i], 'user_name_id' => $get->user_id])->select('id', 'details', 'update_status', 'status')->first();
-                                                                            if ($staff_biometric != '') {
-                                                                                if ($staff_biometric->details != null) {
-                                                                                    $tempDetail = $staff_biometric->details;
-                                                                                    if ($staff_biometric->details != 'Sunday' && $staff_biometric->details != 'Holiday') {
-                                                                                        $tempDetail = 'Casual Leave';
-                                                                                    }
-                                                                                    $staff_biometric->status = 'Absent';
-                                                                                    $staff_biometric->details = $tempDetail;
-                                                                                    $staff_biometric->updated_at = Carbon::now();
-                                                                                    $staff_biometric->save();
-                                                                                } else {
-                                                                                    $staff_biometric->status = 'Absent';
-                                                                                    $staff_biometric->details = 'Casual Leave';
-                                                                                    $staff_biometric->update_status = 1;
-                                                                                    $staff_biometric->updated_at = Carbon::now();
-                                                                                    $staff_biometric->save();
-                                                                                }
-                                                                            }
-                                                                        }
-                                                                    }
-                                                                } else {
-                                                                    foreach ($currentDates as $date) {
-                                                                        $staff_biometric = StaffBiometric::where(['date' => $date, 'user_name_id' => $get->user_id])->select('id', 'details', 'update_status', 'status')->first();
-                                                                        if ($staff_biometric != '') {
-                                                                            if ($staff_biometric->details != null) {
-                                                                                $tempDetail = $staff_biometric->details;
-                                                                                $status = $staff_biometric->status;
-                                                                                if ($staff_biometric->details != 'Sunday' && $staff_biometric->details != 'Holiday') {
-                                                                                    if ($get->noon == 'Fore Noon' && strpos($staff_biometric->details, 'Late') !== false) {
-                                                                                        if (strpos($staff_biometric->details, ',') !== false) {
-                                                                                            $explode = explode(',', $staff_biometric->details);
-                                                                                            if (in_array('Late', $explode)) {
-                                                                                                $theIndex = array_search('Late', $explode);
-                                                                                                unset($explode[$theIndex]);
-                                                                                            } else if (in_array('Too Late', $explode)) {
-                                                                                                $theIndex = array_search('Too Late', $explode);
-                                                                                                unset($explode[$theIndex]);
-                                                                                            }
-                                                                                            $implode = implode(',', $explode);
-                                                                                            $tempDetail = $implode . ',' . $get->noon . ' Casual Leave (CL Provided)';
-
-                                                                                        } else {
-                                                                                            if ($staff_biometric->details == 'Late' || $staff_biometric->details == 'Too Late') {
-                                                                                                $tempDetail = $get->noon . ' Casual Leave (CL Provided)';
-
-                                                                                            }
-                                                                                        }
-
-                                                                                    } else if ($get->noon == 'After Noon' && strpos($staff_biometric->details, 'Early Out') !== false) {
-                                                                                        if (strpos($staff_biometric->details, ',') !== false) {
-                                                                                            $explode = explode(',', $staff_biometric->details);
-                                                                                            if (in_array('Early Out', $explode)) {
-                                                                                                $theIndex = array_search('Early Out', $explode);
-                                                                                                unset($explode[$theIndex]);
-                                                                                                $status = 'Present';
-                                                                                            }
-                                                                                            $implode = implode(',', $explode);
-                                                                                            $tempDetail = $implode . ',' . $get->noon . ' Casual Leave (CL Provided)';
-
-                                                                                        } else {
-                                                                                            if ($staff_biometric->details == 'Early Out') {
-                                                                                                $tempDetail = $get->noon . ' Casual Leave (CL Provided)';
-
-                                                                                                $status = 'Present';
-                                                                                            }
-                                                                                        }
-                                                                                    }
-                                                                                }
-                                                                                //$staff_biometric->status = 'Present';
-                                                                                $staff_biometric->details = $tempDetail;
-                                                                                $staff_biometric->updated_at = Carbon::now();
-                                                                                $staff_biometric->status = $status;
-                                                                                $staff_biometric->save();
-                                                                            } else {
-                                                                                //$staff_biometric->status = 'Present';
-                                                                                $staff_biometric->details = $get->noon . ' Casual Leave (CL Provided)';
-
-                                                                                $staff_biometric->update_status = 1;
-                                                                                $staff_biometric->updated_at = Carbon::now();
-                                                                                $staff_biometric->save();
-                                                                            }
-                                                                        }
-                                                                    }
-                                                                }
-                                                                $check_teaching_staff = TeachingStaff::where(['user_name_id' => $get->user_id])->get();
-                                                                if (count($check_teaching_staff) > 0) {
-                                                                    $teaching_staff = TeachingStaff::where(['user_name_id' => $get->user_id])->update([
-                                                                        'subtracted_cl' => $subtracted_cl,
-                                                                        'casual_leave' => $cl,
-                                                                        'past_casual_leave' => $cl,
-                                                                    ]);
-                                                                } else {
-                                                                    $non_teaching_staff = NonTeachingStaff::where(['user_name_id' => $get->user_id])->update([
-                                                                        'subtracted_cl' => $subtracted_cl,
-                                                                        'casual_leave' => $cl,
-                                                                        'past_casual_leave' => $cl,
-                                                                    ]);
-                                                                }
-                                                            }
-                                                        } else {
-
-                                                            if ($halfDay == false) {
-                                                                foreach ($currentDates as $date) {
-                                                                    $staff_biometric = StaffBiometric::where(['date' => $date, 'user_name_id' => $get->user_id])->select('id', 'details', 'update_status', 'status')->first();
-                                                                    if ($staff_biometric != '') {
-                                                                        if ($staff_biometric->details != null) {
-                                                                            $tempDetail = $staff_biometric->details;
-                                                                            if ($staff_biometric->details != 'Sunday' && $staff_biometric->details != 'Holiday') {
-                                                                                $tempDetail = 'Casual Leave';
-                                                                            }
-                                                                            $staff_biometric->status = 'Absent';
-                                                                            $staff_biometric->details = $tempDetail;
-                                                                            $staff_biometric->updated_at = Carbon::now();
-                                                                            $staff_biometric->save();
-                                                                        } else {
-                                                                            $staff_biometric->status = 'Absent';
-                                                                            $staff_biometric->details = 'Casual Leave';
-                                                                            $staff_biometric->update_status = 1;
-                                                                            $staff_biometric->updated_at = Carbon::now();
-                                                                            $staff_biometric->save();
-                                                                        }
-                                                                    }
-                                                                }
-                                                            } else {
-                                                                foreach ($currentDates as $date) {
-                                                                    $staff_biometric = StaffBiometric::where(['date' => $date, 'user_name_id' => $get->user_id])->select('id', 'details', 'update_status', 'status')->first();
-                                                                    if ($staff_biometric != '') {
-                                                                        if ($staff_biometric->details != null) {
-                                                                            $tempDetail = $staff_biometric->details;
-                                                                            $status = $staff_biometric->status;
-                                                                            if ($staff_biometric->details != 'Sunday' && $staff_biometric->details != 'Holiday') {
-                                                                                if ($get->noon == 'Fore Noon' && strpos($staff_biometric->details, 'Late') !== false) {
-                                                                                    if (strpos($staff_biometric->details, ',') !== false) {
-                                                                                        $explode = explode(',', $staff_biometric->details);
-                                                                                        if (in_array('Late', $explode)) {
-                                                                                            $theIndex = array_search('Late', $explode);
-                                                                                            unset($explode[$theIndex]);
-                                                                                        } else if (in_array('Too Late', $explode)) {
-                                                                                            $theIndex = array_search('Too Late', $explode);
-                                                                                            unset($explode[$theIndex]);
-                                                                                        }
-                                                                                        $implode = implode(',', $explode);
-                                                                                        $tempDetail = $implode . ',' . $get->noon . ' Casual Leave';
-                                                                                    } else {
-                                                                                        if ($staff_biometric->details == 'Late' || $staff_biometric->details == 'Too Late') {
-                                                                                            $tempDetail = $get->noon . ' Casual Leave';
-                                                                                        }
-                                                                                    }
-
-                                                                                } else if ($get->noon == 'After Noon' && strpos($staff_biometric->details, 'Early Out') !== false) {
-                                                                                    if (strpos($staff_biometric->details, ',') !== false) {
-                                                                                        $explode = explode(',', $staff_biometric->details);
-                                                                                        if (in_array('Early Out', $explode)) {
-                                                                                            $theIndex = array_search('Early Out', $explode);
-                                                                                            unset($explode[$theIndex]);
-                                                                                            $status = 'Present';
-                                                                                        }
-                                                                                        $implode = implode(',', $explode);
-                                                                                        $tempDetail = $implode . ',' . $get->noon . ' Casual Leave';
-                                                                                    } else {
-                                                                                        if ($staff_biometric->details == 'Early Out') {
-                                                                                            $tempDetail = $get->noon . ' Casual Leave';
-                                                                                            $status = 'Present';
-                                                                                        }
-                                                                                    }
-                                                                                }
-                                                                            }
-                                                                            //$staff_biometric->status = 'Present';
-                                                                            $staff_biometric->details = $tempDetail;
-                                                                            $staff_biometric->updated_at = Carbon::now();
-                                                                            $staff_biometric->status = $status;
-                                                                            $staff_biometric->save();
-                                                                        } else {
-                                                                            //$staff_biometric->status = 'Present';
-                                                                            $staff_biometric->details = $get->noon . ' Casual Leave';
-                                                                            $staff_biometric->update_status = 1;
-                                                                            $staff_biometric->updated_at = Carbon::now();
-                                                                            $staff_biometric->save();
-                                                                        }
-                                                                    }
-                                                                }
-                                                            }
-                                                        }
-                                                    }
-                                                } else {
-
-                                                    if ($halfDay == false) {
-                                                        foreach ($currentDates as $date) {
-                                                            $staff_biometric = StaffBiometric::where(['date' => $date, 'user_name_id' => $get->user_id])->select('id', 'details', 'update_status', 'status')->first();
-                                                            if ($staff_biometric != '') {
-                                                                if ($staff_biometric->details != null) {
-                                                                    $tempDetail = $staff_biometric->details;
-                                                                    if ($staff_biometric->details != 'Sunday' && $staff_biometric->details != 'Holiday') {
-                                                                        $tempDetail = 'Casual Leave';
-                                                                    }
-                                                                    $staff_biometric->status = 'Absent';
-                                                                    $staff_biometric->details = $tempDetail;
-                                                                    $staff_biometric->updated_at = Carbon::now();
-                                                                    $staff_biometric->save();
-                                                                } else {
-                                                                    $staff_biometric->status = 'Absent';
-                                                                    $staff_biometric->details = 'Casual Leave';
-                                                                    $staff_biometric->update_status = 1;
-                                                                    $staff_biometric->updated_at = Carbon::now();
-                                                                    $staff_biometric->save();
-                                                                }
-                                                            }
-                                                        }
-                                                    } else {
-                                                        foreach ($currentDates as $date) {
-                                                            $staff_biometric = StaffBiometric::where(['date' => $date, 'user_name_id' => $get->user_id])->select('id', 'details', 'update_status', 'status')->first();
-                                                            if ($staff_biometric != '') {
-                                                                if ($staff_biometric->details != null) {
-                                                                    $tempDetail = $staff_biometric->details;
-                                                                    $status = $staff_biometric->status;
-                                                                    if ($staff_biometric->details != 'Sunday' && $staff_biometric->details != 'Holiday') {
-                                                                        if ($get->noon == 'Fore Noon' && strpos($staff_biometric->details, 'Late') !== false) {
-                                                                            if (strpos($staff_biometric->details, ',') !== false) {
-                                                                                $explode = explode(',', $staff_biometric->details);
-                                                                                if (in_array('Late', $explode)) {
-                                                                                    $theIndex = array_search('Late', $explode);
-                                                                                    unset($explode[$theIndex]);
-                                                                                } else if (in_array('Too Late', $explode)) {
-                                                                                    $theIndex = array_search('Too Late', $explode);
-                                                                                    unset($explode[$theIndex]);
-                                                                                }
-                                                                                $implode = implode(',', $explode);
-                                                                                $tempDetail = $implode . ',' . $get->noon . ' Casual Leave';
-                                                                            } else {
-                                                                                if ($staff_biometric->details == 'Late' || $staff_biometric->details == 'Too Late') {
-                                                                                    $tempDetail = $get->noon . ' Casual Leave';
-                                                                                }
-                                                                            }
-
-                                                                        } else if ($get->noon == 'After Noon' && strpos($staff_biometric->details, 'Early Out') !== false) {
-                                                                            if (strpos($staff_biometric->details, ',') !== false) {
-                                                                                $explode = explode(',', $staff_biometric->details);
-                                                                                if (in_array('Early Out', $explode)) {
-                                                                                    $theIndex = array_search('Early Out', $explode);
-                                                                                    unset($explode[$theIndex]);
-                                                                                    $status = 'Present';
-                                                                                }
-                                                                                $implode = implode(',', $explode);
-                                                                                $tempDetail = $implode . ',' . $get->noon . ' Casual Leave';
-                                                                            } else {
-                                                                                if ($staff_biometric->details == 'Early Out') {
-                                                                                    $tempDetail = $get->noon . ' Casual Leave';
-                                                                                    $status = 'Present';
-                                                                                }
-                                                                            }
-                                                                        }
-                                                                    }
-                                                                    //$staff_biometric->status = 'Present';
-                                                                    $staff_biometric->details = $tempDetail;
-                                                                    $staff_biometric->updated_at = Carbon::now();
-                                                                    $staff_biometric->status = $status;
-                                                                    $staff_biometric->save();
-                                                                } else {
-
-                                                                    //$staff_biometric->status = 'Present';
-                                                                    $staff_biometric->details = $get->noon . ' Casual Leave';
-                                                                    $staff_biometric->update_status = 1;
-                                                                    $staff_biometric->updated_at = Carbon::now();
-                                                                    $staff_biometric->save();
-                                                                }
-                                                            }
-                                                        }
-                                                    }
-                                                }
-                                            } else {
-
-                                                if ($halfDay == false) {
-                                                    foreach ($currentDates as $date) {
-                                                        $staff_biometric = StaffBiometric::where(['date' => $date, 'user_name_id' => $get->user_id])->select('id', 'details', 'update_status', 'status')->first();
-                                                        if ($staff_biometric != '') {
-                                                            if ($staff_biometric->details != null) {
-                                                                $tempDetail = $staff_biometric->details;
-                                                                if ($staff_biometric->details != 'Sunday' && $staff_biometric->details != 'Holiday') {
-                                                                    $tempDetail = 'Casual Leave';
-                                                                }
-                                                                $staff_biometric->status = 'Absent';
-                                                                $staff_biometric->details = $tempDetail;
-                                                                $staff_biometric->updated_at = Carbon::now();
-                                                                $staff_biometric->save();
-                                                            } else {
-                                                                $staff_biometric->status = 'Absent';
-                                                                $staff_biometric->details = 'Casual Leave';
-                                                                $staff_biometric->update_status = 1;
-                                                                $staff_biometric->updated_at = Carbon::now();
-                                                                $staff_biometric->save();
-
-                                                            }
-                                                        }
-                                                    }
-                                                } else {
-                                                    foreach ($currentDates as $date) {
-
-                                                        $staff_biometric = StaffBiometric::where(['date' => $date, 'user_name_id' => $get->user_id])->select('id', 'details', 'update_status', 'status')->first();
-                                                        if ($staff_biometric != '') {
-                                                            if ($staff_biometric->details != null) {
-                                                                $tempDetail = $staff_biometric->details;
-                                                                $status = $staff_biometric->status;
-                                                                if ($staff_biometric->details != 'Sunday' && $staff_biometric->details != 'Holiday') {
-                                                                    if ($get->noon == 'Fore Noon' && strpos($staff_biometric->details, 'Late') !== false) {
-                                                                        if (strpos($staff_biometric->details, ',') !== false) {
-                                                                            $explode = explode(',', $staff_biometric->details);
-                                                                            if (in_array('Late', $explode)) {
-                                                                                $theIndex = array_search('Late', $explode);
-                                                                                unset($explode[$theIndex]);
-                                                                            } else if (in_array('Too Late', $explode)) {
-                                                                                $theIndex = array_search('Too Late', $explode);
-                                                                                unset($explode[$theIndex]);
-                                                                            }
-                                                                            $implode = implode(',', $explode);
-                                                                            $tempDetail = $implode . ',' . $get->noon . ' Casual Leave';
-                                                                        } else {
-                                                                            if ($staff_biometric->details == 'Late' || $staff_biometric->details == 'Too Late') {
-                                                                                $tempDetail = $get->noon . ' Casual Leave';
-                                                                            }
-                                                                        }
-
-                                                                    } else if ($get->noon == 'After Noon' && strpos($staff_biometric->details, 'Early Out') !== false) {
-                                                                        if (strpos($staff_biometric->details, ',') !== false) {
-                                                                            $explode = explode(',', $staff_biometric->details);
-                                                                            if (in_array('Early Out', $explode)) {
-                                                                                $theIndex = array_search('Early Out', $explode);
-                                                                                unset($explode[$theIndex]);
-                                                                                $status = 'Present';
-                                                                            }
-                                                                            $implode = implode(',', $explode);
-                                                                            $tempDetail = $implode . ',' . $get->noon . ' Casual Leave';
-                                                                        } else {
-                                                                            if ($staff_biometric->details == 'Early Out') {
-                                                                                $tempDetail = $get->noon . ' Casual Leave';
-                                                                                $status = 'Present';
-                                                                            }
-                                                                        }
-                                                                    }
-                                                                }
-                                                                //$staff_biometric->status = 'Present';
-                                                                $staff_biometric->details = $tempDetail;
-                                                                $staff_biometric->updated_at = Carbon::now();
-                                                                $staff_biometric->status = $status;
-                                                                $staff_biometric->save();
-                                                            } else {
-                                                                //$staff_biometric->status = 'Present';
-                                                                $staff_biometric->details = $get->noon . ' Casual Leave';
-                                                                $staff_biometric->update_status = 1;
-                                                                $staff_biometric->updated_at = Carbon::now();
-                                                                $staff_biometric->save();
-
-                                                            }
-                                                        }
-                                                    }
-                                                }
-                                            }
-                                        } else {
-                                            if ($teaching_staff_get->casual_leave > 0) {
-                                                if ($leaveInCurrent >= 3) {
-                                                    $deduct_cl = 3 - $teaching_staff_get->casual_leave;
-
-                                                    if ($deduct_cl > 0) {
-                                                        $cl = 0;
-                                                        $subtracted_cl = $teaching_staff_get->subtracted_cl + $teaching_staff_get->casual_leave;
-
-                                                        if ($halfDay == false) {
-                                                            for ($i = 0; $i < count($currentDates); $i++) {
-                                                                if ($i <= $teaching_staff_get->casual_leave) {
-                                                                    $staff_biometric = StaffBiometric::where(['date' => $currentDates[$i], 'user_name_id' => $get->user_id])->select('id', 'details', 'update_status', 'status')->first();
-                                                                    if ($staff_biometric != '') {
-                                                                        if ($staff_biometric->details != null) {
-                                                                            $tempDetail = $staff_biometric->details;
-                                                                            if ($staff_biometric->details != 'Sunday' && $staff_biometric->details != 'Holiday') {
-                                                                                $tempDetail = 'Casual Leave (CL Provided)';
-                                                                            }
-                                                                            $staff_biometric->status = 'Absent';
-                                                                            $staff_biometric->details = $tempDetail;
-                                                                            $staff_biometric->updated_at = Carbon::now();
-                                                                            $staff_biometric->save();
-                                                                        } else {
-                                                                            $staff_biometric->status = 'Absent';
-                                                                            $staff_biometric->details = 'Casual Leave (CL Provided)';
-                                                                            $staff_biometric->update_status = 1;
-                                                                            $staff_biometric->updated_at = Carbon::now();
-                                                                            $staff_biometric->save();
-
-                                                                        }
-                                                                    }
-                                                                } else {
-                                                                    $staff_biometric = StaffBiometric::where(['date' => $currentDates[$i], 'user_name_id' => $get->user_id])->select('id', 'details', 'update_status', 'status')->first();
-                                                                    if ($staff_biometric != '') {
-                                                                        if ($staff_biometric->details != null) {
-                                                                            $tempDetail = $staff_biometric->details;
-                                                                            if ($staff_biometric->details != 'Sunday' && $staff_biometric->details != 'Holiday') {
-                                                                                $tempDetail = 'Casual Leave';
-                                                                            }
-                                                                            $staff_biometric->status = 'Absent';
-                                                                            $staff_biometric->details = $tempDetail;
-                                                                            $staff_biometric->updated_at = Carbon::now();
-                                                                            $staff_biometric->save();
-                                                                        } else {
-                                                                            $staff_biometric->status = 'Absent';
-                                                                            $staff_biometric->details = 'Casual Leave';
-                                                                            $staff_biometric->update_status = 1;
-                                                                            $staff_biometric->updated_at = Carbon::now();
-                                                                            $staff_biometric->save();
-                                                                        }
-                                                                    }
-                                                                }
-                                                            }
-                                                        } else {
-                                                            foreach ($currentDates as $date) {
-                                                                $staff_biometric = StaffBiometric::where(['date' => $date, 'user_name_id' => $get->user_id])->select('id', 'details', 'update_status', 'status')->first();
-                                                                if ($staff_biometric != '') {
-                                                                    if ($staff_biometric->details != null) {
-                                                                        $tempDetail = $staff_biometric->details;
-                                                                        $status = $staff_biometric->status;
-                                                                        if ($staff_biometric->details != 'Sunday' && $staff_biometric->details != 'Holiday') {
-                                                                            if ($get->noon == 'Fore Noon' && strpos($staff_biometric->details, 'Late') !== false) {
-                                                                                if (strpos($staff_biometric->details, ',') !== false) {
-                                                                                    $explode = explode(',', $staff_biometric->details);
-                                                                                    if (in_array('Late', $explode)) {
-                                                                                        $theIndex = array_search('Late', $explode);
-                                                                                        unset($explode[$theIndex]);
-                                                                                    } else if (in_array('Too Late', $explode)) {
-                                                                                        $theIndex = array_search('Too Late', $explode);
-                                                                                        unset($explode[$theIndex]);
-                                                                                    }
-                                                                                    $implode = implode(',', $explode);
-                                                                                    $tempDetail = $implode . ',' . $get->noon . ' Casual Leave (CL Provided)';
-
-                                                                                } else {
-                                                                                    if ($staff_biometric->details == 'Late' || $staff_biometric->details == 'Too Late') {
-                                                                                        $tempDetail = $get->noon . ' Casual Leave (CL Provided)';
-
-                                                                                    }
-                                                                                }
-
-                                                                            } else if ($get->noon == 'After Noon' && strpos($staff_biometric->details, 'Early Out') !== false) {
-                                                                                if (strpos($staff_biometric->details, ',') !== false) {
-                                                                                    $explode = explode(',', $staff_biometric->details);
-                                                                                    if (in_array('Early Out', $explode)) {
-                                                                                        $theIndex = array_search('Early Out', $explode);
-                                                                                        unset($explode[$theIndex]);
-                                                                                        $status = 'Present';
-                                                                                    }
-                                                                                    $implode = implode(',', $explode);
-                                                                                    $tempDetail = $implode . ',' . $get->noon . ' Casual Leave (CL Provided)';
-
-                                                                                } else {
-                                                                                    if ($staff_biometric->details == 'Early Out') {
-                                                                                        $tempDetail = $get->noon . ' Casual Leave (CL Provided)';
-
-                                                                                        $status = 'Present';
-                                                                                    }
-                                                                                }
-                                                                            }
-                                                                        }
-                                                                        //$staff_biometric->status = 'Present';
-                                                                        $staff_biometric->details = $tempDetail;
-                                                                        $staff_biometric->updated_at = Carbon::now();
-                                                                        $staff_biometric->status = $status;
-                                                                        $staff_biometric->save();
-                                                                    } else {
-                                                                        //$staff_biometric->status = 'Present';
-                                                                        $staff_biometric->details = $get->noon . ' Casual Leave (CL Provided)';
-
-                                                                        $staff_biometric->update_status = 1;
-                                                                        $staff_biometric->updated_at = Carbon::now();
-                                                                        $staff_biometric->save();
-
-                                                                    }
-                                                                }
-                                                            }
-                                                        }
-
-                                                        $check_teaching_staff = TeachingStaff::where(['user_name_id' => $get->user_id])->get();
-                                                        if (count($check_teaching_staff) > 0) {
-                                                            $teaching_staff = TeachingStaff::where(['user_name_id' => $get->user_id])->update([
-                                                                'subtracted_cl' => $subtracted_cl,
-                                                                'casual_leave' => 0,
-                                                                'past_casual_leave' => 0,
-                                                            ]);
-                                                        } else {
-                                                            $non_teaching_staff = NonTeachingStaff::where(['user_name_id' => $get->user_id])->update([
-                                                                'subtracted_cl' => $subtracted_cl,
-                                                                'casual_leave' => 0,
-                                                                'past_casual_leave' => 0,
-                                                            ]);
-                                                        }
-                                                    } else {
-                                                        $cl = abs($deduct_cl);
-                                                        $subtracted_cl = $teaching_staff_get->subtracted_cl + 3;
-
-                                                        if ($halfDay == false) {
-                                                            for ($i = 0; $i < count($currentDates); $i++) {
-                                                                if ($i <= 3) {
-                                                                    $staff_biometric = StaffBiometric::where(['date' => $currentDates[$i], 'user_name_id' => $get->user_id])->select('id', 'details', 'update_status', 'status')->first();
-                                                                    if ($staff_biometric != '') {
-                                                                        if ($staff_biometric->details != null) {
-                                                                            $tempDetail = $staff_biometric->details;
-                                                                            if ($staff_biometric->details != 'Sunday' && $staff_biometric->details != 'Holiday') {
-                                                                                $tempDetail = 'Casual Leave (CL Provided)';
-                                                                            }
-                                                                            $staff_biometric->status = 'Absent';
-                                                                            $staff_biometric->details = $tempDetail;
-                                                                            $staff_biometric->updated_at = Carbon::now();
-                                                                            $staff_biometric->save();
-                                                                        } else {
-                                                                            $staff_biometric->status = 'Absent';
-                                                                            $staff_biometric->details = 'Casual Leave (CL Provided)';
-                                                                            $staff_biometric->update_status = 1;
-                                                                            $staff_biometric->updated_at = Carbon::now();
-                                                                            $staff_biometric->save();
-                                                                        }
-                                                                    }
-                                                                } else {
-                                                                    $staff_biometric = StaffBiometric::where(['date' => $currentDates[$i], 'user_name_id' => $get->user_id])->select('id', 'details', 'update_status', 'status')->first();
-                                                                    if ($staff_biometric != '') {
-                                                                        if ($staff_biometric->details != null) {
-                                                                            $tempDetail = $staff_biometric->details;
-                                                                            if ($staff_biometric->details != 'Sunday' && $staff_biometric->details != 'Holiday') {
-                                                                                $tempDetail = 'Casual Leave';
-                                                                            }
-                                                                            $staff_biometric->status = 'Absent';
-                                                                            $staff_biometric->details = $tempDetail;
-                                                                            $staff_biometric->updated_at = Carbon::now();
-                                                                            $staff_biometric->save();
-                                                                        } else {
-                                                                            $staff_biometric->status = 'Absent';
-                                                                            $staff_biometric->details = 'Casual Leave';
-                                                                            $staff_biometric->update_status = 1;
-                                                                            $staff_biometric->updated_at = Carbon::now();
-                                                                            $staff_biometric->save();
-                                                                        }
-                                                                    }
-                                                                }
-                                                            }
-                                                        } else {
-                                                            foreach ($currentDates as $date) {
-                                                                $staff_biometric = StaffBiometric::where(['date' => $date, 'user_name_id' => $get->user_id])->select('id', 'details', 'update_status', 'status')->first();
-                                                                if ($staff_biometric != '') {
-                                                                    if ($staff_biometric->details != null) {
-                                                                        $tempDetail = $staff_biometric->details;
-                                                                        $status = $staff_biometric->status;
-                                                                        if ($staff_biometric->details != 'Sunday' && $staff_biometric->details != 'Holiday') {
-                                                                            if ($get->noon == 'Fore Noon' && strpos($staff_biometric->details, 'Late') !== false) {
-                                                                                if (strpos($staff_biometric->details, ',') !== false) {
-                                                                                    $explode = explode(',', $staff_biometric->details);
-                                                                                    if (in_array('Late', $explode)) {
-                                                                                        $theIndex = array_search('Late', $explode);
-                                                                                        unset($explode[$theIndex]);
-                                                                                    } else if (in_array('Too Late', $explode)) {
-                                                                                        $theIndex = array_search('Too Late', $explode);
-                                                                                        unset($explode[$theIndex]);
-                                                                                    }
-                                                                                    $implode = implode(',', $explode);
-                                                                                    $tempDetail = $implode . ',' . $get->noon . ' Casual Leave (CL Provided)';
-
-                                                                                } else {
-                                                                                    if ($staff_biometric->details == 'Late' || $staff_biometric->details == 'Too Late') {
-                                                                                        $tempDetail = $get->noon . ' Casual Leave (CL Provided)';
-
-                                                                                    }
-                                                                                }
-
-                                                                            } else if ($get->noon == 'After Noon' && strpos($staff_biometric->details, 'Early Out') !== false) {
-                                                                                if (strpos($staff_biometric->details, ',') !== false) {
-                                                                                    $explode = explode(',', $staff_biometric->details);
-                                                                                    if (in_array('Early Out', $explode)) {
-                                                                                        $theIndex = array_search('Early Out', $explode);
-                                                                                        unset($explode[$theIndex]);
-                                                                                        $status = 'Present';
-                                                                                    }
-                                                                                    $implode = implode(',', $explode);
-                                                                                    $tempDetail = $implode . ',' . $get->noon . ' Casual Leave (CL Provided)';
-
-                                                                                } else {
-                                                                                    if ($staff_biometric->details == 'Early Out') {
-                                                                                        $tempDetail = $get->noon . ' Casual Leave (CL Provided)';
-
-                                                                                        $status = 'Present';
-                                                                                    }
-                                                                                }
-                                                                            }
-                                                                        }
-                                                                        //$staff_biometric->status = 'Present';
-                                                                        $staff_biometric->details = $tempDetail;
-                                                                        $staff_biometric->updated_at = Carbon::now();
-                                                                        $staff_biometric->status = $status;
-                                                                        $staff_biometric->save();
-                                                                    } else {
-                                                                        //$staff_biometric->status = 'Present';
-                                                                        $staff_biometric->details = $get->noon . ' Casual Leave (CL Provided)';
-
-                                                                        $staff_biometric->update_status = 1;
-                                                                        $staff_biometric->updated_at = Carbon::now();
-                                                                        $staff_biometric->save();
-                                                                    }
-                                                                }
-                                                            }
-                                                        }
-                                                        $check_teaching_staff = TeachingStaff::where(['user_name_id' => $get->user_id])->get();
-                                                        if (count($check_teaching_staff) > 0) {
-                                                            $teaching_staff = TeachingStaff::where(['user_name_id' => $get->user_id])->update([
-                                                                'subtracted_cl' => $subtracted_cl,
-                                                                'casual_leave' => $cl,
-                                                                'past_casual_leave' => $cl + 1,
-                                                            ]);
-                                                        } else {
-                                                            $non_teaching_staff = NonTeachingStaff::where(['user_name_id' => $get->user_id])->update([
-                                                                'subtracted_cl' => $subtracted_cl,
-                                                                'casual_leave' => $cl,
-                                                                'past_casual_leave' => $cl + 1,
-                                                            ]);
-                                                        }
-                                                    }
-                                                } else {
-                                                    $deduct_cl = $teaching_staff_get->casual_leave - $leaveInCurrent;
-
-                                                    if ($deduct_cl > 0) {
-
-                                                        $cl = $deduct_cl;
-                                                        $subtracted_cl = $teaching_staff_get->subtracted_cl + $leaveInCurrent;
-
-                                                        if ($halfDay == false) {
-                                                            for ($i = 0; $i < count($currentDates); $i++) {
-                                                                if ($i <= $leaveInCurrent) {
-                                                                    $staff_biometric = StaffBiometric::where(['date' => $currentDates[$i], 'user_name_id' => $get->user_id])->select('id', 'details', 'update_status', 'status')->first();
-                                                                    if ($staff_biometric != '') {
-                                                                        if ($staff_biometric->details != null) {
-                                                                            $tempDetail = $staff_biometric->details;
-                                                                            if ($staff_biometric->details != 'Sunday' && $staff_biometric->details != 'Holiday') {
-                                                                                $tempDetail = 'Casual Leave (CL Provided)';
-                                                                            }
-                                                                            $staff_biometric->status = 'Absent';
-                                                                            $staff_biometric->details = $tempDetail;
-                                                                            $staff_biometric->updated_at = Carbon::now();
-                                                                            $staff_biometric->save();
-                                                                        } else {
-                                                                            $staff_biometric->status = 'Absent';
-                                                                            $staff_biometric->details = 'Casual Leave (CL Provided)';
-                                                                            $staff_biometric->update_status = 1;
-                                                                            $staff_biometric->updated_at = Carbon::now();
-                                                                            $staff_biometric->save();
-                                                                        }
-                                                                    }
-                                                                } else {
-                                                                    $staff_biometric = StaffBiometric::where(['date' => $currentDates[$i], 'user_name_id' => $get->user_id])->select('id', 'details', 'update_status', 'status')->first();
-                                                                    if ($staff_biometric != '') {
-                                                                        if ($staff_biometric->details != null) {
-                                                                            $tempDetail = $staff_biometric->details;
-                                                                            if ($staff_biometric->details != 'Sunday' && $staff_biometric->details != 'Holiday') {
-                                                                                $tempDetail = 'Casual Leave';
-                                                                            }
-                                                                            $staff_biometric->status = 'Absent';
-                                                                            $staff_biometric->details = $tempDetail;
-                                                                            $staff_biometric->updated_at = Carbon::now();
-                                                                            $staff_biometric->save();
-                                                                        } else {
-                                                                            $staff_biometric->status = 'Absent';
-                                                                            $staff_biometric->details = 'Casual Leave';
-                                                                            $staff_biometric->update_status = 1;
-                                                                            $staff_biometric->updated_at = Carbon::now();
-                                                                            $staff_biometric->save();
-                                                                        }
-                                                                    }
-                                                                }
-                                                            }
-                                                        } else {
-                                                            foreach ($currentDates as $date) {
-                                                                $staff_biometric = StaffBiometric::where(['date' => $date, 'user_name_id' => $get->user_id])->select('id', 'details', 'update_status', 'status')->first();
-                                                                if ($staff_biometric != '') {
-                                                                    if ($staff_biometric->details != null) {
-                                                                        $tempDetail = $staff_biometric->details;
-                                                                        $status = $staff_biometric->status;
-                                                                        if ($staff_biometric->details != 'Sunday' && $staff_biometric->details != 'Holiday') {
-                                                                            if ($get->noon == 'Fore Noon' && strpos($staff_biometric->details, 'Late') !== false) {
-                                                                                if (strpos($staff_biometric->details, ',') !== false) {
-                                                                                    $explode = explode(',', $staff_biometric->details);
-                                                                                    if (in_array('Late', $explode)) {
-                                                                                        $theIndex = array_search('Late', $explode);
-                                                                                        unset($explode[$theIndex]);
-                                                                                    } else if (in_array('Too Late', $explode)) {
-                                                                                        $theIndex = array_search('Too Late', $explode);
-                                                                                        unset($explode[$theIndex]);
-                                                                                    }
-                                                                                    $implode = implode(',', $explode);
-                                                                                    $tempDetail = $implode . ',' . $get->noon . ' Casual Leave (CL Provided)';
-
-                                                                                } else {
-                                                                                    if ($staff_biometric->details == 'Late' || $staff_biometric->details == 'Too Late') {
-                                                                                        $tempDetail = $get->noon . ' Casual Leave (CL Provided)';
-
-                                                                                    }
-                                                                                }
-
-                                                                            } else if ($get->noon == 'After Noon' && strpos($staff_biometric->details, 'Early Out') !== false) {
-                                                                                if (strpos($staff_biometric->details, ',') !== false) {
-                                                                                    $explode = explode(',', $staff_biometric->details);
-                                                                                    if (in_array('Early Out', $explode)) {
-                                                                                        $theIndex = array_search('Early Out', $explode);
-                                                                                        unset($explode[$theIndex]);
-                                                                                        $status = 'Present';
-                                                                                    }
-                                                                                    $implode = implode(',', $explode);
-                                                                                    $tempDetail = $implode . ',' . $get->noon . ' Casual Leave (CL Provided)';
-
-                                                                                } else {
-                                                                                    if ($staff_biometric->details == 'Early Out') {
-                                                                                        $tempDetail = $get->noon . ' Casual Leave (CL Provided)';
-
-                                                                                        $status = 'Present';
-                                                                                    }
-                                                                                }
-                                                                            }
-                                                                        }
-                                                                        //$staff_biometric->status = 'Present';
-                                                                        $staff_biometric->details = $tempDetail;
-                                                                        $staff_biometric->updated_at = Carbon::now();
-                                                                        $staff_biometric->status = $status;
-                                                                        $staff_biometric->save();
-                                                                    } else {
-                                                                        //$staff_biometric->status = 'Present';
-                                                                        $staff_biometric->details = $get->noon . ' Casual Leave (CL Provided)';
-
-                                                                        $staff_biometric->update_status = 1;
-                                                                        $staff_biometric->updated_at = Carbon::now();
-                                                                        $staff_biometric->save();
-                                                                    }
-                                                                }
-                                                            }
-                                                        }
-                                                        $check_teaching_staff = TeachingStaff::where(['user_name_id' => $get->user_id])->get();
-                                                        if (count($check_teaching_staff) > 0) {
-                                                            $teaching_staff = TeachingStaff::where(['user_name_id' => $get->user_id])->update([
-                                                                'subtracted_cl' => $subtracted_cl,
-                                                                'casual_leave' => $cl,
-                                                                'past_casual_leave' => $cl,
-                                                            ]);
-                                                        } else {
-                                                            $non_teaching_staff = NonTeachingStaff::where(['user_name_id' => $get->user_id])->update([
-                                                                'subtracted_cl' => $subtracted_cl,
-                                                                'casual_leave' => $cl,
-                                                                'past_casual_leave' => $cl,
-                                                            ]);
-                                                        }
-                                                    } else {
-
-                                                        $cl = 0;
-                                                        $subtracted_cl = $teaching_staff_get->subtracted_cl + $teaching_staff_get->casual_leave;
-
-                                                        if ($halfDay == false) {
-                                                            for ($i = 0; $i < count($currentDates); $i++) {
-                                                                if ($i <= $teaching_staff_get->casual_leave) {
-                                                                    $staff_biometric = StaffBiometric::where(['date' => $currentDates[$i], 'user_name_id' => $get->user_id])->select('id', 'details', 'update_status', 'status')->first();
-                                                                    if ($staff_biometric != '') {
-                                                                        if ($staff_biometric->details != null) {
-                                                                            $tempDetail = $staff_biometric->details;
-                                                                            if ($staff_biometric->details != 'Sunday' && $staff_biometric->details != 'Holiday') {
-                                                                                $tempDetail = 'Casual Leave (CL Provided)';
-                                                                            }
-                                                                            $staff_biometric->status = 'Absent';
-                                                                            $staff_biometric->details = $tempDetail;
-                                                                            $staff_biometric->updated_at = Carbon::now();
-                                                                            $staff_biometric->save();
-                                                                        } else {
-                                                                            $staff_biometric->status = 'Absent';
-                                                                            $staff_biometric->details = 'Casual Leave (CL Provided)';
-                                                                            $staff_biometric->update_status = 1;
-                                                                            $staff_biometric->updated_at = Carbon::now();
-                                                                            $staff_biometric->save();
-                                                                        }
-                                                                    }
-                                                                } else {
-                                                                    $staff_biometric = StaffBiometric::where(['date' => $currentDates[$i], 'user_name_id' => $get->user_id])->select('id', 'details', 'update_status', 'status')->first();
-                                                                    if ($staff_biometric != '') {
-                                                                        if ($staff_biometric->details != null) {
-                                                                            $tempDetail = $staff_biometric->details;
-                                                                            if ($staff_biometric->details != 'Sunday' && $staff_biometric->details != 'Holiday') {
-                                                                                $tempDetail = 'Casual Leave';
-                                                                            }
-                                                                            $staff_biometric->status = 'Absent';
-                                                                            $staff_biometric->details = $tempDetail;
-                                                                            $staff_biometric->updated_at = Carbon::now();
-                                                                            $staff_biometric->save();
-                                                                        } else {
-                                                                            $staff_biometric->status = 'Absent';
-                                                                            $staff_biometric->details = 'Casual Leave';
-                                                                            $staff_biometric->update_status = 1;
-                                                                            $staff_biometric->updated_at = Carbon::now();
-                                                                            $staff_biometric->save();
-                                                                        }
-                                                                    }
-                                                                }
-                                                            }
-                                                        } else {
-                                                            foreach ($currentDates as $date) {
-                                                                $staff_biometric = StaffBiometric::where(['date' => $date, 'user_name_id' => $get->user_id])->select('id', 'details', 'update_status', 'status')->first();
-                                                                if ($staff_biometric != '') {
-                                                                    if ($staff_biometric->details != null) {
-                                                                        $tempDetail = $staff_biometric->details;
-                                                                        $status = $staff_biometric->status;
-                                                                        if ($staff_biometric->details != 'Sunday' && $staff_biometric->details != 'Holiday') {
-                                                                            if ($get->noon == 'Fore Noon' && strpos($staff_biometric->details, 'Late') !== false) {
-                                                                                if (strpos($staff_biometric->details, ',') !== false) {
-                                                                                    $explode = explode(',', $staff_biometric->details);
-                                                                                    if (in_array('Late', $explode)) {
-                                                                                        $theIndex = array_search('Late', $explode);
-                                                                                        unset($explode[$theIndex]);
-                                                                                    } else if (in_array('Too Late', $explode)) {
-                                                                                        $theIndex = array_search('Too Late', $explode);
-                                                                                        unset($explode[$theIndex]);
-                                                                                    }
-                                                                                    $implode = implode(',', $explode);
-                                                                                    $tempDetail = $implode . ',' . $get->noon . ' Casual Leave (CL Provided)';
-
-                                                                                } else {
-                                                                                    if ($staff_biometric->details == 'Late' || $staff_biometric->details == 'Too Late') {
-                                                                                        $tempDetail = $get->noon . ' Casual Leave (CL Provided)';
-
-                                                                                    }
-                                                                                }
-
-                                                                            } else if ($get->noon == 'After Noon' && strpos($staff_biometric->details, 'Early Out') !== false) {
-                                                                                if (strpos($staff_biometric->details, ',') !== false) {
-                                                                                    $explode = explode(',', $staff_biometric->details);
-                                                                                    if (in_array('Early Out', $explode)) {
-                                                                                        $theIndex = array_search('Early Out', $explode);
-                                                                                        unset($explode[$theIndex]);
-                                                                                        $status = 'Present';
-                                                                                    }
-                                                                                    $implode = implode(',', $explode);
-                                                                                    $tempDetail = $implode . ',' . $get->noon . ' Casual Leave (CL Provided)';
-
-                                                                                } else {
-                                                                                    if ($staff_biometric->details == 'Early Out') {
-                                                                                        $tempDetail = $get->noon . ' Casual Leave (CL Provided)';
-
-                                                                                        $status = 'Present';
-                                                                                    }
-                                                                                }
-                                                                            }
-                                                                        }
-                                                                        //$staff_biometric->status = 'Present';
-                                                                        $staff_biometric->details = $tempDetail;
-                                                                        $staff_biometric->updated_at = Carbon::now();
-                                                                        $staff_biometric->status = $status;
-                                                                        $staff_biometric->save();
-                                                                    } else {
-                                                                        //$staff_biometric->status = 'Present';
-                                                                        $staff_biometric->details = $get->noon . ' Casual Leave (CL Provided)';
-
-                                                                        $staff_biometric->update_status = 1;
-                                                                        $staff_biometric->updated_at = Carbon::now();
-                                                                        $staff_biometric->save();
-                                                                    }
-                                                                }
-                                                            }
-                                                        }
-                                                        $check_teaching_staff = TeachingStaff::where(['user_name_id' => $get->user_id])->get();
-                                                        if (count($check_teaching_staff) > 0) {
-                                                            $teaching_staff = TeachingStaff::where(['user_name_id' => $get->user_id])->update([
-                                                                'subtracted_cl' => $subtracted_cl,
-                                                                'casual_leave' => 0,
-                                                                'past_casual_leave' => 0,
-                                                            ]);
-                                                        } else {
-                                                            $non_teaching_staff = NonTeachingStaff::where(['user_name_id' => $get->user_id])->update([
-                                                                'subtracted_cl' => $subtracted_cl,
-                                                                'casual_leave' => 0,
-                                                                'past_casual_leave' => 0,
-                                                            ]);
-                                                        }
-                                                    }
-                                                }
-                                            } else {
-
-                                                if ($halfDay == false) {
-                                                    foreach ($currentDates as $date) {
-                                                        $staff_biometric = StaffBiometric::where(['date' => $date, 'user_name_id' => $get->user_id])->select('id', 'details', 'update_status', 'status')->first();
-                                                        if ($staff_biometric != '') {
-                                                            if ($staff_biometric->details != null) {
-                                                                $tempDetail = $staff_biometric->details;
-                                                                if ($staff_biometric->details != 'Sunday' && $staff_biometric->details != 'Holiday') {
-                                                                    $tempDetail = 'Casual Leave';
-                                                                }
-                                                                $staff_biometric->status = 'Absent';
-                                                                $staff_biometric->details = $tempDetail;
-                                                                $staff_biometric->updated_at = Carbon::now();
-                                                                $staff_biometric->save();
-                                                            } else {
-                                                                $staff_biometric->status = 'Absent';
-                                                                $staff_biometric->details = 'Casual Leave';
-                                                                $staff_biometric->update_status = 1;
-                                                                $staff_biometric->updated_at = Carbon::now();
-                                                                $staff_biometric->save();
-                                                            }
-                                                        }
-                                                    }
-                                                } else {
-                                                    foreach ($currentDates as $date) {
-                                                        $staff_biometric = StaffBiometric::where(['date' => $date, 'user_name_id' => $get->user_id])->select('id', 'details', 'update_status', 'status')->first();
-                                                        if ($staff_biometric != '') {
-                                                            if ($staff_biometric->details != null) {
-                                                                $tempDetail = $staff_biometric->details;
-                                                                $status = $staff_biometric->status;
-                                                                if ($staff_biometric->details != 'Sunday' && $staff_biometric->details != 'Holiday') {
-                                                                    if ($get->noon == 'Fore Noon' && strpos($staff_biometric->details, 'Late') !== false) {
-                                                                        if (strpos($staff_biometric->details, ',') !== false) {
-                                                                            $explode = explode(',', $staff_biometric->details);
-                                                                            if (in_array('Late', $explode)) {
-                                                                                $theIndex = array_search('Late', $explode);
-                                                                                unset($explode[$theIndex]);
-                                                                            } else if (in_array('Too Late', $explode)) {
-                                                                                $theIndex = array_search('Too Late', $explode);
-                                                                                unset($explode[$theIndex]);
-                                                                            }
-                                                                            $implode = implode(',', $explode);
-                                                                            $tempDetail = $implode . ',' . $get->noon . ' Casual Leave';
-                                                                        } else {
-                                                                            if ($staff_biometric->details == 'Late' || $staff_biometric->details == 'Too Late') {
-                                                                                $tempDetail = $get->noon . ' Casual Leave';
-                                                                            }
-                                                                        }
-
-                                                                    } else if ($get->noon == 'After Noon' && strpos($staff_biometric->details, 'Early Out') !== false) {
-                                                                        if (strpos($staff_biometric->details, ',') !== false) {
-                                                                            $explode = explode(',', $staff_biometric->details);
-                                                                            if (in_array('Early Out', $explode)) {
-                                                                                $theIndex = array_search('Early Out', $explode);
-                                                                                unset($explode[$theIndex]);
-                                                                                $status = 'Present';
-                                                                            }
-                                                                            $implode = implode(',', $explode);
-                                                                            $tempDetail = $implode . ',' . $get->noon . ' Casual Leave';
-                                                                        } else {
-                                                                            if ($staff_biometric->details == 'Early Out') {
-                                                                                $tempDetail = $get->noon . ' Casual Leave';
-                                                                                $status = 'Present';
-                                                                            }
-                                                                        }
-                                                                    }
-                                                                }
-                                                                //$staff_biometric->status = 'Present';
-                                                                $staff_biometric->details = $tempDetail;
-                                                                $staff_biometric->updated_at = Carbon::now();
-                                                                $staff_biometric->status = $status;
-                                                                $staff_biometric->save();
-                                                            } else {
-                                                                //$staff_biometric->status = 'Present';
-                                                                $staff_biometric->details = $get->noon . ' Casual Leave';
-                                                                $staff_biometric->update_status = 1;
-                                                                $staff_biometric->updated_at = Carbon::now();
-                                                                $staff_biometric->save();
-                                                            }
-                                                        }
-                                                    }
-                                                }
-                                            }
-                                        }
-                                    }
-                                } else {
-                                    $dates = Carbon::parse($first_date)->daysUntil($last_date);
-
-                                    if ($get->half_day_leave != null && $get->noon != null) {
-
-                                        $staff_biometric = StaffBiometric::where(['date' => $get->half_day_leave, 'user_name_id' => $get->user_id])->select('id', 'details', 'update_status', 'status')->first();
+                                if ($halfDay == false) {
+                                    // Full Day Leave Request.
+                                    foreach ($currentDates as $date) {
+                                        $staff_biometric = StaffBiometric::where(['date' => $date, 'user_name_id' => $get->user_id])->select('id', 'details', 'update_status', 'status')->first();
+                                        $check_cl = Staffs::where(['user_name_id' => $get->user_id])->first();
                                         if ($staff_biometric != '') {
-                                            if ($staff_biometric->details != null) {
-                                                $tempDetail = $staff_biometric->details;
-                                                $status = $staff_biometric->status;
-                                                if ($staff_biometric->details != 'Sunday' && $staff_biometric->details != 'Holiday') {
-                                                    if ($get->noon == 'Fore Noon' && strpos($staff_biometric->details, 'Late') !== false) {
-                                                        if (strpos($staff_biometric->details, ',') !== false) {
-                                                            $explode = explode(',', $staff_biometric->details);
-                                                            if (in_array('Late', $explode)) {
-                                                                $theIndex = array_search('Late', $explode);
-                                                                unset($explode[$theIndex]);
-                                                            } else if (in_array('Too Late', $explode)) {
-                                                                $theIndex = array_search('Too Late', $explode);
-                                                                unset($explode[$theIndex]);
-                                                            }
-                                                            $implode = implode(',', $explode);
-                                                            $tempDetail = $implode . ',' . $get->noon . ' Casual Leave';
-                                                        } else {
-                                                            if ($staff_biometric->details == 'Late' || $staff_biometric->details == 'Too Late') {
-                                                                $tempDetail = $get->noon . ' Casual Leave';
-                                                            }
-                                                        }
-
-                                                    } else if ($get->noon == 'After Noon' && strpos($staff_biometric->details, 'Early Out') !== false) {
-                                                        if (strpos($staff_biometric->details, ',') !== false) {
-                                                            $explode = explode(',', $staff_biometric->details);
-                                                            if (in_array('Early Out', $explode)) {
-                                                                $theIndex = array_search('Early Out', $explode);
-                                                                unset($explode[$theIndex]);
-                                                                $status = 'Present';
-                                                            }
-                                                            $implode = implode(',', $explode);
-                                                            $tempDetail = $implode . ',' . $get->noon . ' Casual Leave';
-                                                        } else {
-                                                            if ($staff_biometric->details == 'Early Out') {
-                                                                $tempDetail = $get->noon . ' Casual Leave';
-                                                                $status = 'Present';
-                                                            }
-                                                        }
-                                                    }
-                                                }
-                                                //$staff_biometric->status = 'Present';
-                                                $staff_biometric->details = $tempDetail;
-                                                $staff_biometric->updated_at = Carbon::now();
-                                                $staff_biometric->status = $status;
-                                                $staff_biometric->save();
-                                            } else {
-
-                                                //$staff_biometric->status = 'Present';
-                                                $staff_biometric->details = $get->noon . ' Casual Leave';
+                                            if ($check_cl->casual_leave > 0) {
+                                                $staff_biometric->details = 'Casual Leave (CL Provided)';
                                                 $staff_biometric->update_status = 1;
                                                 $staff_biometric->updated_at = Carbon::now();
+                                                $staff_biometric->balance_cl = $staff_biometric->balance_cl - $cl_deduct;
                                                 $staff_biometric->save();
-                                            }
-                                        }
 
-                                    } else {
-
-                                        foreach ($dates as $date) {
-
-                                            $staff_biometric = StaffBiometric::where(['date' => $date->format('Y-m-d'), 'user_name_id' => $get->user_id])->select('id', 'details', 'update_status', 'status')->first();
-                                            if ($staff_biometric != '') {
-                                                if ($staff_biometric->details != null) {
-                                                    $tempDetail = $staff_biometric->details;
-                                                    if ($staff_biometric->details != 'Sunday' && $staff_biometric->details != 'Holiday') {
-                                                        $tempDetail = 'Casual Leave';
-                                                    }
-                                                    $staff_biometric->status = 'Absent';
-                                                    $staff_biometric->details = $tempDetail;
-                                                    $staff_biometric->updated_at = Carbon::now();
-                                                    $staff_biometric->save();
-                                                } else {
-
-                                                    $staff_biometric->status = 'Absent';
-                                                    $staff_biometric->details = 'Casual Leave';
-                                                    $staff_biometric->update_status = 1;
-                                                    $staff_biometric->updated_at = Carbon::now();
-                                                    $staff_biometric->save();
-
-                                                }
-                                            }
-                                        }
-                                    }
-                                }
-                            } else {
-                                $dates = Carbon::parse($first_date)->daysUntil($last_date);
-
-                                if ($get->half_day_leave != null && $get->noon != null) {
-
-                                    $staff_biometric = StaffBiometric::where(['date' => $get->half_day_leave, 'user_name_id' => $get->user_id])->select('id', 'details', 'update_status', 'status')->first();
-                                    if ($staff_biometric != '') {
-                                        if ($staff_biometric->details != null) {
-                                            $tempDetail = $staff_biometric->details;
-                                            $status = $staff_biometric->status;
-                                            if ($staff_biometric->details != 'Sunday' && $staff_biometric->details != 'Holiday') {
-                                                if ($get->noon == 'Fore Noon' && strpos($staff_biometric->details, 'Late') !== false) {
-                                                    if (strpos($staff_biometric->details, ',') !== false) {
-                                                        $explode = explode(',', $staff_biometric->details);
-                                                        if (in_array('Late', $explode)) {
-                                                            $theIndex = array_search('Late', $explode);
-                                                            unset($explode[$theIndex]);
-                                                        } else if (in_array('Too Late', $explode)) {
-                                                            $theIndex = array_search('Too Late', $explode);
-                                                            unset($explode[$theIndex]);
-                                                        }
-                                                        $implode = implode(',', $explode);
-                                                        $tempDetail = $implode . ',' . $get->noon . ' Casual Leave';
-                                                    } else {
-                                                        if ($staff_biometric->details == 'Late' || $staff_biometric->details == 'Too Late') {
-                                                            $tempDetail = $get->noon . ' Casual Leave';
-                                                        }
-                                                    }
-
-                                                } else if ($get->noon == 'After Noon' && strpos($staff_biometric->details, 'Early Out') !== false) {
-                                                    if (strpos($staff_biometric->details, ',') !== false) {
-                                                        $explode = explode(',', $staff_biometric->details);
-                                                        if (in_array('Early Out', $explode)) {
-                                                            $theIndex = array_search('Early Out', $explode);
-                                                            unset($explode[$theIndex]);
-                                                            $status = 'Present';
-                                                        }
-                                                        $implode = implode(',', $explode);
-                                                        $tempDetail = $implode . ',' . $get->noon . ' Casual Leave';
-                                                    } else {
-                                                        if ($staff_biometric->details == 'Early Out') {
-                                                            $tempDetail = $get->noon . ' Casual Leave';
-                                                            $status = 'Present';
-                                                        }
-                                                    }
-                                                }
-                                            }
-                                            //$staff_biometric->status = 'Present';
-                                            $staff_biometric->details = $tempDetail;
-                                            $staff_biometric->updated_at = Carbon::now();
-                                            $staff_biometric->status = $status;
-                                            $staff_biometric->save();
-                                        } else {
-
-                                            //$staff_biometric->status = 'Present';
-                                            $staff_biometric->details = $get->noon . ' Casual Leave';
-                                            $staff_biometric->update_status = 1;
-                                            $staff_biometric->updated_at = Carbon::now();
-                                            $staff_biometric->save();
-                                        }
-                                    }
-
-                                } else {
-
-                                    foreach ($dates as $date) {
-
-                                        $staff_biometric = StaffBiometric::where(['date' => $date->format('Y-m-d'), 'user_name_id' => $get->user_id])->select('id', 'details', 'update_status', 'status')->first();
-                                        if ($staff_biometric != '') {
-                                            if ($staff_biometric->details != null) {
-                                                $tempDetail = $staff_biometric->details;
-                                                if ($staff_biometric->details != 'Sunday' && $staff_biometric->details != 'Holiday') {
-                                                    $tempDetail = 'Casual Leave';
-                                                }
-                                                $staff_biometric->status = 'Absent';
-                                                $staff_biometric->details = $tempDetail;
-                                                $staff_biometric->updated_at = Carbon::now();
-                                                $staff_biometric->save();
+                                                $check_cl->casual_leave = $check_cl->casual_leave - $cl_deduct;
+                                                $check_cl->save();
                                             } else {
-                                                $staff_biometric->status = 'Absent';
                                                 $staff_biometric->details = 'Casual Leave';
                                                 $staff_biometric->update_status = 1;
                                                 $staff_biometric->updated_at = Carbon::now();
@@ -4810,518 +884,146 @@ class HrmRequestLeaveController extends Controller
                                             }
                                         }
                                     }
-                                }
-                            }
-                        } else if ($get->leave_type == 2) {
+                                } else {
+                                    //Half Day Leave.
+                                    foreach ($currentDates as $date) {
+                                        $staff_biometric = StaffBiometric::where(['date' => $date, 'user_name_id' => $get->user_id])->select('id', 'details', 'update_status', 'status')->first();
+                                        $check_cl = Staffs::where(['user_name_id' => $get->user_id])->first();
+                                        if ($staff_biometric != '') {
+                                            if ($check_cl->casual_leave > 0) {
+                                                $staff_biometric->details = $get->noon . ' Casual Leave (CL Provided)';
+                                                $staff_biometric->update_status = 1;
+                                                $staff_biometric->balance_cl = $staff_biometric->balance_cl - $cl_deduct;
+                                                $staff_biometric->updated_at = Carbon::now();
+                                                $staff_biometric->save();
 
-                            $dates = Carbon::parse($first_date)->daysUntil($last_date);
-
-                            if ($get->half_day_leave != null && $get->noon != null) {
-
-                                if ($get->user_id != null) {
-
-                                    $staff_biometric = StaffBiometric::where(['date' => $get->half_day_leave, 'user_name_id' => $get->user_id])->select('id', 'details', 'update_status', 'status')->first();
-                                    if ($staff_biometric != '') {
-                                        if ($staff_biometric->details != null) {
-                                            $tempDetail = $staff_biometric->details;
-                                            $status = $staff_biometric->status;
-                                            if ($staff_biometric->details != 'Sunday' && $staff_biometric->details != 'Holiday') {
-                                                if ($get->noon == 'Fore Noon' && strpos($staff_biometric->details, 'Late') !== false) {
-                                                    if (strpos($staff_biometric->details, ',') !== false) {
-                                                        $explode = explode(',', $staff_biometric->details);
-                                                        if (in_array('Late', $explode)) {
-                                                            $theIndex = array_search('Late', $explode);
-                                                            unset($explode[$theIndex]);
-                                                        } else if (in_array('Too Late', $explode)) {
-                                                            $theIndex = array_search('Too Late', $explode);
-                                                            unset($explode[$theIndex]);
-                                                        }
-                                                        $implode = implode(',', $explode);
-                                                        $tempDetail = $implode . ',' . $get->noon . ' Admin OD';
-                                                    } else {
-                                                        if ($staff_biometric->details == 'Late' || $staff_biometric->details == 'Too Late') {
-                                                            $tempDetail = $get->noon . ' Admin OD';
-                                                        }
-                                                    }
-
-                                                } else if ($get->noon == 'After Noon' && strpos($staff_biometric->details, 'Early Out') !== false) {
-                                                    if (strpos($staff_biometric->details, ',') !== false) {
-                                                        $explode = explode(',', $staff_biometric->details);
-                                                        if (in_array('Early Out', $explode)) {
-                                                            $theIndex = array_search('Early Out', $explode);
-                                                            unset($explode[$theIndex]);
-                                                            $status = 'Present';
-                                                        }
-                                                        $implode = implode(',', $explode);
-                                                        $tempDetail = $implode . ',' . $get->noon . ' Admin OD';
-                                                    } else {
-                                                        if ($staff_biometric->details == 'Early Out') {
-                                                            $tempDetail = $get->noon . ' Admin OD';
-                                                            $status = 'Present';
-                                                        }
-                                                    }
-                                                }
+                                                $check_cl->casual_leave = $check_cl->casual_leave - $cl_deduct;
+                                                $check_cl->save();
+                                            } else {
+                                                $staff_biometric->details = $get->noon . ' Casual Leave';
+                                                $staff_biometric->update_status = 1;
+                                                $staff_biometric->updated_at = Carbon::now();
+                                                $staff_biometric->save();
                                             }
-                                            //$staff_biometric->status = 'Present';
-                                            $staff_biometric->details = $tempDetail;
+                                        }
+                                    }
+                                }
+
+                            } else {
+                                if ($halfDay == false) {
+                                    // Full Day Leave Request.
+                                    foreach ($currentDates as $date) {
+                                        $staff_biometric = StaffBiometric::where(['date' => $date, 'user_name_id' => $get->user_id])->select('id', 'details', 'update_status', 'status')->first();
+                                        if ($staff_biometric != '') {
+                                            $staff_biometric->details = 'Casual Leave';
+                                            $staff_biometric->update_status = 1;
                                             $staff_biometric->updated_at = Carbon::now();
-                                            $staff_biometric->status = $status;
                                             $staff_biometric->save();
-                                        } else {
-                                            //$staff_biometric->status = 'Present';
-                                            $staff_biometric->details = $get->noon . ' Admin OD';
+                                        }
+                                    }
+                                } else {
+                                    //Half Day Leave.
+                                    foreach ($currentDates as $date) {
+                                        $staff_biometric = StaffBiometric::where(['date' => $date, 'user_name_id' => $get->user_id])->select('id', 'details', 'update_status', 'status')->first();
+                                        if ($staff_biometric != '') {
+                                            $staff_biometric->details = $get->noon . ' Casual Leave';
                                             $staff_biometric->update_status = 1;
                                             $staff_biometric->updated_at = Carbon::now();
                                             $staff_biometric->save();
                                         }
                                     }
                                 }
-                            } else {
-
+                            }
+                        } elseif ($get->leave_type == 2) {
+                            if ($isHalfDay) {
+                                $currentDates = [];
+                                $first_date = $get->half_day_leave;
+                                $last_date = $get->half_day_leave;
+                                $halfDay = true;
+                                $cl_deduct = 0.5;
+                                $dates = Carbon::parse($first_date)->daysUntil($last_date);
                                 foreach ($dates as $date) {
-
-                                    $staff_biometric = StaffBiometric::where(['date' => $date->format('Y-m-d'), 'user_name_id' => $get->user_id])->select('id', 'details', 'update_status', 'status')->first();
-                                    if ($staff_biometric != '') {
-                                        if ($staff_biometric->details != null) {
-                                            $tempDetail = $staff_biometric->details;
-                                            if ($staff_biometric->details != 'Sunday' && $staff_biometric->details != 'Holiday') {
-                                                $tempDetail = 'Admin OD';
-                                            } else if ($staff_biometric->details == 'Sunday') {
-                                                $tempDetail = 'Sunday,Admin OD';
-                                            } else if ($staff_biometric->details == 'Holiday') {
-                                                $tempDetail = 'Holiday,Admin OD';
-                                            }
-                                            $staff_biometric->status = 'Absent';
-                                            $staff_biometric->details = $tempDetail;
-                                            $staff_biometric->updated_at = Carbon::now();
-                                            $staff_biometric->save();
-
-                                        } else {
-
-                                            $staff_biometric->status = 'Absent';
-                                            $staff_biometric->details = 'Admin OD';
-                                            $staff_biometric->update_status = 1;
-                                            $staff_biometric->updated_at = Carbon::now();
-                                            $staff_biometric->save();
-                                        }
-                                    }
-                                }
-                            }
-
-                            $check_teaching_staff = TeachingStaff::where(['user_name_id' => $get->user_id])->get();
-                            if (count($check_teaching_staff) > 0) {
-                                $teaching_staff = TeachingStaff::where(['user_name_id' => $get->user_id])->update([
-                                    'admin_od' => $teaching_staff_get->admin_od + $get->total_days,
-                                ]);
-                            } else {
-                                $non_teaching_staff = NonTeachingStaff::where(['user_name_id' => $get->user_id])->update([
-                                    'admin_od' => $teaching_staff_get->admin_od + $get->total_days,
-                                ]);
-                            }
-                        } else if ($get->leave_type == 3) {
-
-                            $dates = Carbon::parse($first_date)->daysUntil($last_date);
-                            if ($get->half_day_leave != null && $get->noon != null) {
-
-                                if ($get->user_id != null) {
-
-                                    $staff_biometric = StaffBiometric::where(['date' => $get->half_day_leave, 'user_name_id' => $get->user_id])->select('id', 'details', 'update_status', 'status')->first();
-                                    if ($staff_biometric != '') {
-                                        if ($staff_biometric->details != null) {
-                                            $tempDetail = $staff_biometric->details;
-                                            $status = $staff_biometric->status;
-                                            if ($staff_biometric->details != 'Sunday' && $staff_biometric->details != 'Holiday') {
-                                                if ($get->noon == 'Fore Noon' && strpos($staff_biometric->details, 'Late') !== false) {
-                                                    if (strpos($staff_biometric->details, ',') !== false) {
-                                                        $explode = explode(',', $staff_biometric->details);
-                                                        if (in_array('Late', $explode)) {
-                                                            $theIndex = array_search('Late', $explode);
-                                                            unset($explode[$theIndex]);
-                                                        } else if (in_array('Too Late', $explode)) {
-                                                            $theIndex = array_search('Too Late', $explode);
-                                                            unset($explode[$theIndex]);
-                                                        }
-                                                        $implode = implode(',', $explode);
-                                                        $tempDetail = $implode . ',' . $get->noon . ' Exam OD';
-                                                    } else {
-                                                        if ($staff_biometric->details == 'Late' || $staff_biometric->details == 'Too Late') {
-                                                            $tempDetail = $get->noon . ' Exam OD';
-                                                        }
-                                                    }
-
-                                                } else if ($get->noon == 'After Noon' && strpos($staff_biometric->details, 'Early Out') !== false) {
-                                                    if (strpos($staff_biometric->details, ',') !== false) {
-                                                        $explode = explode(',', $staff_biometric->details);
-                                                        if (in_array('Early Out', $explode)) {
-                                                            $theIndex = array_search('Early Out', $explode);
-                                                            unset($explode[$theIndex]);
-                                                            $status = 'Present';
-                                                        }
-                                                        $implode = implode(',', $explode);
-                                                        $tempDetail = $implode . ',' . $get->noon . ' Exam OD';
-                                                    } else {
-                                                        if ($staff_biometric->details == 'Early Out') {
-                                                            $tempDetail = $get->noon . ' Exam OD';
-                                                            $status = 'Present';
-                                                        }
-                                                    }
-                                                }
-                                            }
-                                            //$staff_biometric->status = 'Present';
-                                            $staff_biometric->details = $tempDetail;
-                                            $staff_biometric->updated_at = Carbon::now();
-                                            $staff_biometric->status = $status;
-                                            $staff_biometric->save();
-
-                                        } else {
-
-                                            //$staff_biometric->status = 'Present';
-                                            $staff_biometric->details = $get->noon . ' Exam OD';
-                                            $staff_biometric->update_status = 1;
-                                            $staff_biometric->updated_at = Carbon::now();
-                                            $staff_biometric->save();
-                                        }
-                                    }
+                                    array_push($currentDates, $date->format('Y-m-d'));
                                 }
                             } else {
+                                $currentDates = [];
+                                $date1 = Carbon::parse($get->from_date);
+                                $date2 = Carbon::parse($get->to_date);
 
+                                $diffInDays = $date1->diffInDays($date2) + 1;
+                                $dates = Carbon::parse($first_date)->daysUntil($last_date);
+                                $cl_deduct = 1;
                                 foreach ($dates as $date) {
+                                    array_push($currentDates, $date->format('Y-m-d'));
+                                }
+                            }
 
-                                    $staff_biometric = StaffBiometric::where(['date' => $date->format('Y-m-d'), 'user_name_id' => $get->user_id])->select('id', 'details', 'update_status', 'status')->first();
-                                    if ($staff_biometric != '') {
-                                        if ($staff_biometric->details != null) {
-                                            $tempDetail = $staff_biometric->details;
-                                            if ($staff_biometric->details != 'Sunday' && $staff_biometric->details != 'Holiday') {
-                                                $tempDetail = 'Exam OD';
-                                            } else if ($staff_biometric->details == 'Sunday') {
-                                                $tempDetail = 'Sunday,Exam OD';
-                                            } else if ($staff_biometric->details == 'Holiday') {
-                                                $tempDetail = 'Holiday,Exam OD';
+                            if ($teaching_staff_get->casual_leave > 0) {
+
+                                if ($halfDay == false) {
+                                    // Full Day Leave Request.
+                                    foreach ($currentDates as $date) {
+                                        $staff_biometric = StaffBiometric::where(['date' => $date, 'user_name_id' => $get->user_id])->select('id', 'details', 'update_status', 'status')->first();
+                                        $check_cl = Staffs::where(['user_name_id' => $get->user_id])->first();
+                                        if ($staff_biometric != '') {
+                                            if ($check_cl->sick_leave > 0) {
+                                                $staff_biometric->details = 'Sick Leave (CL Provided)';
+                                                $staff_biometric->update_status = 1;
+                                                $staff_biometric->updated_at = Carbon::now();
+                                                $staff_biometric->save();
+
+                                                $check_cl->sick_leave = $check_cl->sick_leave - $cl_deduct;
+                                                $check_cl->save();
+                                            } else {
+                                                $staff_biometric->details = 'Sick Leave';
+                                                $staff_biometric->update_status = 1;
+                                                $staff_biometric->updated_at = Carbon::now();
+                                                $staff_biometric->save();
                                             }
-                                            $staff_biometric->status = 'Absent';
-                                            $staff_biometric->details = $tempDetail;
-                                            $staff_biometric->updated_at = Carbon::now();
-                                            $staff_biometric->save();
+                                        }
+                                    }
+                                } else {
+                                    //Half Day Leave.
+                                    foreach ($currentDates as $date) {
+                                        $staff_biometric = StaffBiometric::where(['date' => $date, 'user_name_id' => $get->user_id])->select('id', 'details', 'update_status', 'status')->first();
+                                        $check_cl = Staffs::where(['user_name_id' => $get->user_id])->first();
+                                        if ($staff_biometric != '') {
+                                            if ($check_cl->sick_leave > 0) {
+                                                $staff_biometric->details = $get->noon . 'Sick Leave (CL Provided)';
+                                                $staff_biometric->update_status = 1;
+                                                $staff_biometric->updated_at = Carbon::now();
+                                                $staff_biometric->save();
 
-                                        } else {
+                                                $check_cl->sick_leave = $check_cl->sick_leave - $cl_deduct;
+                                                $check_cl->save();
+                                            } else {
+                                                $staff_biometric->details = $get->noon . 'Sick Leave';
+                                                $staff_biometric->update_status = 1;
+                                                $staff_biometric->updated_at = Carbon::now();
+                                                $staff_biometric->save();
+                                            }
+                                        }
+                                    }
+                                }
 
-                                            $staff_biometric->status = 'Absent';
-                                            $staff_biometric->details = 'Exam OD';
+                            } else {
+                                if ($halfDay == false) {
+                                    // Full Day Leave Request.
+                                    foreach ($currentDates as $date) {
+                                        $staff_biometric = StaffBiometric::where(['date' => $date, 'user_name_id' => $get->user_id])->select('id', 'details', 'update_status', 'status')->first();
+                                        if ($staff_biometric != '') {
+                                            $staff_biometric->details = 'Sick Leave';
                                             $staff_biometric->update_status = 1;
                                             $staff_biometric->updated_at = Carbon::now();
                                             $staff_biometric->save();
                                         }
                                     }
-                                }
-                            }
-
-                            $check_teaching_staff = TeachingStaff::where(['user_name_id' => $get->user_id])->get();
-                            if (count($check_teaching_staff) > 0) {
-                                $teaching_staff = TeachingStaff::where(['user_name_id' => $get->user_id])->update([
-                                    'exam_od' => $teaching_staff_get->exam_od + $get->total_days,
-                                ]);
-                            } else {
-                                $non_teaching_staff = NonTeachingStaff::where(['user_name_id' => $get->user_id])->update([
-                                    'exam_od' => $teaching_staff_get->exam_od + $get->total_days,
-                                ]);
-                            }
-                        } else if ($get->leave_type == 4) {
-
-                            $dates = Carbon::parse($first_date)->daysUntil($last_date);
-
-                            if ($get->half_day_leave != null && $get->noon != null) {
-
-                                if ($get->user_id != null) {
-                                    $staff_biometric = StaffBiometric::where(['date' => $get->half_day_leave, 'user_name_id' => $get->user_id])->select('id', 'details', 'update_status', 'status')->first();
-                                    if ($staff_biometric != '') {
-                                        if ($staff_biometric->details != null) {
-                                            $tempDetail = $staff_biometric->details;
-                                            $status = $staff_biometric->status;
-                                            if ($staff_biometric->details != 'Sunday' && $staff_biometric->details != 'Holiday') {
-                                                if ($get->noon == 'Fore Noon' && strpos($staff_biometric->details, 'Late') !== false) {
-                                                    if (strpos($staff_biometric->details, ',') !== false) {
-                                                        $explode = explode(',', $staff_biometric->details);
-                                                        if (in_array('Late', $explode)) {
-                                                            $theIndex = array_search('Late', $explode);
-                                                            unset($explode[$theIndex]);
-                                                        } else if (in_array('Too Late', $explode)) {
-                                                            $theIndex = array_search('Too Late', $explode);
-                                                            unset($explode[$theIndex]);
-                                                        }
-                                                        $implode = implode(',', $explode);
-                                                        $tempDetail = $implode . ',' . $get->noon . ' Training OD';
-                                                    } else {
-                                                        if ($staff_biometric->details == 'Late' || $staff_biometric->details == 'Too Late') {
-                                                            $tempDetail = $get->noon . ' Training OD';
-                                                        }
-                                                    }
-
-                                                } else if ($get->noon == 'After Noon' && strpos($staff_biometric->details, 'Early Out') !== false) {
-                                                    if (strpos($staff_biometric->details, ',') !== false) {
-                                                        $explode = explode(',', $staff_biometric->details);
-                                                        if (in_array('Early Out', $explode)) {
-                                                            $theIndex = array_search('Early Out', $explode);
-                                                            unset($explode[$theIndex]);
-                                                            $status = 'Present';
-                                                        }
-                                                        $implode = implode(',', $explode);
-                                                        $tempDetail = $implode . ',' . $get->noon . ' Training OD';
-                                                    } else {
-                                                        if ($staff_biometric->details == 'Early Out') {
-                                                            $tempDetail = $get->noon . ' Training OD';
-                                                            $status = 'Present';
-                                                        }
-                                                    }
-                                                }
-                                            }
-                                            //$staff_biometric->status = 'Present';
-                                            $staff_biometric->details = $tempDetail;
-                                            $staff_biometric->updated_at = Carbon::now();
-                                            $staff_biometric->status = $status;
-                                            $staff_biometric->save();
-
-                                        } else {
-
-                                            //$staff_biometric->status = 'Present';
-                                            $staff_biometric->details = $get->noon . ' Training OD';
-                                            $staff_biometric->update_status = 1;
-                                            $staff_biometric->updated_at = Carbon::now();
-                                            $staff_biometric->save();
-                                        }
-                                    }
-                                }
-                            } else {
-
-                                foreach ($dates as $date) {
-
-                                    $staff_biometric = StaffBiometric::where(['date' => $date->format('Y-m-d'), 'user_name_id' => $get->user_id])->select('id', 'details', 'update_status', 'status')->first();
-                                    if ($staff_biometric != '') {
-                                        if ($staff_biometric->details != null) {
-                                            $tempDetail = $staff_biometric->details;
-                                            if ($staff_biometric->details != 'Sunday' && $staff_biometric->details != 'Holiday') {
-                                                $tempDetail = 'Training OD';
-                                            } else if ($staff_biometric->details == 'Sunday') {
-                                                $tempDetail = 'Sunday,Training OD';
-                                            } else if ($staff_biometric->details == 'Holiday') {
-                                                $tempDetail = 'Holiday,Training OD';
-                                            }
-                                            $staff_biometric->status = 'Absent';
-                                            $staff_biometric->details = $tempDetail;
-                                            $staff_biometric->updated_at = Carbon::now();
-                                            $staff_biometric->save();
-
-                                        } else {
-
-                                            $staff_biometric->status = 'Absent';
-                                            $staff_biometric->details = 'Training OD';
-                                            $staff_biometric->update_status = 1;
-                                            $staff_biometric->updated_at = Carbon::now();
-                                            $staff_biometric->save();
-                                        }
-                                    }
-                                }
-                            }
-
-                            $check_teaching_staff = TeachingStaff::where(['user_name_id' => $get->user_id])->get();
-                            if (count($check_teaching_staff) > 0) {
-                                $teaching_staff = TeachingStaff::where(['user_name_id' => $get->user_id])->update([
-                                    'training_od' => $teaching_staff_get->training_od + $get->total_days,
-                                ]);
-                            } else {
-                                $non_teaching_staff = NonTeachingStaff::where(['user_name_id' => $get->user_id])->update([
-                                    'training_od' => $teaching_staff_get->training_od + $get->total_days,
-                                ]);
-                            }
-                        } else if ($get->leave_type == 5) {
-
-                            $get_off_date = Carbon::parse($get->off_date)->month;
-
-                            if ($get->half_day_leave != null && $get->noon != null) {
-
-                                $staff_biometric = StaffBiometric::where(['date' => $get->half_day_leave, 'user_name_id' => $get->user_id])->select('id', 'details', 'update_status', 'status')->first();
-                                if ($staff_biometric != '') {
-                                    if ($staff_biometric->details != null) {
-                                        $tempDetail = $staff_biometric->details;
-                                        $status = $staff_biometric->status;
-                                        if ($staff_biometric->details != 'Sunday' && $staff_biometric->details != 'Holiday') {
-                                            if ($get->noon == 'Fore Noon' && strpos($staff_biometric->details, 'Late') !== false) {
-                                                if (strpos($staff_biometric->details, ',') !== false) {
-                                                    $explode = explode(',', $staff_biometric->details);
-                                                    if (in_array('Late', $explode)) {
-                                                        $theIndex = array_search('Late', $explode);
-                                                        unset($explode[$theIndex]);
-                                                    } else if (in_array('Too Late', $explode)) {
-                                                        $theIndex = array_search('Too Late', $explode);
-                                                        unset($explode[$theIndex]);
-                                                    }
-                                                    $implode = implode(',', $explode);
-                                                    $tempDetail = $implode . ',' . $get->noon . ' Compensation Leave';
-                                                } else {
-                                                    if ($staff_biometric->details == 'Late' || $staff_biometric->details == 'Too Late') {
-                                                        $tempDetail = $get->noon . ' Compensation Leave';
-                                                    }
-                                                }
-
-                                            } else if ($get->noon == 'After Noon' && strpos($staff_biometric->details, 'Early Out') !== false) {
-                                                if (strpos($staff_biometric->details, ',') !== false) {
-                                                    $explode = explode(',', $staff_biometric->details);
-                                                    if (in_array('Early Out', $explode)) {
-                                                        $theIndex = array_search('Early Out', $explode);
-                                                        unset($explode[$theIndex]);
-                                                        $status = 'Present';
-                                                    }
-                                                    $implode = implode(',', $explode);
-                                                    $tempDetail = $implode . ',' . $get->noon . ' Compensation Leave';
-                                                } else {
-                                                    if ($staff_biometric->details == 'Early Out') {
-                                                        $tempDetail = $get->noon . ' Compensation Leave';
-                                                        $status = 'Present';
-                                                    }
-                                                }
-                                            }
-                                        }
-                                        //$staff_biometric->status = 'Present';
-                                        $staff_biometric->details = $tempDetail;
-                                        $staff_biometric->updated_at = Carbon::now();
-                                        $staff_biometric->status = $status;
-                                        $staff_biometric->save();
-
-                                    } else {
-
-                                        ////$staff_biometric->status = 'Present';
-                                        $staff_biometric->details = $get->noon . ' Compensation Leave';
-                                        $staff_biometric->update_status = 1;
-                                        $staff_biometric->updated_at = Carbon::now();
-                                        $staff_biometric->save();
-                                    }
-                                }
-
-                            } else {
-
-                                $staff_biometric = StaffBiometric::where(['date' => $get->off_date, 'user_name_id' => $get->user_id])->select('id', 'details', 'update_status', 'status')->first();
-                                if ($staff_biometric != '') {
-                                    if ($staff_biometric->details != null) {
-                                        $tempDetail = $staff_biometric->details;
-                                        if ($staff_biometric->details != 'Sunday' && $staff_biometric->details != 'Holiday') {
-                                            $tempDetail = 'Compensation Leave';
-                                        }
-                                        $staff_biometric->status = 'Absent';
-                                        $staff_biometric->details = $tempDetail;
-                                        $staff_biometric->updated_at = Carbon::now();
-                                        $staff_biometric->save();
-
-                                    } else {
-
-                                        $staff_biometric->status = 'Absent';
-                                        $staff_biometric->details = 'Compensation Leave';
-                                        $staff_biometric->update_status = 1;
-                                        $staff_biometric->updated_at = Carbon::now();
-                                        $staff_biometric->save();
-                                    }
-                                }
-                            }
-
-                            $check_teaching_staff = TeachingStaff::where(['user_name_id' => $get->user_id])->get();
-                            if (count($check_teaching_staff) > 0) {
-                                $teaching_staff = TeachingStaff::where(['user_name_id' => $get->user_id])->update([
-                                    'compensation_leave' => $teaching_staff_get->compensation_leave + 1,
-                                ]);
-                            } else {
-                                $non_teaching_staff = NonTeachingStaff::where(['user_name_id' => $get->user_id])->update([
-                                    'compensation_leave' => $teaching_staff_get->compensation_leave + 1,
-                                ]);
-                            }
-                        } else if ($get->leave_type == 6 || $get->leave_type == 7 || $get->leave_type == 8) {
-                            $dates = Carbon::parse($first_date)->daysUntil($last_date);
-                            if ($get->leave_type == 6) {
-                                $leave_type = 'Winter Vacation';
-                            } else if ($get->leave_type == 7) {
-                                $leave_type = 'Summer Vacation';
-                            } else {
-                                $leave_type = 'Paternity Leave';
-                            }
-                            if ($get->half_day_leave != null && $get->noon != null) {
-
-                                $detailOfHalfDay = $get->noon . ' ' . $leave_type;
-
-                                $staff_biometric = StaffBiometric::where(['date' => $get->half_day_leave, 'user_name_id' => $get->user_id])->select('id', 'details', 'update_status', 'status')->first();
-                                if ($staff_biometric != '') {
-                                    if ($staff_biometric->details != null) {
-                                        $tempDetail = $staff_biometric->details;
-                                        $status = $staff_biometric->status;
-                                        if ($staff_biometric->details != 'Sunday' && $staff_biometric->details != 'Holiday') {
-                                            if ($get->noon == 'Fore Noon' && strpos($staff_biometric->details, 'Late') !== false) {
-                                                if (strpos($staff_biometric->details, ',') !== false) {
-                                                    $explode = explode(',', $staff_biometric->details);
-                                                    if (in_array('Late', $explode)) {
-                                                        $theIndex = array_search('Late', $explode);
-                                                        unset($explode[$theIndex]);
-                                                    } else if (in_array('Too Late', $explode)) {
-                                                        $theIndex = array_search('Too Late', $explode);
-                                                        unset($explode[$theIndex]);
-                                                    }
-                                                    $implode = implode(',', $explode);
-                                                    $tempDetail = $implode . ',' . $get->noon . ' ' . $detailOfHalfDay;
-                                                } else {
-                                                    if ($staff_biometric->details == 'Late' || $staff_biometric->details == 'Too Late') {
-                                                        $tempDetail = $get->noon . ' ' . $detailOfHalfDay;
-                                                    }
-                                                }
-
-                                            } else if ($get->noon == 'After Noon' && strpos($staff_biometric->details, 'Early Out') !== false) {
-                                                if (strpos($staff_biometric->details, ',') !== false) {
-                                                    $explode = explode(',', $staff_biometric->details);
-                                                    if (in_array('Early Out', $explode)) {
-                                                        $theIndex = array_search('Early Out', $explode);
-                                                        unset($explode[$theIndex]);
-                                                        $status = 'Present';
-                                                    }
-                                                    $implode = implode(',', $explode);
-                                                    $tempDetail = $implode . ',' . $get->noon . ' ' . $detailOfHalfDay;
-                                                } else {
-                                                    if ($staff_biometric->details == 'Early Out') {
-                                                        $tempDetail = $get->noon . ' ' . $detailOfHalfDay;
-                                                        $status = 'Present';
-                                                    }
-                                                }
-                                            }
-                                        }
-                                        //$staff_biometric->status = 'Present';
-                                        $staff_biometric->details = $tempDetail;
-                                        $staff_biometric->updated_at = Carbon::now();
-                                        $staff_biometric->status = $status;
-                                        $staff_biometric->save();
-
-                                    } else {
-
-                                        //$staff_biometric->status = 'Present';
-                                        $staff_biometric->details = $detailOfHalfDay;
-                                        $staff_biometric->update_status = 1;
-                                        $staff_biometric->updated_at = Carbon::now();
-                                        $staff_biometric->save();
-                                    }
-                                }
-
-                            } else {
-
-                                foreach ($dates as $date) {
-
-                                    $staff_biometric = StaffBiometric::where(['date' => $date->format('Y-m-d'), 'user_name_id' => $get->user_id])->select('id', 'details', 'update_status', 'status')->first();
-                                    if ($staff_biometric != '') {
-                                        if ($staff_biometric->details != null) {
-                                            $tempDetail = $staff_biometric->details;
-                                            if ($staff_biometric->details != 'Sunday' && $staff_biometric->details != 'Holiday') {
-                                                $tempDetail = $leave_type;
-                                            }
-                                            $staff_biometric->status = 'Absent';
-                                            $staff_biometric->details = $tempDetail;
-                                            $staff_biometric->updated_at = Carbon::now();
-                                            $staff_biometric->save();
-
-                                        } else {
-
-                                            $staff_biometric->status = 'Absent';
-                                            $staff_biometric->details = $leave_type;
+                                } else {
+                                    //Half Day Leave.
+                                    foreach ($currentDates as $date) {
+                                        $staff_biometric = StaffBiometric::where(['date' => $date, 'user_name_id' => $get->user_id])->select('id', 'details', 'update_status', 'status')->first();
+                                        if ($staff_biometric != '') {
+                                            $staff_biometric->details = $get->noon . 'Sick Leave';
                                             $staff_biometric->update_status = 1;
                                             $staff_biometric->updated_at = Carbon::now();
                                             $staff_biometric->save();
@@ -5388,25 +1090,25 @@ class HrmRequestLeaveController extends Controller
         }
         $staffs = [];
         if ($user_name_id != null && $from_date != null) {
-            $checkStaff = NonTeachingStaff::where(['user_name_id' => $user_name_id])->select('id')->first();
+            $checkStaff = Staffs::where(['user_name_id' => $user_name_id])->select('id')->first();
             if ($checkStaff != '') {
                 $role = DB::table('role_user')->where(['user_id' => $user_name_id])->select('role_id')->first();
-                if ($role != '' && $role->role_id != 33 && $role->role_id != 34) {
+                if ($role != '' && $role->role_id == 1 && $role->role_id == 2 && $role->role_id == 3) {
                     $odAction = true;
                 }
             }
 
-            $get_alterData = StaffAlteration::where(['from_id' => $user_name_id, 'from_date' => $from_date, 'to_date' => $to_date])->select('to_id', 'status')->get();
+            // $get_alterData = StaffAlteration::where(['from_id' => $user_name_id, 'from_date' => $from_date, 'to_date' => $to_date])->select('to_id', 'status')->get();
 
-            if (count($get_alterData) > 0) {
-                foreach ($get_alterData as $data) {
-                    $get_staff = TeachingStaff::where(['user_name_id' => $data->to_id])->first();
+            // if (count($get_alterData) > 0) {
+            //     foreach ($get_alterData as $data) {
+            //         $get_staff = Staffs::where(['user_name_id' => $data->to_id])->first();
 
-                    if ($get_staff != '') {
-                        array_push($staffs, ['staff_code' => $get_staff->StaffCode, 'staff_name' => $get_staff->name, 'status' => $data->status]);
-                    }
-                }
-            }
+            //         if ($get_staff != '') {
+            //             array_push($staffs, ['staff_code' => $get_staff->employee_id, 'staff_name' => $get_staff->name, 'status' => $data->status]);
+            //         }
+            //     }
+            // }
         }
 
         $leave_types = LeaveType::pluck('name', 'id')->prepend(trans('global.pleaseSelect'), '');
@@ -5495,6 +1197,7 @@ class HrmRequestLeaveController extends Controller
 
     public function check(Request $request)
     {
+        // dd($request);
         if ($request) {
             $user_id = auth()->user()->id;
             if ($user_id) {
@@ -5532,118 +1235,178 @@ class HrmRequestLeaveController extends Controller
                         } else {
                             $inputToDate = null;
                         }
-
+                        // dd($inputFromDate, $leaveFromDate, $inputFromDate->between($leaveFromDate, $leaveToDate));
                         if ($inputFromDate != null && $inputToDate != null && $leaveFromDate != null && $leaveToDate != null && (($inputFromDate->between($leaveFromDate, $leaveToDate) || $inputToDate->between($leaveFromDate, $leaveToDate)) || ($leaveFromDate->between($inputFromDate, $inputToDate) || $leaveToDate->between($inputFromDate, $inputToDate)))) {
-                            return response()->json(['data' => 'Error']);
-                            break;
+                            return response()->json(['data' => 'You have already taken leave between these dates']);
+                            // break;
                         }
                         if ($halfDayLeave != null && $halfDayLeave->between($inputFromDate, $inputToDate)) {
-                            return response()->json(['data' => 'Error']);
-                            break;
+                            return response()->json(['data' => 'You have already taken leave between these dates']);
+                            // break;
                         }
                         if (($halfDayLeave != null && $inputFromDate != null) && $inputFromDate == $halfDayLeave) {
-                            return response()->json(['data' => 'Error']);
-                            break;
+                            return response()->json(['data' => 'You have already taken leave between these dates']);
+                            // break;
                         }
                     }
                 }
-                $startDate = new DateTime($from_date);
-                $endDate = new DateTime($to_date);
+                if ($request->leave_type == 2 || $request->leave_type == 3) {
 
-                $daysArray = array();
-                $dateAndDay = [];
+                    $startDate = new DateTime($from_date);
+                    $currentDate = Carbon::now();
+                    $endDate = new DateTime($to_date);
+                    $daysArray = array();
+                    $dateAndDay = [];
 
-                while ($startDate <= $endDate) {
-                    $day = $startDate->format('l');
-                    $theDate = $startDate->format('Y-m-d');
-                    $capital = strtoupper($day);
-                    $dateAndDay[$capital] = $theDate;
-                    $daysArray[] = $capital;
-                    $startDate->modify('+1 day');
-                }
-                $currentClasses = Session::get('currentClasses');
-                $results = ClassTimeTableTwo::whereIn('class_name', $currentClasses)->whereIn('day', $daysArray)
-                    ->where(function ($query) use ($user_id) {
-                        $query->where('staff', $user_id);
-                    })
-                    ->where(['status' => 1])->get();
+                    while ($startDate <= $endDate) {
+                        $day = $startDate->format('l');
+                        $theDate = $startDate->format('Y-m-d');
+                        $capital = strtoupper($day);
+                        $dateAndDay[$capital] = $theDate;
+                        $daysArray[] = $capital;
+                        $startDate->modify('+1 day');
+                    }
+                    $ay = AcademicYear::where('status', 1)->first();
+                    $currentStatus = '';
+                    foreach ($dateAndDay as $id => $value) {
+                        $checkDateInCalen = DB::table('college_calenders_preview')
+                            ->where(['academic_year' => $ay->name, 'date' => $value . ' 00:00:00'])
+                            ->whereNull('deleted_at')
+                            ->first();
 
-                $got_periods = [];
-
-                foreach ($results as $result) {
-                    $currentStatus = false;
-                    $enrollMaster = CourseEnrollMaster::find($result->class_name);
-                    if ($enrollMaster) {
-                        $get_course_7 = explode('/', $enrollMaster->enroll_master_number);
-                        $get_short_form_7 = ToolsCourse::where('name', $get_course_7[1])->select('short_form')->first();
-
-                        if ($get_short_form_7) {
-                            $get_course_7[1] = $get_short_form_7->short_form;
-                            $data = $get_course_7[1] . ' / ' . $get_course_7[3] . ' / ' . $get_course_7[4];
-                            $result->shortform = $data != '' ? $data : '';
-                        }
-                        $academicYear = $get_course_7[2];
-
-                        if ($get_course_7[3] == 1) {
-                            $batch = '01';
-                            $semType = 'ODD';
-                        } elseif ($get_course_7[3] == 2) {
-                            $batch = '01';
-                            $semType = 'EVEN';
-                        } elseif ($get_course_7[3] == 3) {
-                            $batch = '02';
-                            $semType = 'ODD';
-                        } elseif ($get_course_7[3] == 4) {
-                            $batch = '02';
-                            $semType = 'EVEN';
-                        } elseif ($get_course_7[3] == 5) {
-                            $batch = '03';
-                            $semType = 'ODD';
-                        } elseif ($get_course_7[3] == 6) {
-                            $batch = '03';
-                            $semType = 'EVEN';
-                        } elseif ($get_course_7[3] == 7) {
-                            $batch = '04';
-                            $semType = 'ODD';
-                        } elseif ($get_course_7[3] == 8) {
-                            $batch = '04';
-                            $semType = 'EVEN';
-                        }
-
-                        $theDay = $result->day;
-                        if (array_key_exists($theDay, $dateAndDay)) {
-                            $checkDateInCalen = DB::table('college_calenders_preview')->where(['academic_year' => $academicYear, 'semester_type' => $semType, 'batch' => $batch, 'date' => $dateAndDay[$theDay] . ' 00:00:00'])->whereNull('deleted_at')->select('dayorder')->first();
-
-                            if (($checkDateInCalen != null && ($checkDateInCalen->dayorder == 1 || $checkDateInCalen->dayorder == 4)) || ($checkDateInCalen == null)) {
-                                $currentStatus = true;
-                            }
+                        if ($checkDateInCalen != null && $checkDateInCalen->dayorder != 4 && $checkDateInCalen->dayorder != 1) {
+                            $currentStatus = true;
+                        } else {
+                            return response()->json(['status' => false, 'data' => 'Selected Date Is Holiday.']);
                         }
                     }
-                    if ($currentStatus == false) {
-                        if ($result->period != '') {
-                            if ($result->period == 1) {
-                                $result->period_name = 'ONE';
-                            } else if ($result->period == 2) {
-                                $result->period_name = 'TWO';
-                            } else if ($result->period == 3) {
-                                $result->period_name = 'THREE';
-                            } else if ($result->period == 4) {
-                                $result->period_name = 'FOUR';
-                            } else if ($result->period == 5) {
-                                $result->period_name = 'FIVE';
-                            } else if ($result->period == 6) {
-                                $result->period_name = 'SIX';
-                            } else if ($result->period == 7) {
-                                $result->period_name = 'SEVEN';
+                    if ($currentStatus) {
+                        return response()->json(['status' => true, 'data' => '']);
+                    } else {
+                        return response()->json(['status' => false, 'data' => 'Technical Error.']);
+                    }
+
+                } elseif ($request->leave_type == 1) {
+                    $startDate = new DateTime($from_date);
+                    $currentDate = Carbon::now();
+                    $endDate = new DateTime($to_date);
+                    $daysArray = array();
+                    $dateAndDay = [];
+
+                    while ($startDate <= $endDate) {
+                        $day = $startDate->format('l');
+                        $theDate = $startDate->format('Y-m-d');
+                        $capital = strtoupper($day);
+                        $dateAndDay[$capital] = $theDate;
+                        $daysArray[] = $capital;
+                        $startDate->modify('+1 day');
+                    }
+                    $ay = AcademicYear::where('status', 1)->first();
+                    $currentStatus = '';
+                    if (count($dateAndDay) > 1) {
+                        foreach ($dateAndDay as $id => $value) {
+                            $checkDateInCalen = DB::table('college_calenders_preview')
+                                ->where(['academic_year' => $ay->name, 'date' => $value . ' 00:00:00'])
+                                ->whereNull('deleted_at')
+                                ->first();
+
+                            if ($checkDateInCalen != null && $checkDateInCalen->dayorder != 4 && $checkDateInCalen->dayorder != 1) {
+                                $startDate = new DateTime($from_date);
+                                $currentDate = Carbon::now();
+                                $interval = $currentDate->diff($startDate)->days;
+                                $explode = explode('-', $value);
+                                $d = (int) $explode[2] + 1;
+                                $explode = $explode[0] . '-' . $explode[1] . '-' . $d;
+
+                                if ($checkDateInCalen->dayorder == 10 && $id == 'FRIDAY') {
+                                    $nextDayCheck = DB::table('college_calenders_preview')
+                                        ->where(['academic_year' => $ay->name, 'date' => $explode . ' 00:00:00'])
+                                        ->whereNull('deleted_at')
+                                        ->first();
+                                    if ($nextDayCheck->dayorder == 4) {
+                                        if ($interval >= 20 && $checkDateInCalen->dayorder == 10) {
+                                            $currentStatus = true;
+                                        } else {
+                                            return response()->json(['status' => false, 'data' => 'Weekend leave must be requested at least 20 days in advance.']);
+                                        }
+                                    } else {
+                                        $currentStatus = true;
+                                    }
+                                } else {
+                                    // dd($interval);
+                                    if (($interval >= 20 && $checkDateInCalen->dayorder == 11) || ($interval >= 20 && $checkDateInCalen->dayorder == 20) || ($interval >= 20 && $checkDateInCalen->dayorder == 10)) {
+                                        $currentStatus = true;
+                                    } elseif (($interval < 20 && $checkDateInCalen->dayorder == 20) || ($interval < 20 && $checkDateInCalen->dayorder == 10) || ($interval < 20 && $checkDateInCalen->dayorder == 11)) {
+                                        return response()->json(['status' => false, 'data' => 'Weekend leave must be requested at least 20 days in advance.']);
+                                    } elseif (($interval < 20 && $checkDateInCalen->dayorder != 20) || ($interval < 20 && $checkDateInCalen->dayorder != 10) || ($interval < 20 && $checkDateInCalen->dayorder != 11)) {
+                                        $currentStatus = true;
+                                    }
+                                }
+
                             } else {
-                                $result->period_name = $result->period;
+                                return response()->json(['status' => false, 'data' => 'Selected Date Is Holiday.']);
                             }
                         }
-                        array_push($got_periods, $result);
-                    }
-                }
+                        if ($currentStatus) {
+                            return response()->json(['status' => true, 'data' => '']);
+                        } else {
+                            return response()->json(['status' => false, 'data' => 'Technical Error.']);
+                        }
+                    } else {
+                        foreach ($dateAndDay as $id => $value) {
+                            $checkDateInCalen = DB::table('college_calenders_preview')
+                                ->where(['academic_year' => $ay->name, 'date' => $value . ' 00:00:00'])
+                                ->whereNull('deleted_at')
+                                ->first();
 
-                return response()->json(['data' => $got_periods]);
+                            if ($checkDateInCalen != null && $checkDateInCalen->dayorder != 4 && $checkDateInCalen->dayorder != 1) {
+                                $startDate = new DateTime($from_date);
+                                $currentDate = Carbon::now();
+                                $interval = $currentDate->diff($startDate)->days;
+                                // dd($currentDate, $startDate, $interval);
+                                $explode = explode('-', $value);
+                                $d = (int) $explode[2] + 1;
+                                $explode = $explode[0] . '-' . $explode[1] . '-' . $d;
+
+                                if ($checkDateInCalen->dayorder == 10 && $id == 'FRIDAY') {
+                                    $nextDayCheck = DB::table('college_calenders_preview')
+                                        ->where(['academic_year' => $ay->name, 'date' => $explode . ' 00:00:00'])
+                                        ->whereNull('deleted_at')
+                                        ->first();
+                                    if ($nextDayCheck->dayorder == 4) {
+                                        if ($interval >= 20 && $checkDateInCalen->dayorder == 10) {
+                                            $currentStatus = true;
+                                        } else {
+                                            return response()->json(['status' => false, 'data' => 'Weekend leave must be requested at least 20 days in advance.']);
+                                        }
+                                    } else {
+                                        $currentStatus = true;
+                                    }
+                                } else {
+                                    // dd($interval, $checkDateInCalen->dayorder);
+                                    if (($interval >= 20 && $checkDateInCalen->dayorder == 11) || ($interval >= 20 && $checkDateInCalen->dayorder == 20) || ($interval >= 20 && $checkDateInCalen->dayorder == 10)) {
+                                        $currentStatus = true;
+                                    } elseif (($interval < 20 && $checkDateInCalen->dayorder == 20) || ($interval < 20 && $checkDateInCalen->dayorder == 10) || ($interval < 20 && $checkDateInCalen->dayorder == 11)) {
+                                        return response()->json(['status' => false, 'data' => 'Weekend leave must be requested at least 20 days in advance.']);
+                                    } elseif (($interval < 20 && $checkDateInCalen->dayorder != 20) || ($interval < 20 && $checkDateInCalen->dayorder != 10) || ($interval < 20 && $checkDateInCalen->dayorder != 11)) {
+                                        $currentStatus = true;
+                                    }
+                                }
+
+                            } else {
+                                return response()->json(['status' => false, 'data' => 'Selected Date Is Holiday.']);
+                            }
+                        }
+                        if ($currentStatus) {
+                            return response()->json(['status' => true, 'data' => '']);
+                        } else {
+                            return response()->json(['status' => false, 'data' => 'Technical Error.']);
+                        }
+                    }
+
+                } else {
+                    return response()->json(['status' => flase, 'data' => "Invalid Leave Type."]);
+                }
             }
         }
     }

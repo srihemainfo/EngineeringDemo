@@ -7,30 +7,13 @@
     </div>
     <div class="card">
         <div class="card-header">
-         Create Academic Calendar
+         Create Office Calendar
         </div>
 
 
         <div class="card-body">
             <form method="POST" action="{{ route('admin.college-calenders.store') }}" enctype="multipart/form-data">
                 @csrf
-                <div class="form-group">
-                    <label for="batch" class="required"> Year </label>
-                    <select class="form-control select2 {{ $errors->has('batch') ? 'is-invalid' : '' }}" name="batch"
-                        id="batch">
-                        {{-- @foreach ($Batch as $id => $entry) --}}
-                        <option value="">Please Select</option>
-                        <option value="01">First year</option>
-                        <option value="02">Second Year</option>
-                        <option value="03">Third Year</option>
-                        <option value="04">Fourth Year</option>
-                        {{-- @endforeach --}}
-                    </select>
-                    @if ($errors->has('batch'))
-                        <span class="text-danger">{{ $errors->first('batch') }}</span>
-                    @endif
-                    {{-- <span class="help-block">batch</span> --}}
-                </div>
                 <div class="form-group">
                     <label for="academic_year" class="required">
                         {{ trans('cruds.courseEnrollMaster.fields.academic') }}</label>
@@ -48,23 +31,6 @@
                     <span class="help-block">{{ trans('cruds.courseEnrollMaster.fields.academic_helper') }}</span>
                 </div>
 
-                <div class="form-group">
-                    <label class="required"
-                        for="semester_type">{{ trans('cruds.courseEnrollMaster.fields.semester') }}</label>
-                    <select class="form-control select2 {{ $errors->has('semester_type') ? 'is-invalid' : '' }}"
-                        name="semester_type" id="semester_id" required>
-
-
-                        <option value="">Please Select</option>
-                        <option value="ODD">ODD</option>
-                        <option value="EVEN">EVEN</option>
-
-                    </select>
-                    @if ($errors->has('semester_type'))
-                        <span class="text-danger">{{ $errors->first('semester_type') }}</span>
-                    @endif
-                    <span class="help-block">{{ trans('cruds.courseEnrollMaster.fields.semester_helper') }}</span>
-                </div>
                 <div class="form-group">
                     <label for="from_date" class="required">{{ trans('cruds.collegeCalender.fields.from_date') }}</label>
                     <input type="text" class="form-control date" name="from_date" id="from_date" value="" autocomplete="off">

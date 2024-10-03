@@ -7,11 +7,11 @@
             <h5 class="mb-2 text-primary">Leave Request</h5>
 
         </div>
-        @if ($hrmRequestLeaf->level == 0 && $hrmRequestLeaf->status == 'Pending')
+        {{-- {{dd($hrmRequestLeaf->status)}} --}}
+        {{-- @if ($hrmRequestLeaf->level == 0 && $hrmRequestLeaf->status == 'Pending')
             @if (count($staffs) > 0)
                 <div class="card-header">
                     <div class="row text-center">
-                        {{-- {{ dd($staffs) }} --}}
                         @foreach ($staffs as $staff)
                             <div class="col-xl-6 col-lg-6 col-md-6 col-sm-6 col-12 mb-2 text-center">
                                 <div
@@ -34,11 +34,11 @@
                     </div>
                 </div>
             @endif
-        @endif
+        @endif --}}
 
         <div class="card-body">
 
-            {{-- {{ dd($hrmRequestLeaf) }} --}}
+            {{-- {{ dd($hrmRequestLeaf->user) }} --}}
             <div class="row gutters">
                 <div class="col-xl-5 col-lg-5 col-md-6 col-sm-6 col-12">
                     <div class="form-group">
@@ -158,107 +158,28 @@
                         {{ trans('global.back_to_list') }}
                     </a>
                 </div>
-                <div class="{{ $hrmRequestLeaf->status == 'NeedClarification' ? 'col-7' : 'col-6' }}"></div>
+                <div class="{{ $hrmRequestLeaf->status == 'NeedClarification' ? 'col-5' : 'col-5' }}"></div>
                 @if (
-                    (auth()->user()->roles[0]->id == 14 || auth()->user()->roles[0]->id == 42) &&
+                    (auth()->user()->roles[0]->id == 1 || auth()->user()->roles[0]->id == 2 || auth()->user()->roles[0]->id == 3) &&
                         $hrmRequestLeaf->level == 0 &&
                         $hrmRequestLeaf->status == 'Pending')
                     <div class="col-xl-2 col-lg-2 col-md-2 col-sm-2 col-2">
                         <input type="hidden" name="id" id="id" value="{{ $hrmRequestLeaf->id }}">
                         <input type="hidden" name="leave_type" id="leave_type"
                             value="{{ $hrmRequestLeaf->leave_type }}">
-                        <button type="submit" id="rejecter" name="updater" value="updater" class="btn btn-danger"
+                        <button type="submit" id="rejecter" name="updater" value="updater" class="btn btn-warning"
                             onclick="needClarification(this)">Need clarification</button>
-                        <span id="clarification_span" class="text-success" style="display:none;font-weight:bold;">Processing...</span>
+                        <span id="clarification_span" class="text-success"
+                            style="display:none;font-weight:bold;">Processing...</span>
                     </div>
-                    <div class="col-xl-1 col-lg-1 col-md-1 col-sm-1 col-1" style="padding: 0;">
-                        <input type="hidden" name="id" id="id" value="{{ $hrmRequestLeaf->id }}">
-                        <input type="hidden" name="leave_type" id="leave_type"
-                            value="{{ $hrmRequestLeaf->leave_type }}">
-                        <button type="submit" id="updater" name="updater" value="updater" class="btn btn-success"
-                            onclick="approve(this)">Approve</button>
-                        <span id="approve_span" class="text-success" style="display:none;font-weight:bold;">Processing...</span>
-                    </div>
-                    {{-- auth()->user()->roles[0]->id == 1 && $hrmRequestLeaf->status == 'Pending') || --}}
-                @elseif (auth()->user()->roles[0]->id == 13 && $hrmRequestLeaf->status == 'Pending')
-                    {{-- @if (
-                        $hrmRequestLeaf->leave_type == 1 ||
-                            $hrmRequestLeaf->leave_type == 5 ||
-                            ($odAction == true && $hrmRequestLeaf->level != 95))
-                        <div class="col-xl-2 col-lg-2 col-md-2 col-sm-2 col-2">
-                            <input type="hidden" name="id" id="id" value="{{ $hrmRequestLeaf->id }}">
-                            <input type="hidden" name="leave_type" id="leave_type"
-                                value="{{ $hrmRequestLeaf->leave_type }}">
-                            <button type="submit" id="rejecter" name="updater" value="updater" class="btn btn-danger"
-                                onclick="needClarification(this)">Need clarification</button>
-                            <span id="clarification_span" class="text-success" style="display:none;font-weight:bold;">Processing...</span>
-
-                        </div>
-                        <div class="col-xl-1 col-lg-1 col-md-1 col-sm-1 col-1" style="padding: 0;">
-                            <input type="hidden" name="id" id="id" value="{{ $hrmRequestLeaf->id }}">
-                            <input type="hidden" name="leave_type" id="leave_type"
-                                value="{{ $hrmRequestLeaf->leave_type }}">
-                            <button type="submit" id="updater" name="updater" value="updater"
-                                class="btn btn-success" onclick="approve(this)">Approve</button>
-                            <span id="approve_span" class="text-success" style="display:none;font-weight:bold;">Processing...</span>
-                        </div>
-                    @elseif($hrmRequestLeaf->level == 95 || $hrmRequestLeaf->level == 1)--}}
-                        <div class="col-xl-2 col-lg-2 col-md-2 col-sm-2 col-2">
-                            <input type="hidden" name="id" id="id" value="{{ $hrmRequestLeaf->id }}">
-                            <input type="hidden" name="leave_type" id="leave_type"
-                                value="{{ $hrmRequestLeaf->leave_type }}">
-                            <button type="submit" id="rejecter" name="updater" value="updater" class="btn btn-danger"
-                                onclick="needClarification(this)">Need clarification</button>
-                            <span id="clarification_span" class="text-success" style="display:none;font-weight:bold;">Processing...</span>
-
-                        </div>
-                        <div class="col-xl-1 col-lg-1 col-md-1 col-sm-1 col-1" style="padding: 0;">
-                            <input type="hidden" name="id" id="id" value="{{ $hrmRequestLeaf->id }}">
-                            <input type="hidden" name="leave_type" id="leave_type"
-                                value="{{ $hrmRequestLeaf->leave_type }}">
-                            <button type="submit" id="updater" name="updater" value="updater"
-                                class="btn btn-success" onclick="approve(this)">Approve</button>
-                            <span id="approve_span" class="text-success" style="display:none;font-weight:bold;">Processing...</span>
-                        </div>
-                    {{-- @endif --}}
-                @elseif (auth()->user()->roles[0]->id == 15 &&
-                        $hrmRequestLeaf->level == 1 &&
-                        $hrmRequestLeaf->status == 'Pending' &&
-                        ($hrmRequestLeaf->leave_type == 2 ||
-                            $hrmRequestLeaf->leave_type == 3 ||
-                            $hrmRequestLeaf->leave_type == 4 ||
-                            $hrmRequestLeaf->leave_type == 6 ||
-                            $hrmRequestLeaf->leave_type == 7))
-                    <div class="col-xl-2 col-lg-2 col-md-2 col-sm-2 col-2">
-                        <input type="hidden" name="id" id="id" value="{{ $hrmRequestLeaf->id }}">
-                        <input type="hidden" name="leave_type" id="leave_type"
-                            value="{{ $hrmRequestLeaf->leave_type }}">
-                        <button type="submit" id="rejecter" name="updater" value="updater" class="btn btn-danger"
-                            onclick="needClarification(this)">Need clarification</button>
-                        <span id="clarification_span" class="text-success" style="display:none;font-weight:bold;">Processing...</span>
-                    </div>
-                    <div class="col-xl-1 col-lg-1 col-md-1 col-sm-1 col-1" style="padding: 0;">
-                        <input type="hidden" name="id" id="id" value="{{ $hrmRequestLeaf->id }}">
-                        <input type="hidden" name="leave_type" id="leave_type"
-                            value="{{ $hrmRequestLeaf->leave_type }}">
-                        <button type="submit" id="updater" name="updater" value="updater" class="btn btn-success"
-                            onclick="approve(this)">Approve</button>
-                        <span id="approve_span" class="text-success" style="display:none;font-weight:bold;">Processing...</span>
-                    </div>
-                @elseif (
-                    (auth()->user()->roles[0]->id == 15 ||
-                        auth()->user()->roles[0]->id == 1 ||
-                        auth()->user()->roles[0]->id == 13 ||
-                        auth()->user()->roles[0]->id == 14 ||
-                        auth()->user()->roles[0]->id == 42) &&
-                        $hrmRequestLeaf->status == 'NeedClarification')
                     <div class="col-xl-1 col-lg-1 col-md-1 col-sm-1 col-1">
                         <input type="hidden" name="id" id="id" value="{{ $hrmRequestLeaf->id }}">
                         <input type="hidden" name="leave_type" id="leave_type"
                             value="{{ $hrmRequestLeaf->leave_type }}">
                         <button type="submit" id="rejecter" name="updater" value="updater" class="btn btn-danger"
                             onclick="reject(this)">Reject</button>
-                        <span id="reject_span" class="text-success" style="display:none;font-weight:bold;">Processing...</span>
+                        <span id="reject_span" class="text-success"
+                            style="display:none;font-weight:bold;">Processing...</span>
 
                     </div>
                     <div class="col-xl-1 col-lg-1 col-md-1 col-sm-1 col-1" style="padding: 0;">
@@ -267,8 +188,10 @@
                             value="{{ $hrmRequestLeaf->leave_type }}">
                         <button type="submit" id="updater" name="updater" value="updater" class="btn btn-success"
                             onclick="approve(this)">Approve</button>
-                        <span id="approve_span" class="text-success" style="display:none;font-weight:bold;">Processing...</span>
+                        <span id="approve_span" class="text-success"
+                            style="display:none;font-weight:bold;">Processing...</span>
                     </div>
+                    {{-- auth()->user()->roles[0]->id == 1 && $hrmRequestLeaf->status == 'Pending') || --}}
                 @else
                     <div class="col-2"></div>
                 @endif
@@ -343,7 +266,8 @@
                         error: function(jqXHR, textStatus, errorThrown) {
                             if (jqXHR.status) {
                                 if (jqXHR.status == 500) {
-                                    Swal.fire('', 'Request Timeout / Internal Server Error', 'error');
+                                    Swal.fire('', 'Request Timeout / Internal Server Error',
+                                        'error');
                                 } else {
                                     Swal.fire('', jqXHR.status, 'error');
                                 }
@@ -410,7 +334,8 @@
                         error: function(jqXHR, textStatus, errorThrown) {
                             if (jqXHR.status) {
                                 if (jqXHR.status == 500) {
-                                    Swal.fire('', 'Request Timeout / Internal Server Error', 'error');
+                                    Swal.fire('', 'Request Timeout / Internal Server Error',
+                                        'error');
                                 } else {
                                     Swal.fire('', jqXHR.status, 'error');
                                 }

@@ -7,16 +7,11 @@
         content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
     <meta http-equiv="X-UA-Compatible" content="ie=edge">
     <meta name="csrf-token" content="{{ csrf_token() }}">
+    {{-- <meta name="viewport" content="width=device-width, initial-scale=1.0"> --}}
     <title>Demo College Of Engineering & Technology</title>
     <link rel="icon" type="image/x-icon" href="{{ asset('adminlogo/school_favicon.png') }}">
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link
-        href="https://fonts.googleapis.com/css2?family=Poppins:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&display=swap"
-        rel="stylesheet">
-    {{-- <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/css/materialize.min.css" integrity="sha512-UJfAaOlIRtdR+0P6C3KUoTDAxVTuy3lnSXLyLKlHYJlcSU8Juge/mjeaxDNMlw9LgeIotgz5FP8eUQPhX1q10A==" crossorigin="anonymous" referrerpolicy="no-referrer" /> --}}
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.5/css/select2.min.css" rel="stylesheet" />
     <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.2.1/css/bootstrap.min.css" rel="stylesheet" />
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.5/css/select2.min.css" rel="stylesheet" />
     <link
         href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-datetimepicker/4.17.47/css/bootstrap-datetimepicker.min.css"
         rel="stylesheet" />
@@ -28,243 +23,133 @@
     <link href="https://cdn.datatables.net/select/1.3.0/css/select.dataTables.min.css" rel="stylesheet" />
     <link href="https://cdn.datatables.net/buttons/1.2.4/css/buttons.dataTables.min.css" rel="stylesheet" />
     <link href="https://cdnjs.cloudflare.com/ajax/libs/dropzone/5.5.1/min/dropzone.min.css" rel="stylesheet" />
+
     <link href="{{ asset('css/custom.css') }}" rel="stylesheet" />
-
-
     @yield('styles')
+    <style>
+        .bell-item a {
+            width: 287px;
+            text-wrap: wrap;
+        }
+
+        .bell-item {
+            border-bottom: 1px solid #dfdfdf;
+        }
+
+        .rollDiv {
+            height: 333px;
+            overflow-y: scroll;
+        }
+
+
+
+        /* Absolute Center Spinner */
+        .loading {
+            position: fixed;
+            z-index: 999;
+            height: 2em;
+            width: 2em;
+            overflow: show;
+            margin: auto;
+            top: 0;
+            left: 0;
+            bottom: 0;
+            right: 0;
+        }
+
+        /* Transparent Overlay */
+        .loading:before {
+            content: '';
+            display: block;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(rgba(20, 20, 20, 0), rgba(0, 0, 0, 0));
+            background: -webkit-radial-gradient(rgba(20, 20, 20, 0), rgba(0, 0, 0, 0));
+        }
+
+        /* :not(:required) hides these rules from IE9 and below */
+        .loading:not(:required) {
+            /* hide "loading..." text */
+            font: 0/0 a;
+            color: transparent;
+            text-shadow: none;
+            background-color: transparent;
+            border: 0;
+        }
+
+        .loading:not(:required):after {
+            content: '';
+            display: block;
+            font-size: 10px;
+            width: 1em;
+            height: 1em;
+            margin-top: -0.5em;
+            -webkit-animation: spinner 2s infinite linear;
+            -moz-animation: spinner 2s infinite linear;
+            -ms-animation: spinner 2s infinite linear;
+            -o-animation: spinner 2s infinite linear;
+            animation: spinner 2s infinite linear;
+            border-radius: 0.5em;
+            border: 2px solid lightblue;
+            /* Change the border color to light blue */
+            box-shadow: lightblue 1.5em 0 0 0, lightblue 1.1em 1.1em 0 0, lightblue 0 1.5em 0 0, lightblue -1.1em 1.1em 0 0, lightblue -1.5em 0 0 0, lightblue -1.1em -1.1em 0 0, lightblue 0 -1.5em 0 0, lightblue 1.1em -1.1em 0 0;
+            /* Change the box-shadow color to light blue */
+        }
+
+
+        /* Animation */
+
+        @-webkit-keyframes spinner {
+            0% {
+                -webkit-transform: rotate(0deg);
+                transform: rotate(0deg);
+            }
+
+            100% {
+                -webkit-transform: rotate(360deg);
+                transform: rotate(360deg);
+            }
+        }
+
+        @-moz-keyframes spinner {
+            0% {
+                -moz-transform: rotate(0deg);
+                transform: rotate(0deg);
+            }
+
+            100% {
+                -moz-transform: rotate(360deg);
+                transform: rotate(360deg);
+            }
+        }
+
+        @-o-keyframes spinner {
+            0% {
+                -o-transform: rotate(0deg);
+                transform: rotate(0deg);
+            }
+
+            100% {
+                -o-transform: rotate(360deg);
+                transform: rotate(360deg);
+            }
+        }
+
+        @keyframes spinner {
+            0% {
+                transform: rotate(0deg);
+            }
+
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+    </style>
+
 </head>
-<style>
-    .bell-item a {
-        width: 287px;
-        text-wrap: wrap;
-    }
-
-    *{
-        font-size:0.9rem;
-    }
-
-    .bell-item {
-        border-bottom: 1px solid #dfdfdf;
-    }
-
-    .rollDiv {
-        height: 333px;
-        overflow-y: scroll;
-    }
-
-    svg {
-        display: block;
-        font-size: 5vw;
-        height: 1em;
-        left: 90%;
-        position: relative;
-        top: 50%;
-        transform: translate(-50%, -50%);
-        width: 1em;
-    }
-
-    .too-big-actually {
-        transform-origin: 9.5px 9.5px;
-        transform: scale(0.5);
-    }
-
-
-
-    @keyframes ring {
-        0% {
-            transform: rotate(0deg);
-        }
-
-        1.5% {
-            transform: rotate(30deg);
-        }
-
-        2.5% {
-            transform: rotate(-25deg);
-        }
-
-        3.75% {
-            transform: rotate(20deg);
-        }
-
-        5.15% {
-            transform: rotate(-10deg);
-        }
-
-        6.65% {
-            transform: rotate(5deg);
-        }
-
-        8.0% {
-            transform: rotate(-2deg);
-        }
-
-        10.0% {
-            transform: rotate(0deg);
-        }
-
-        100% {
-            transform: rotate(0deg);
-        }
-    }
-
-    @keyframes ding {
-        0% {
-            transform: translateX(0);
-        }
-
-        1.2% {
-            transform: translateX(4px);
-        }
-
-        1.5% {
-            transform: translateX(4px);
-        }
-
-        2.3% {
-            transform: translateX(-4px);
-        }
-
-        2.5% {
-            transform: translateX(-4px);
-        }
-
-        3.55% {
-            transform: translateX(4px);
-        }
-
-        3.75% {
-            transform: translateX(4px);
-        }
-
-        5.45% {
-            transform: translateX(-3px);
-        }
-
-        7.15% {
-            transform: translateX(2px);
-        }
-
-        9.0% {
-            transform: translateX(-1px);
-        }
-
-        11.0% {
-            transform: translateX(0);
-        }
-
-        100% {
-            transform: rotate(0deg);
-        }
-    }
-</style>
-
-<style>
-    /* Absolute Center Spinner */
-    .loading {
-        position: fixed;
-        z-index: 999;
-        height: 2em;
-        width: 2em;
-        overflow: show;
-        margin: auto;
-        top: 0;
-        left: 0;
-        bottom: 0;
-        right: 0;
-    }
-
-    /* Transparent Overlay */
-    .loading:before {
-        content: '';
-        display: block;
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        background: radial-gradient(rgba(20, 20, 20, 0), rgba(0, 0, 0, 0));
-        background: -webkit-radial-gradient(rgba(20, 20, 20, 0), rgba(0, 0, 0, 0));
-    }
-
-    /* :not(:required) hides these rules from IE9 and below */
-    .loading:not(:required) {
-        /* hide "loading..." text */
-        font: 0/0 a;
-        color: transparent;
-        text-shadow: none;
-        background-color: transparent;
-        border: 0;
-    }
-
-    .loading:not(:required):after {
-        content: '';
-        display: block;
-        font-size: 10px;
-        width: 1em;
-        height: 1em;
-        margin-top: -0.5em;
-        -webkit-animation: spinner 2s infinite linear;
-        -moz-animation: spinner 2s infinite linear;
-        -ms-animation: spinner 2s infinite linear;
-        -o-animation: spinner 2s infinite linear;
-        animation: spinner 2s infinite linear;
-        border-radius: 0.5em;
-        border: 2px solid lightblue;
-        /* Change the border color to light blue */
-        box-shadow: lightblue 1.5em 0 0 0, lightblue 1.1em 1.1em 0 0, lightblue 0 1.5em 0 0, lightblue -1.1em 1.1em 0 0, lightblue -1.5em 0 0 0, lightblue -1.1em -1.1em 0 0, lightblue 0 -1.5em 0 0, lightblue 1.1em -1.1em 0 0;
-        /* Change the box-shadow color to light blue */
-    }
-
-
-    /* Animation */
-
-    @-webkit-keyframes spinner {
-        0% {
-            -webkit-transform: rotate(0deg);
-            transform: rotate(0deg);
-        }
-
-        100% {
-            -webkit-transform: rotate(360deg);
-            transform: rotate(360deg);
-        }
-    }
-
-    @-moz-keyframes spinner {
-        0% {
-            -moz-transform: rotate(0deg);
-            transform: rotate(0deg);
-        }
-
-        100% {
-            -moz-transform: rotate(360deg);
-            transform: rotate(360deg);
-        }
-    }
-
-    @-o-keyframes spinner {
-        0% {
-            -o-transform: rotate(0deg);
-            transform: rotate(0deg);
-        }
-
-        100% {
-            -o-transform: rotate(360deg);
-            transform: rotate(360deg);
-        }
-    }
-
-    @keyframes spinner {
-        0% {
-            transform: rotate(0deg);
-        }
-
-        100% {
-            transform: rotate(360deg);
-        }
-    }
-</style>
 
 <body class="sidebar-mini layout-fixed" style="height: auto;">
     <div class="wrapper">
@@ -275,8 +160,6 @@
                     <a class="nav-link" data-widget="pushmenu" href="#"><i class="fa fa-bars"></i></a>
                 </li>
             </ul>
-            {{-- {{ dd(auth()->user()->roles[0]) }} --}}
-            <!-- Right navbar links -->
             @if (count(config('panel.available_languages', [])) > 1)
                 <ul class="navbar-nav ml-auto">
                     <li class="nav-item dropdown">
@@ -297,34 +180,11 @@
             <ul class="navbar-nav ml-auto">
                 <li class="nav-item dropdown notifications-menu">
                     <a href="#" class="nav-link" data-toggle="dropdown">
-                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 19 19">
-                            <g class="too-big-actually">
-                                <g class="bell-whole">
-                                    <path class="bell-part bell-part--ringer"
-                                        d="M9.5,17.5a2,2,0,0,0,2-2h-4A2,2,0,0,0,9.5,17.5Z" />
-                                    <path class="bell-part bell-part--main"
-                                        d="M16.23,12.82c-.6-.65-1.73-1.62-1.73-4.82a4.93,4.93,0,0,0-4-4.85V2.5a1,1,0,0,0-2,0v.65A4.94,4.94,0,0,0,4.5,8c0,3.2-1.13,4.17-1.73,4.82a1,1,0,0,0-.27.68,1,1,0,0,0,1,1h12a1,1,0,0,0,1-1A1,1,0,0,0,16.23,12.82Z" />
-                                </g>
-                            </g>
-                        </svg>
+                        <i class="far fa-bell"></i>
                         @php
                             $alertsCount = \Auth::user()->userUserAlerts()->where('read', false)->count();
                         @endphp
                         @if ($alertsCount > 0)
-                            <style>
-                                .bell-whole {
-                                    animation: ring 20s linear infinite;
-                                    transform-origin: 9.5px 2.4781px;
-                                }
-
-                                .bell-part {
-                                    fill: currentColor;
-                                }
-
-                                .bell-part--ringer {
-                                    animation: ding 20s linear infinite;
-                                }
-                            </style>
                             <span class="badge badge-warning navbar-badge">
                                 {{ $alertsCount }}
                             </span>
@@ -355,22 +215,38 @@
                     </div>
                 </li>
             </ul>
+
             <ul class="navbar-nav">
                 <li class="nav-item dropdown notifications-menu">
                     <a href="#" class="nav-link nav_prof_label bg-primary" data-toggle="dropdown"
                         style="color:black;display:block;">
 
-                        {{-- @if (session('profile') != '' && session('profile') != null)
+                        @if (session('profile') != '' && session('profile') != null)
                             <img src="{{ asset(session('profile')) }}" alt="" style="border-radius:50%;"
                                 width="25px" height="25px">
-
-                        @else --}}
-                        <i class="fa fa-user"></i>
-                        {{-- @endif --}}
+                        @else
+                            <i class="fa fa-user"></i>
+                        @endif
                         <span style="margin-left:0.75rem;">{{ auth()->user()->name }}</span>
                     </a>
+
                     <div class="dropdown-menu dropdown-menu-lg dropdown-menu-right">
                         <ul style="list-style-type:none;padding:0;">
+                            <li> <a href="{{ url('admin/teaching-staff/' . auth()->user()->id . '/Profile-view') }}"
+                                    class="dropdown-item"> My Profile </a></li>
+                            @if (file_exists(app_path('Http/Controllers/Auth/ChangePasswordController.php')))
+                                @can('profile_password_edit')
+                                    <li class="nav-item">
+                                        <a class="dropdown-item" href="{{ route('profile.password.Staff_edit') }}">
+
+                                            <p>
+                                                {{ trans('global.change_password') }}
+                                            </p>
+                                        </a>
+                                    </li>
+                                @endcan
+                            @endif
+
                             <li> <a href="#" class="dropdown-item"
                                     onclick="event.preventDefault(); document.getElementById('logoutform').submit();">
                                     Logout </a></li>
@@ -378,117 +254,213 @@
                     </div>
                 </li>
             </ul>
-
         </nav>
 
-        @include('partials.menu')
+        <aside class="main-sidebar sidebar-dark-primary elevation-4" style="min-height: 917px;">
+  
+            <a href="#" class="brand-link" style="background-color: rgb(255, 255, 255)">
+                <span class="brand-text font-weight-light">
+                    <img src="{{ asset('adminlogo/school_menu_logo.png') }}" alt="" width="100%">
+                </span>
+            </a>
+
+            <div class="sidebar">
+                <nav class="mt-2">
+                    <style>
+                        .search-input-container {
+                            position: relative;
+                            overflow: auto;
+                        }
+
+                        .search-input-container input[type="search"] {
+                            padding: 7px 7px 7px 47px;
+                            width: 100%;
+                            background: #ededed url(https://static.tumblr.com/ftv85bp/MIXmud4tx/search-icon.png) no-repeat 9px center;
+                            border: solid 1px #ccc;
+                            border-bottom-left-radius: 25px;
+                            border-top-left-radius: 25px;
+                            transition: all .5s;
+                        }
+
+                        .search-input-container input[type="search"]:focus {
+                            width: 100%;
+                            background-color: #fff;
+                            border-color: #007bff;
+                            box-shadow: 0 0 5px rgba(109, 207, 246, .5);
+                            outline: none;
+                        }
+                    </style>
+                    <div id="demo-2">
+                        <div class="search-input-container">
+                            <input type="search" id="searchInput" placeholder="Search..." class="menu_searcher "
+                                autocomplete="off" value="">
+                        </div>
+                    </div>
+                    <ul class="nav nav-pills nav-sidebar flex-column" data-widget="treeview" role="menu"
+                        data-accordion="false" id="list" style="padding-bottom:50px;">
+
+                        <li class="nav-item" style="margin-top:0.5rem;">
+                            <a class="nav-link {{ request()->routeIs('admin.home') ? 'active' : '' }}"
+                                href="{{ route('admin.home') }}">
+                                <i class="fas fa-fw fa-tachometer-alt nav-icon">
+                                </i>
+                                <p>
+                                    {{ trans('global.dashboard') }}
+                                </p>
+                            </a>
+                        </li>
+                        {{-- @can('student_daily_attendance_staff_access')
+                            <li class="nav-item">
+                                <a href="{{ route('admin.student-period-attendance.index') }}"
+                                    class="nav-link {{ request()->is('admin/student-period-attendance') || request()->is('admin/student-period-attendance/*') || request()->is('admin/get-staff-day-period/*') ? 'active' : '' }}">
+                                    <i class="fa-fw nav-icon fas fa-address-book">
+
+                                    </i>
+                                    <p>
+                                        Student Daily Attendance
+                                    </p>
+                                </a>
+                            </li>
+                        @endcan --}}
+                        {{-- @can('student_daily_attendance_staff_summary_access')
+                            <li class="nav-item">
+                                <a href="{{ route('admin.day_student_attendance_summary.index') }}"
+                                    class="nav-link {{ request()->is('admin/day_student-attendance-summary*') ? 'active' : '' }}">
+                                    <i class="fa-fw nav-icon fas fa-file-alt"></i>
+                                    <p>Day Attendance Summary</p>
+                                </a>
+                            </li>
+                        @endcan --}}
+                        @can('add_leave_access')
+                            <li class="nav-item">
+                                <a href="{{ route('admin.staff-request-leaves.staff_index') }}"
+                                    class="nav-link {{ request()->is('admin/staff-request-leaves') || request()->is('admin/staff-request-leaves/*') ? 'active' : '' }}">
+                                    <i class="fa-fw nav-icon fas fa-file-alt">
+
+                                    </i>
+                                    <p>
+                                        Apply Leave / OD
+                                    </p>
+                                </a>
+                            </li>
+                        @endcan
+                        @can('permission_request')
+                            <li class="nav-item">
+                                <a href="{{ route('admin.staff-permissionsreq.staff_index') }}"
+                                    class="nav-link {{ request()->is('admin/staff-permissionsreq') || request()->is('admin/staff-permissionsreq/*') ? 'active' : '' }}">
+                                    <i class="fa-fw nav-icon fas fa-envelope">
+
+                                    </i>
+                                    <p>
+                                        Permission Request
+                                    </p>
+                                </a>
+                            </li>
+                        @endcan
+                        @can('Staff_personal_attendence')
+                            <li class="nav-item">
+                                <a href="{{ route('admin.Staff-Personal-Attendence.index') }}"
+                                    class="nav-link {{ request()->is('admin/Staff-Personal-Attendence') || request()->is('admin/Staff-Personal-Attendence/*') ? 'active' : '' }}">
+                                    <i class="fa-fw nav-icon fas fa-edit">
+
+                                    </i>
+                                    <p>
+                                        Staff Personal Attendence
+                                    </p>
+                                </a>
+                            </li>
+                        @endcan
+                        @can('staff_leave_request')
+                            <li class="nav-item">
+                                <a href="{{ route('admin.student-leave-requests.stu_index') }}"
+                                    class="nav-link {{ request()->is('admin/student-leave-requests') || request()->is('admin/student-leave-requests/*') ? 'active' : '' }}">
+                                    <i class="fa-fw nav-icon fas fa-mail-bulk">
+
+                                    </i>
+                                    <p>
+                                        Leave Requests
+                                    </p>
+                                </a>
+                            </li>
+                        @endcan
+                        {{-- @can('staff_feedback_forms')
+                            <li
+                                class="nav-item has-treeview {{ request()->is('admin/feedback-forms*') ? 'menu-open' : '' }}">
+                                <a class="nav-link nav-dropdown-toggle {{ request()->is('admin/feedback-forms*') ? 'active' : '' }}"
+                                    href="#">
+                                    <i class="fas nav-icon fas fa-comment">
+                                    </i>
+                                    <p>
+                                        Feed Backs
+                                        <i class="right fa fa-fw fa-angle-left nav-icon"></i>
+                                    </p>
+                                </a>
+                                <ul class="nav nav-treeview"
+                                    style="background-color: rgba(128, 128, 128, 0.473); color:#ffffff">
+                                    @can('staff_feedback_forms')
+                                        <li class="nav-item">
+                                            <a href="{{ route('admin.feedback-form.index') }}"
+                                                class="nav-link {{ request()->is('admin/feedback-form') || request()->is('admin/feedback-form/*') ? 'active' : '' }}">
+                                                <i class="fa-fw nav-icon fas fa-comments">
+                                                </i>
+                                                <p>
+                                                    Forms
+                                                </p>
+                                            </a>
+                                        </li>
+                                    @endcan
+                                </ul>
+                            </li>
+                        @endcan --}}
+                        @php($unread = \App\Models\QaTopic::unreadCount())
+                        <li class="nav-item">
+                            <a href="{{ route('admin.messenger.index') }}"
+                                class="{{ request()->is('admin/messenger') || request()->is('admin/messenger/*') ? 'active' : '' }} nav-link">
+                                <i class="fa-fw fa fa-envelope nav-icon">
+
+                                </i>
+                                <p>{{ trans('global.messages') }}</p>
+                                @if ($unread > 0)
+                                    <strong>( {{ $unread }} )</strong>
+                                @endif
+
+                            </a>
+                        </li>
+                    </ul>
+                </nav>
+                <!-- /.sidebar-menu -->
+            </div>
+            <!-- /.sidebar -->
+        </aside>
         <div class="content-wrapper" style="min-height: 917px;">
             <!-- Main content -->
 
             <section class="content" style="padding-top: 20px;padding-bottom:20px;">
                 @if (session('message'))
-                    <div class="row mb-2" id="message_shower">
+                    <div class="row mb-2">
                         <div class="col-lg-12">
-                            <div class="alert alert-success" role="alert"
-                                style="display:flex;justify-content:space-between">
-                                <div id='success-message'>{{ session('message') }}</div>
-                                <div><i style="cursor: pointer;"class="fa-fw fas fa-times" onclick="message_shower()">
-                                    </i></div>
-                            </div>
-                        </div>
-                    </div>
-                @elseif (session('message_error'))
-                    <div class="row mb-2" id="message_shower">
-                        <div class="col-lg-12">
-                            <div class="alert alert-danger" role="alert"
-                                style="display:flex;justify-content:space-between">
-                                <div id='success-message'>{{ session('message_error') }}</div>
-                                <div><i style="cursor: pointer;"class="fa-fw fas fa-times" onclick="message_shower()">
-                                    </i></div>
-                            </div>
+                            <div class="alert alert-success" role="alert">{{ session('message') }}</div>
                         </div>
                     </div>
                 @endif
-                @if (session('error'))
-                    <div class="row mb-2" id="error_shower">
+                @if ($errors->count() > 0)
+                    <div class="row mb-2" id="error_1_shower">
                         <div class="col-lg-12">
-                            <div class="alert alert-danger" role="alert"
-                                style="display:flex;justify-content:space-between">
-                                <div>{{ session('error') }}</div>
-                                <div><i style="cursor: pointer;"class="fa-fw fas fa-times" onclick="error_shower()">
-                                    </i></div>
-                            </div>
+                            @foreach ($errors->all() as $error)
+                                <div class="alert alert-danger parent" role="alert"
+                                    style="display:flex;justify-content:space-between">
+                                    <div>{{ $error }}</div>
+                                    <div><i style="cursor: pointer;" class="fa-fw fas fa-times"></i></div>
+                                </div>
+                            @endforeach
                         </div>
                     </div>
                 @endif
 
-
-                @if (request()->is('admin/master-tools') ||
-                request()->is('admin/tools*') ||
-                request()->is('admin/batches*') ||
-                request()->is('admin/year*') ||
-                request()->is('admin/designation*') ||
-                request()->is('admin/academic-years*') ||
-                request()->is('admin/semesters*') ||
-                request()->is('admin/sections*') ||
-                request()->is('admin/course-enroll-masters*') ||
-                request()->is('admin/lab_title*') ||
-                request()->is('admin/nationalities*') ||
-                request()->is('admin/religions*') ||
-                request()->is('admin/blood-groups*') ||
-                request()->is('admin/state*') ||
-                request()->is('admin/communities*') ||
-                request()->is('admin/mother-tongues*') ||
-                request()->is('admin/education-boards*') ||
-                request()->is('admin/education-types*') ||
-                request()->is('admin/scholarships*') ||
-                request()->is('admin/mediumof-studieds*') ||
-                request()->is('admin/teaching-types*') ||
-                request()->is('admin/examstaffs*') ||
-                request()->is('admin/college-blocks*') ||
-                request()->is('admin/scholarships*') ||
-                request()->is('admin/leave-statuses*') ||
-                request()->is('admin/class-rooms*') ||
-                request()->is('admin/class-batch*') ||
-                request()->is('admin/email-settings*') ||
-                request()->is('admin/sms-settings*') ||
-                request()->is('admin/sms-templates*') ||
-                request()->is('admin/email-templates*') ||
-                request()->is('admin/Shift/*') ||
-                request()->is('admin/Shift') ||
-                request()->is('admin/tool-lab') ||
-                request()->is('admin/tool-lab/*') ||
-                request()->is('admin/rooms') ||
-                request()->is('admin/rooms/*') ||
-                request()->is('admin/events/*') ||
-                request()->is('admin/leave-types/*') ||
-                request()->is('admin/grade-master*') ||
-                request()->is('admin/examfee-master*') ||
-                request()->is('admin/credit-limit-master*') ||
-                request()->is('admin/fee-components*') ||
-                request()->is('admin/fee-cycle*') ||
-                request()->is('admin/internal-weightage/*') ||
-                request()->is('admin/paymentMode*') ||
-                request()->is('admin/paymentMode/*') ||
-                request()->is('admin/events*') ||
-                request()->is('admin/events/*') ||
-                request()->is('admin/leave-types*') ||
-                request()->is('admin/leave-types/*') ||
-                request()->is('admin/admission-mode*') ||
-                request()->is('admin/result-master*'))
-            <!-- //  General Tools menu will match URL /tools/999 or /tools/create -->
-
-            <div class="row">
-                <div class="col-9" style="border-right: 1px solid #cecdcd;">@yield('content')</div>
-                <div class="col-3"> @include('partials.toolsmenu')</div>
-            </div>
-        @else
-            @yield('content')
-        @endif
-
+                @yield('content')
 
             </section>
-
+            <!-- /.content -->
         </div>
 
         <footer class="main-footer">
@@ -501,7 +473,6 @@
             {{ csrf_field() }}
         </form>
     </div>
-    <script src="{{ mix('js/app.js') }}"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
     <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.1.1/js/bootstrap.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.3/umd/popper.min.js"></script>
@@ -525,8 +496,42 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/dropzone/5.5.1/min/dropzone.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@9.3.4/dist/sweetalert2.all.min.js"></script>
     <script src="{{ asset('js/main.js') }}"></script>
+    <script>
+        $(document).ready(function() {
 
+            document.addEventListener("contextmenu", (e) => e.preventDefault());
 
+            function ctrlShiftKey(e, keyCode) {
+                return e.ctrlKey && e.shiftKey && e.keyCode === keyCode.charCodeAt(0);
+            }
+
+            document.onkeydown = (e) => {
+                // Disable F12, Ctrl + Shift + I, Ctrl + Shift + J, Ctrl + U
+                if (
+                    event.keyCode === 123 ||
+                    ctrlShiftKey(e, "I") ||
+                    ctrlShiftKey(e, "J") ||
+                    ctrlShiftKey(e, "C") ||
+                    (e.ctrlKey && e.keyCode === "U".charCodeAt(0))
+                )
+                    return false;
+            };
+
+            $('#searchInput').on('keyup', function() {
+                var searchTerm = $(this).val().toLowerCase();
+
+                $('#list li').each(function() {
+                    var listItemText = $(this).text().toLowerCase();
+
+                    if (listItemText.includes(searchTerm)) {
+                        $(this).show();
+                    } else {
+                        $(this).hide();
+                    }
+                });
+            });
+        });
+    </script>
     <script>
         $(function() {
             let copyButtonTrans = '{{ trans('global.datatables.copy') }}'
@@ -537,7 +542,6 @@
             let colvisButtonTrans = '{{ trans('global.datatables.colvis') }}'
             let selectAllButtonTrans = '{{ trans('global.select_all') }}'
             let selectNoneButtonTrans = '{{ trans('global.deselect_all') }}'
-
             let languages = {
                 'en': 'https://cdn.datatables.net/plug-ins/1.10.19/i18n/English.json'
             };
@@ -568,7 +572,7 @@
                 dom: 'lBfrtip<"actions">',
                 buttons: [{
                         extend: 'selectAll',
-                        className: ' btn btn-primary btn-sm',
+                        className: 'btn-primary',
                         text: selectAllButtonTrans,
                         exportOptions: {
                             columns: ':visible'
@@ -583,7 +587,7 @@
                     },
                     {
                         extend: 'selectNone',
-                        className: 'btn btn-primary btn-sm',
+                        className: 'btn-primary',
                         text: selectNoneButtonTrans,
                         exportOptions: {
                             columns: ':visible'
@@ -591,7 +595,7 @@
                     },
                     {
                         extend: 'copy',
-                        className: 'btn btn-default btn-sm',
+                        className: 'btn-default',
                         text: copyButtonTrans,
                         exportOptions: {
                             columns: ':visible'
@@ -599,7 +603,7 @@
                     },
                     {
                         extend: 'csv',
-                        className: 'btn btn-default btn-sm',
+                        className: 'btn-default',
                         text: csvButtonTrans,
                         exportOptions: {
                             columns: ':visible'
@@ -607,7 +611,7 @@
                     },
                     {
                         extend: 'excel',
-                        className: 'btn btn-default btn-sm',
+                        className: 'btn-default',
                         text: excelButtonTrans,
                         exportOptions: {
                             columns: ':visible'
@@ -615,7 +619,7 @@
                     },
                     {
                         extend: 'pdf',
-                        className: 'btn btn-default btn-sm',
+                        className: 'btn-default',
                         text: pdfButtonTrans,
                         exportOptions: {
                             columns: ':visible'
@@ -623,7 +627,7 @@
                     },
                     {
                         extend: 'print',
-                        className: 'btn btn-default btn-sm',
+                        className: 'btn-default',
                         text: printButtonTrans,
                         exportOptions: {
                             columns: ':visible'
@@ -631,7 +635,7 @@
                     },
                     {
                         extend: 'colvis',
-                        className: 'btn btn-default btn-sm',
+                        className: 'btn-default',
                         text: colvisButtonTrans,
                         exportOptions: {
                             columns: ':visible'
@@ -651,17 +655,6 @@
                     $.get('/admin/user-alerts/read');
                 }
             });
-        });
-
-        function message_shower() {
-            $("#message_shower").fadeOut();
-        }
-
-        function error_shower(element) {
-            $("#error_shower").fadeOut();
-        }
-        $(".fa-times").on("click", function() {
-            $(this).closest(".parent").fadeOut();
         });
     </script>
     <script>
@@ -704,7 +697,7 @@
                         return '{{ trans('global.searching') }}';
                     },
                     noResults: function() {
-                        return '{{ trans('global.no_results') }}';
+                        return '{{ trans(' global.no_results') }}';
                     },
                 }
 
@@ -737,23 +730,31 @@
             });
         });
     </script>
-    <script>
-        $(document).ready(function() {
-            $('#searchInput').on('keyup', function() {
-                var searchTerm = $(this).val().toLowerCase();
-
-                $('#list li').each(function() {
-                    var listItemText = $(this).text().toLowerCase();
-
-                    if (listItemText.includes(searchTerm)) {
-                        $(this).show();
-                    } else {
-                        $(this).hide();
-                    }
-                });
-            });
-        });
-    </script>
+    {{-- <script>
+        function toggleFullScreen() {
+            if (!document.fullscreenElement && !document.mozFullScreenElement && !document.webkitFullscreenElement && !document.msFullscreenElement) {
+                if (document.documentElement.requestFullscreen) {
+                    document.documentElement.requestFullscreen();
+                } else if (document.documentElement.msRequestFullscreen) {
+                    document.documentElement.msRequestFullscreen();
+                } else if (document.documentElement.mozRequestFullScreen) {
+                    document.documentElement.mozRequestFullScreen();
+                } else if (document.documentElement.webkitRequestFullscreen) {
+                    document.documentElement.webkitRequestFullscreen(Element.ALLOW_KEYBOARD_INPUT);
+                }
+            } else {
+                if (document.exitFullscreen) {
+                    document.exitFullscreen();
+                } else if (document.msExitFullscreen) {
+                    document.msExitFullscreen();
+                } else if (document.mozCancelFullScreen) {
+                    document.mozCancelFullScreen();
+                } else if (document.webkitExitFullscreen) {
+                    document.webkitExitFullscreen();
+                }
+            }
+        }
+    </script> --}}
     <script>
         /*!
          * AdminLTE v3.0.0-alpha.2 (https://adminlte.io)

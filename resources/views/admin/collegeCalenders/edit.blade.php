@@ -8,22 +8,12 @@
             border-radius: 4px;
             display: flex;
             background: #FFF;
-            /* box-shadow: 0 10px 50px -15px rgba(0, 0, 0, 0.75); */
-
-            /* position: relative;
-
-                                            &:before {
-                                                position: absolute;
-                                                content: attr(data-year);
-                                                color: #333;
-                                                top: -60px;
-                                                left: 10px;
-                                                font-family: sans-serif;
-                                                font-weight: 700;
-                                                font-size: 332%;
-                                                z-index: 111111;
-                                            } */
         }
+
+        li.editable span {
+            margin-right: auto;
+        }
+
 
         .year ul {
             display: inline-block;
@@ -42,9 +32,6 @@
                 font-family: sans-serif;
                 font-weight: 700;
                 font-size: 110%;
-
-                /* transform-origin: 0 100%;
-                                                transform: rotate(90deg) translateX(-0px) translateY(0px); */
                 top: -19px;
                 left: 6px;
                 right: 0px;
@@ -103,7 +90,7 @@
         }
     </style>
     <?php
-
+    
     foreach ($startDates as $record) {
         // dd($record);
         // ;03,batch
@@ -113,11 +100,11 @@
         $date = $record->date;
         $dayorder = $record->dayorder;
         $bookmark = $record->bookmark;
-        $semester_type = $record->semester_type;
+        // $semester_type = $record->semester_type;
         $academic_year = $record->academic_year;
     }
-    $batch = $startDates[0]->batch;
-
+    // $batch = $startDates[0]->batch;
+    
     $startYear = date('Y', strtotime($startDates[0]->start_date));
     $endYear = date('Y', strtotime($startDates[0]->end_date));
     $startMonth = date('m', strtotime($startDates[0]->start_date));
@@ -131,8 +118,6 @@
                     <thead>
                         <tr>
                             <th scope="col">Academic Year</th>
-                            <th scope="col">Batch</th>
-                            <th scope="col">Semester Type</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -140,30 +125,6 @@
                             <td>
                                 {{ $academic_year ?? '' }}
                             </td>
-
-                            <td>
-                                @switch($batch)
-                                    @case(01)
-                                        First Year
-                                    @break
-
-                                    @case(02)
-                                        Second Year
-                                    @break
-
-                                    @case(03)
-                                        Third Year
-                                    @break
-
-                                    @case(04)
-                                        Fourth Year
-                                    @break
-
-                                    @default
-                                        ''
-                                @endswitch
-                            </td>
-                            <td>{{ $semester_type ?? '' }}</td>
                         </tr>
                     </tbody>
                 </table>
@@ -187,65 +148,63 @@ for ($year = $startYear; $year <= $endYear; $year++) {
 
 
         <?php
-        echo '<div class="col-xl-2 col-lg-2 col-md-2 col-sm-2 col-4 year_label" data-batch="' . $batch . '" data-year="' . $year . '" style="padding-bottom:2.5rem;"><div style="font-size:2rem;padding-bottom:10px;">' . $year . '</div><ul class="' . $formattedMonth . ' month" data-month="' . $monthName . '">';
-
+        echo '<div class="col-xl-2 col-lg-2 col-md-2 col-sm-2 col-4 year_label" data-year="' . $year . '" style="padding-bottom:2.5rem;"><div style="font-size:2rem;padding-bottom:10px;">' . $year . '</div><ul class="' . $formattedMonth . ' month" data-month="' . $monthName . '">';
+        
         ?>
 
         <?php
-
-
-// dd($startDatesArray);
+        $i =0;
         foreach ($startDatesArray as $object) {
-            // dd($object);
+            $i += 1;
             $date = $object->date;
-            $batch = $object->batch;
+            // $batch = $object->batch;
             $currentYear = date('Y', strtotime($date));
             $currentMonth = date('m', strtotime($date));
             $day = date('d', strtotime($date));
             $dayName = date('l', strtotime($date));
             $dayNameShort = '(' . substr($dayName, 0, 3) . ')';
             $style = '';
-
+            
             if ($currentYear != $year || $currentMonth != $formattedMonth) {
                 continue;
             }
-
+            
             $dayorder = $object->dayorder;
 
 
                 // Add additional styles based on the dayorder
                 if ($dayorder == 1 || $dayorder == 2) {
-                    $style .= 'background: #FFD5D6; box-shadow: inset 0 0 0 1px #E0E0E0;width: 170px;';
+                    $style .= 'background: #FFD5D6; box-shadow: inset 0 0 0 1px #E0E0E0;width: 150px; display: flex; justify-content: space-between; ';
                 } elseif ($dayorder == 3) {
-                    $style = 'background: #FFD5D6; box-shadow: inset 0 0 0 1px #E0E0E0;width: 170px;';
+                    $style = 'background: #FFD5D6; box-shadow: inset 0 0 0 1px #E0E0E0;width: 150px; display: flex; justify-content: space-between; ';
                 } elseif ($dayorder == 0) {
-                    $style = 'width: 170px;';
+                    $style = 'width: 150px; display: flex; justify-content: space-between; ';
                 } elseif ($dayorder == 4) {
-                    $style = 'background: #FFD5D6; box-shadow: inset 0 0 0 1px #E0E0E0;color:#010101;width: 170px;';
+                    $style = 'background: #FFD5D6; box-shadow: inset 0 0 0 1px #E0E0E0;color:#010101;width: 150px; display: flex; justify-content: space-between; ';
                     $dayNameShort = 'Holiday';
                 } elseif ($dayorder == 5) {
-                    $style = 'width: 170px;';
+                    $style = 'width: 150px; display: flex; justify-content: space-between;';
                     $dayNameShort = 'NoOrderDay';
                 } elseif ($dayorder == 6) {
-                    $style = 'width: 170px;';
+                    $style = 'width: 150px; display: flex; justify-content: space-between;';
                     $dayNameShort = '';
                 } elseif ($dayorder == 7) {
-                    $style = 'width: 170px;';
+                    $style = 'width: 150px; display: flex; justify-content: space-between;';
                     $dayNameShort = '(Tue)';
                 } elseif ($dayorder == 8) {
-                    $style = 'width: 170px;';
+                    $style = 'width: 150px; display: flex; justify-content: space-between;';
                     $dayNameShort = '(Wed)';
                 } elseif ($dayorder == 9) {
-                    $style = 'width: 170px;';
+                    $style = 'width: 150px; display: flex; justify-content: space-between;';
                     $dayNameShort = '(Thu)';
                 } elseif ($dayorder == 10) {
-                    $style = 'width: 170px;';
+                    $style = 'width: 150px; display: flex; justify-content: space-between;';
                     $dayNameShort = '(Fri)';
                 } elseif ($dayorder == 11) {
-                    $style = 'width: 170px;';
+                    $style = 'width: 150px; display: flex; justify-content: space-between;';
                     $dayNameShort = '(Sat)';
                 } elseif($dayorder == 20){
-                    $style = 'width: 170px;';
+                    $style = 'width: 150px; display: flex; justify-content: space-between;';
                     $dayNameShort = '(Mon)';
                 }
 
@@ -253,9 +212,9 @@ for ($year = $startYear; $year <= $endYear; $year++) {
                     $dayNameShort = '';
                 }
 
-                echo '<li data-date="' . $day . '" data-day="' . $dayNameShort . '" data-batch="' . $batch . '" data-month="' . $formattedMonth . '" style="' . $style . '" class="editable">';
-                echo $day . '<span> </span>' . $dayName;
-                echo '<select id="edit-day" class="select3 " style="float:right; width: 60px;" name="">';
+                echo '<li data-date="' . $day . '" data-day="' . $dayNameShort . '" data-month="' . $formattedMonth . '" style="' . $style . '" class="editable">';
+                echo $day. '&nbsp;&nbsp;'  . $dayName. '<span> </span>';
+                echo '<select id="edit-day" class="select3 " style="float:right; width: 65px;" name="">';
                 echo '<option value="00">Select</option>';
                 echo '<option value="Holiday" data-month="' . $formattedMonth . '" data-datee="' . $day . '" data-year="' . $currentYear . '"' . ($dayNameShort == "Holiday" ? ' selected' : '') . '>Holiday</option>';
                 echo '<option value="No_order_day" data-month="' . $formattedMonth . '" data-datee="' . $day . '" data-year="' . $currentYear . '"' . ($dayNameShort == "NoOrderDay" ? ' selected' : '') . '>No order day</option>';
@@ -377,7 +336,7 @@ for ($year = $startYear; $year <= $endYear; $year++) {
                     data: {
                         month: month,
                         accYear: '{{ $academic_year ?? '' }}',
-                        semType: '{{ $semester_type ?? '' }}',
+                        // semType: '{{ $semester_type ?? '' }}',
 
                         _token: csrf_token
                     },
@@ -395,7 +354,8 @@ for ($year = $startYear; $year <= $endYear; $year++) {
                     error: function(jqXHR, textStatus, errorThrown) {
                         if (jqXHR.status) {
                             if (jqXHR.status == 500) {
-                                Swal.fire('', 'Request Timeout / Internal Server Error', 'error');
+                                Swal.fire('', 'Request Timeout / Internal Server Error',
+                                    'error');
                             } else {
                                 Swal.fire('', jqXHR.status, 'error');
                             }

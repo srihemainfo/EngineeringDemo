@@ -43,6 +43,7 @@ use App\Models\Role;
 use App\Models\Sabotical;
 use App\Models\ShiftModel;
 use App\Models\Sponser;
+use App\Models\Staffs;
 use App\Models\StaffSalary;
 use App\Models\Sttp;
 use App\Models\TeachingStaff;
@@ -64,7 +65,7 @@ class TeachingStaffController extends Controller
 
     public function index(Request $request)
     {
-        abort_if(Gate::denies('teaching_staff_access'), Response::HTTP_FORBIDDEN, '403 Forbidden');
+        // abort_if(Gate::denies('teaching_staff_access'), Response::HTTP_FORBIDDEN, '403 Forbidden');
         // $a = MsBiometric::get();
         // $b = "SELECT * FROM AttendanceLogs";
         // $a = DB::connection('sqlsrv')->getPdo();
@@ -181,7 +182,7 @@ class TeachingStaffController extends Controller
 
     public function create()
     {
-        abort_if(Gate::denies('teaching_staff_create'), Response::HTTP_FORBIDDEN, '403 Forbidden');
+        // abort_if(Gate::denies('teaching_staff_create'), Response::HTTP_FORBIDDEN, '403 Forbidden');
 
         $department = ToolsDepartment::whereNotIn('name', ['ADMIN', 'CIVIL'])->pluck('name', 'id')->prepend(trans('global.pleaseSelect'), '');
         $teaching_type = TeachingType::whereIn('id', [1, 2])->pluck('name', 'id');
@@ -239,26 +240,26 @@ class TeachingStaffController extends Controller
         if($request->doj != null || $request->doj != ''){
             $yearMonth = substr($request->doj, 0, 7);
             $explode = explode('-', $request->doj);
-    
+
             $year = (int)$explode[0];
             $month = (int)$explode[1];
             $day = (int)$explode[2];
-    
+
             // $last_month = date('Y-m-26', strtotime('last month'));
             // $last_month_26 = date('Y-m-26', strtotime($last_month));
             // dd( $last_month);
-    
+
             // $date = substr($request->doj, 8, 9);
             $casual_leave =  0;
-    
+
             if ($yearMonth == date('Y-m') && $day  == 1) {
-    
+
                 $casual_leave =  1;
             } elseif (($year == (int)date('Y') || $year == (int)date('Y') - 1) && (($year == (int)date('Y') - 1 && $month == (int)date('m', strtotime('last month'))) || ($year == (int)date('Y') && $month < (int)date('m'))) && $day >= 26) {
-    
+
                 $casual_leave =  1;
             }
-    
+
             $personal_permission = 0;
             if ($yearMonth == date('Y-m') && ($day  > 1 && $day <= 15)) {
                 $personal_permission =  1;
@@ -269,7 +270,7 @@ class TeachingStaffController extends Controller
                 $personal_permission =  2;
             }
         }
-        
+
 
         // dd($casual_leave);
 
@@ -410,7 +411,7 @@ class TeachingStaffController extends Controller
 
     public function show($request)
     {
-        abort_if(Gate::denies('teaching_staff_show'), Response::HTTP_FORBIDDEN, '403 Forbidden');
+        // abort_if(Gate::denies('teaching_staff_show'), Response::HTTP_FORBIDDEN, '403 Forbidden');
         //  dd($request);
         if (is_numeric($request)) {
             $staff = TeachingStaff::where('user_name_id', $request)->first();
@@ -809,7 +810,7 @@ class TeachingStaffController extends Controller
 
     public function destroy($request)
     {
-        abort_if(Gate::denies('student_delete'), Response::HTTP_FORBIDDEN, '403 Forbidden');
+        // abort_if(Gate::denies('student_delete'), Response::HTTP_FORBIDDEN, '403 Forbidden');
         $teaching_staff = TeachingStaff::where('user_name_id', $request)->delete();
         $personal = PersonalDetail::where('user_name_id', $request)->delete();
         $user = User::find($request)->delete();
@@ -861,7 +862,7 @@ class TeachingStaffController extends Controller
         if (isset($request->data)) {
 
             $staff = auth()->user()->id;
-            $update_control = TeachingStaff::where(['user_name_id' => $staff])->select('past_leave_access')->first();
+            $update_control = Staffs::where(['user_name_id' => $staff])->select('past_leave_access')->first();
             if ($update_control['past_leave_access'] == 1) {
 
                 $given_Dates = $request->date;
@@ -897,7 +898,6 @@ class TeachingStaffController extends Controller
                     return response()->json(['status' => true]);
                 }
             } else {
-
                 return response()->json(['status' => false]);
             }
         }
