@@ -22,12 +22,22 @@ class HomeController extends SystemCalendarController
 {
     public function index()
     {
+<<<<<<< HEAD
 
         $role_id = auth()->user()->roles[0]->id;
         if ($role_id == 1) {
             return view('layouts.admin');
         } elseif ($role_id == 4) {
             return view('layouts.staffs');
+=======
+
+        $user_id = auth()->user()->id;
+        // dd($user_id);
+
+        if ($user_id == 1) {
+
+            return view('layouts.admin');
+>>>>>>> 6563285674506c09c4794a263e688088e7e74606
         }
 
     }

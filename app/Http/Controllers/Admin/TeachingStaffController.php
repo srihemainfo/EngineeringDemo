@@ -65,36 +65,31 @@ class TeachingStaffController extends Controller
 
     public function index(Request $request)
     {
+<<<<<<< HEAD
         // abort_if(Gate::denies('teaching_staff_access'), Response::HTTP_FORBIDDEN, '403 Forbidden');
         // $a = MsBiometric::get();
         // $b = "SELECT * FROM AttendanceLogs";
         // $a = DB::connection('sqlsrv')->getPdo();
         // dd($a);
+=======
+
+>>>>>>> 6563285674506c09c4794a263e688088e7e74606
         if ($request->ajax()) {
-            // $status = PersonalDetail::whereNotNull('StaffCode')->where('employment_status', 'Active')->orWhereNull('employment_status')
-            //     ->orderBy('user_name_id', 'asc')
-            //     ->select('user_name_id')
-            //     ->get();
-            // $userNameIds = $status->pluck('user_name_id');
-            // $staff_details = TeachingStaff::whereIn('user_name_id', $userNameIds)->select('id', 'name', 'Dept', 'StaffCode', 'Designation', 'past_leave_access', 'user_name_id')->get();
-
-            // $query = TeachingStaff::with('personal_details:user_name_id,employment_status')->select(sprintf('%s.*', (new TeachingStaff)->table));
-
 
             $query = DB::table('teaching_staffs')
                 ->whereNull('teaching_staffs.deleted_at')
                 ->leftJoin('role_user', 'role_user.user_id', '=', 'teaching_staffs.user_name_id')
                 ->leftJoin('roles', 'roles.id', '=', 'role_user.role_id')
-                ->leftJoin('shift', 'shift.id', '=', 'teaching_staffs.shift_id')
-                ->leftJoin('personal_details', 'personal_details.user_name_id', '=', 'teaching_staffs.user_name_id')
-                ->where(function ($query) {
-                    $query->where('personal_details.employment_status', 'Active')
-                        ->orWhereNull('personal_details.employment_status');
-                })
-                ->whereNotNull('personal_details.StaffCode')
-                ->orderBy('personal_details.user_name_id', 'asc')
-                ->leftJoin('teaching_types', 'teaching_types.id', '=', 'roles.type_id')
-                ->select('shift.Name as shift_name','teaching_staffs.user_name_id', 'teaching_staffs.name', 'teaching_staffs.past_leave_access', 'teaching_staffs.StaffCode', 'teaching_staffs.Designation', 'teaching_staffs.Dept', 'roles.title', 'teaching_types.name as teach_type')
+                // ->leftJoin('shift', 'shift.id', '=', 'teaching_staffs.shift_id')
+                // ->leftJoin('personal_details', 'personal_details.user_name_id', '=', 'teaching_staffs.user_name_id')
+                // ->where(function ($query) {
+                //     $query->where('personal_details.employment_status', 'Active')
+                //         ->orWhereNull('personal_details.employment_status');
+                // })
+                // ->whereNotNull('personal_details.StaffCode')
+                // ->orderBy('personal_details.user_name_id', 'asc')
+                // ->leftJoin('teaching_types', 'teaching_types.id', '=', 'roles.type_id')
+                ->select('teaching_staffs.user_name_id', 'teaching_staffs.name', 'teaching_staffs.past_leave_access',  'teaching_staffs.Designation', 'teaching_staffs.Dept', 'roles.title')
                 ->get();
 
 
@@ -134,47 +129,45 @@ class TeachingStaffController extends Controller
                 return $row->name ? $row->name : '';
             });
 
-            $table->editColumn('StaffCode', function ($row) {
-                return $row->StaffCode ? $row->StaffCode : '';
-            });
+            // $table->editColumn('StaffCode', function ($row) {
+            //     return $row->StaffCode ? $row->StaffCode : '';
+            // });
             $table->editColumn('Dept', function ($row) {
                 return $row->Dept ? $row->Dept : '';
             });
             $table->editColumn('Designation', function ($row) {
                 return $row->Designation ? $row->Designation : '';
             });
-            $table->editColumn('teach_type', function ($row) {
-                return $row->teach_type ? $row->teach_type : '';
-            });
-            $table->editColumn('shift', function ($row) {
-                return $row->shift_name ? $row->shift_name : '';
-            });
+            // $table->editColumn('teach_type', function ($row) {
+            //     return $row->teach_type ? $row->teach_type : '';
+            // });
+            // $table->editColumn('shift', function ($row) {
+            //     return $row->shift_name ? $row->shift_name : '';
+            // });
 
             $table->editColumn('past_leave_access', function ($row) {
                 $accessGate2 = 'Past_Leave_Permission_Access';
                 return view('partials.controlBtn', compact('accessGate2', 'row'));
             });
 
-            $table->editColumn('active_status', function ($row) {
-                $status = PersonalDetail::where('user_name_id', $row->user_name_id)->select('employment_status')->first();
+            // $table->editColumn('active_status', function ($row) {
+            //     $status = PersonalDetail::where('user_name_id', $row->user_name_id)->select('employment_status')->first();
 
-                $employmentStatus = $status->employment_status ? $status->employment_status : null;
-                if ($employmentStatus != '') {
-                    if ($employmentStatus == 'Active') {
-                        return 'Active';
-                    } else {
-                        return 'Inactive';
-                    }
-                } else {
-                    return '';
-                }
-            });
+            //     $employmentStatus = $status->employment_status ? $status->employment_status : null;
+            //     if ($employmentStatus != '') {
+            //         if ($employmentStatus == 'Active') {
+            //             return 'Active';
+            //         } else {
+            //             return 'Inactive';
+            //         }
+            //     } else {
+            //         return '';
+            //     }
+            // });
 
             $table->rawColumns(['actions', 'placeholder', 'past_leave_access']);
             return $table->make(true);
-            // $table->rawColumns(['actions', 'placeholder']);
 
-            // return $table->make(true);
         }
 
         return view('admin.teachingStaffs.index');

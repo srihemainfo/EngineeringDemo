@@ -11,8 +11,12 @@
         </div>
 
         <div class="card-body">
+<<<<<<< HEAD
             <table
                 class=" table table-bordered table-striped table-hover ajaxTable datatable datatable-Staffs text-center">
+=======
+            <table class=" table table-bordered table-striped table-hover ajaxTable datatable datatable-Staffs text-center">
+>>>>>>> 6563285674506c09c4794a263e688088e7e74606
                 <thead>
                     <tr>
                         <th width="10">
@@ -159,7 +163,11 @@
                     },
                     {
                         data: 'actions',
+<<<<<<< HEAD
                         name: 'actions'
+=======
+                        name: '{{ trans('global.actions') }}'
+>>>>>>> 6563285674506c09c4794a263e688088e7e74606
                     }
                 ],
                 orderCellsTop: true,
@@ -175,6 +183,7 @@
             });
 
         };
+<<<<<<< HEAD
 
 
 
@@ -374,5 +383,7 @@
         //         });
         //     }
         // }
+=======
+>>>>>>> 6563285674506c09c4794a263e688088e7e74606
     </script>
 @endsection
